@@ -1,0 +1,124 @@
+# ========================
+# .NET / C#
+# ========================
+bin/
+obj/
+*.csproj.lscache
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vs/
+.vs/
+*.rsuser
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.opensdf
+*.sdf
+*.cachefile
+*.apsdb
+*.ncb
+*.sap
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.nupkg
+*.snupkg
+*.[Nn]u[Gg]et.props
+*.[Nn]u[Gg]et.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+_TestResults/
+*.testlog
+packages/
+!packages/build/
+*.nuget.props
+*.nuget.targets
+publish/
+PublishProfiles/
+appsettings.Development.json
+appsettings.Local.json
+*.pfx
+*.snk
+
+# ========================
+# JavaScript
+# ========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+dist/
+build/
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.output/
+.vuepress/dist/
+.serverless/
+.fusebox/
+.dynamodb/
+*.min.js
+*.min.css
+coverage/
+.nyc_output/
+jspm_packages/
+bower_components/
+.grunt
+.lock-wscript
+.env
+.env.*
+!.env.example
+!.env.template
+
+# ========================
+# TypeScript
+# ========================
+*.js.map
+*.d.ts
+!src/**/*.d.ts
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# ========================
+# Editors & OS
+# ========================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*secret.yaml

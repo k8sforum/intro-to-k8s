@@ -1,0 +1,3 @@
+-- Runs once on first container start (only when the data directory is empty).
+-- CoreDb is already created by the POSTGRES_DB environment variable,
+-- so no additional setup is needed here.

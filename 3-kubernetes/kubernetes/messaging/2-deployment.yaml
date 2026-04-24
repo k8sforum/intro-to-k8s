@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging
+  namespace: mytravels-default
+  labels:
+    app: messaging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: messaging
+  template:
+    metadata:
+      labels:
+        app: messaging
+    spec:
+      containers:
+        - name: messaging
+          image: tshepontlhokoa/mytravels-messaging:v1.0.4
+          ports:
+            - name: http
+              containerPort: 5102
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:5102
+            - name: GoogleMapsUrl
+              value: https://maps.googleapis.com
+            - name: GooglePlacesUrl
+              value: https://places.googleapis.com
+            - name: MinIO__Endpoint
+              value: minio:9000
+            - name: ConnectionStrings__CoreDbContext
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: ConnectionStrings__CoreDbContext
+            - name: RabbitMQ__Uri
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: RabbitMQ__Uri
+            - name: MinIO__AccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: MinIO__AccessKey
+            - name: MinIO__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: MinIO__SecretKey
+            - name: GoogleApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: GoogleApiKey
+            - name: ContentSafetyEndpoint
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: ContentSafetyEndpoint
+            - name: ContentSafetyKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: ContentSafetyKey
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          # livenessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: 5102
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 15
+          #   timeoutSeconds: 10
+          #   failureThreshold: 10

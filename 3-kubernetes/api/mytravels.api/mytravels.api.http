@@ -1,0 +1,6 @@
+@mytravels.api_HostAddress = {{HostUrl}}
+
+GET {{mytravels.api_HostAddress}}/jobs/
+Accept: application/json
+
+###

@@ -1,0 +1,19 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npx tsc -p tsconfig.build.json
+RUN cp -r libs/domain/src/features dist/libs/domain/src/features
+RUN echo "Build complete."
+
+FROM node:20-alpine AS runner
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY --from=builder /app/dist/scripts ./dist/scripts
+COPY --from=builder /app/dist/libs ./dist/libs
+RUN chown -R node:node /app
+USER node
+CMD ["sh", "-c", "node dist/scripts/migrate.js && echo '' && echo 'Migration complete.'"]

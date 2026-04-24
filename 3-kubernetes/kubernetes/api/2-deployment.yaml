@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: mytravels-default
+  labels:
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: tshepontlhokoa/mytravels-api:v1.0.2
+          ports:
+            - name: http
+              containerPort: 5101
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:5101
+            - name: GoogleMapsUrl
+              value: https://maps.googleapis.com
+            - name: GooglePlacesUrl
+              value: https://places.googleapis.com
+            - name: MinIO__Endpoint
+              value: minio:9000
+            - name: ConnectionStrings__CoreDbContext
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: ConnectionStrings__CoreDbContext
+            - name: GoogleApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: GoogleApiKey
+            - name: GraphApiToken
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: GraphApiToken
+            - name: RabbitMQ__Uri
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: RabbitMQ__Uri
+            - name: MinIO__AccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: MinIO__AccessKey
+            - name: MinIO__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: MinIO__SecretKey
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /swagger
+              port: 5101
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 10

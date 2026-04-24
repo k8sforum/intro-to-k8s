@@ -1,0 +1,21 @@
+# Build and push in one step:
+#   docker compose -f docker-compose.build.yml build --push
+
+services:
+  migration-tool:
+    image: tshepontlhokoa/mytravels-migrations:v1.0.0
+    build:
+      context: .
+      dockerfile: common/mytravels.migration/Dockerfile
+
+  api:
+    image: tshepontlhokoa/mytravels-api:v1.0.2
+    build:
+      context: .
+      dockerfile: api/mytravels.api/Dockerfile
+
+  messaging:
+    image: tshepontlhokoa/mytravels-messaging:v1.0.4
+    build:
+      context: .
+      dockerfile: messaging/mytravels.messaging/Dockerfile
