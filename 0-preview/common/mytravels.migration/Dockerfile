@@ -14,7 +14,7 @@ RUN dotnet restore common/mytravels.migration/mytravels.migration.csproj
 
 # Copy everything else and build
 COPY . ./
-RUN dotnet publish common/mytravels.migration/ -c Release -o /out/core --no-restore
+RUN dotnet publish common/mytravels.migration/ -c Release -o /out/core
 
 # Stage 2: Use SDK for runtime as well (EF tools require SDK)
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine  AS runtime
