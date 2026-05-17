@@ -27,6 +27,8 @@ async function bootstrap() {
     });
   }
 
+  app.use('/swagger/index.html', (_req, res) => res.redirect(301, '/swagger'));
+
   const document = SwaggerModule.createDocument(app, new DocumentBuilder()
     .setTitle('MyTravels API')
     .setVersion('v1')
