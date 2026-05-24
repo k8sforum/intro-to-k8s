@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MessageSubscriberBase } from '@mytravels/common';
-import { IGoogleMapsService, ExchangeNames, PointOfInterestMessage } from '@mytravels/contract';
+import { IMapsService, ExchangeNames, PointOfInterestMessage } from '@mytravels/contract';
 import { PointOfInterestEntity } from '@mytravels/domain';
 
 @Injectable()
@@ -14,8 +14,8 @@ export class AppendFormattedAddressHandler extends MessageSubscriberBase<PointOf
     config: ConfigService,
     @InjectRepository(PointOfInterestEntity)
     private readonly poiRepo: Repository<PointOfInterestEntity>,
-    @Inject(IGoogleMapsService)
-    private readonly googleMaps: IGoogleMapsService,
+    @Inject(IMapsService)
+    private readonly maps: IMapsService,
   ) {
     super(config, ExchangeNames.AppendFormattedAddress, ExchangeNames.AppendFormattedAddress);
   }
@@ -28,7 +28,7 @@ export class AppendFormattedAddressHandler extends MessageSubscriberBase<PointOf
       if (!point) throw new Error(`Point not found: ${message.pointOfInterestId}`);
 
       if (!point.formattedAddress?.trim()) {
-        point.formattedAddress = await this.googleMaps.getAddress(point.latitude, point.longitude);
+        point.formattedAddress = await this.maps.getAddress(point.latitude, point.longitude);
         await this.poiRepo.save(point);
       }
     } finally {

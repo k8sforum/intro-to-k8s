@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosError } from 'axios';
-import { IGoogleMapsService } from '@mytravels/contract';
+import { IMapsService } from '@mytravels/contract';
 
 const MAX_RETRIES = 2;
 
 @Injectable()
-export class GoogleMapsService implements IGoogleMapsService {
+export class GoogleMapsService implements IMapsService {
   private readonly apiKey: string;
   private readonly baseUrl: string;
 

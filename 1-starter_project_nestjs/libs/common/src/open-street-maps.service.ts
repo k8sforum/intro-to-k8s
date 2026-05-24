@@ -4,26 +4,29 @@ import axios, { AxiosError } from 'axios';
 import { IMapsService } from '@mytravels/contract';
 
 const MAX_RETRIES = 2;
+const DEFAULT_BASE_URL = 'https://nominatim.openstreetmap.org';
+const DEFAULT_USER_AGENT = 'mytravels/1.0';
 
 @Injectable()
-export class GoogleMapsService implements IMapsService {
-  private readonly apiKey: string;
+export class OpenStreetMapsService implements IMapsService {
   private readonly baseUrl: string;
+  private readonly userAgent: string;
 
   constructor(private readonly config: ConfigService) {
-    this.apiKey = config.get<string>('GOOGLE_API_KEY');
-    this.baseUrl = config.get<string>('GOOGLE_MAPS_URL');
+    this.baseUrl = config.get<string>('OPEN_STREET_MAPS_URL') ?? DEFAULT_BASE_URL;
+    this.userAgent = config.get<string>('OPEN_STREET_MAPS_USER_AGENT') ?? DEFAULT_USER_AGENT;
   }
 
   async getAddress(latitude: number, longitude: number): Promise<string> {
-    const latlong = `${latitude},${longitude}`;
     return this.withRetry(() =>
-      axios.get(`${this.baseUrl}/maps/api/geocode/json`, {
-        params: { latlng: latlong, key: this.apiKey },
+      axios.get(`${this.baseUrl}/reverse`, {
+        params: { format: 'jsonv2', lat: latitude, lon: longitude },
+        headers: { 'User-Agent': this.userAgent },
       }).then((res) => {
-        const results = res.data?.results;
-        if (!results?.length) throw new Error('Google Maps API returned no results');
-        return results[0].formatted_address as string;
+        if (res.data?.error) throw new Error(`OpenStreetMap geocode failed: ${res.data.error}`);
+        const address = res.data?.display_name;
+        if (!address) throw new Error('display_name missing in response');
+        return address as string;
       }),
     );
   }

@@ -16,7 +16,7 @@ export * from './exceptions/entity-not-found.exception';
 export * from './exceptions/out-of-radius.exception';
 export * from './exceptions/required-parameter-not-found.exception';
 export * from './interfaces/geo-service.interface';
-export * from './interfaces/google-maps-service.interface';
+export * from './interfaces/maps-service.interface';
 export * from './interfaces/message.interface';
 export * from './interfaces/message-publisher.interface';
 export * from './interfaces/object-storage-service.interface';
