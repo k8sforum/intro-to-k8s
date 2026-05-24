@@ -1,6 +1,6 @@
 ﻿namespace mytravels.contract.Interfaces;
 
-public interface IGoogleMapsService
+public interface IMapsService
 {
     Task<string> GetAddressAsync(double latitude, double longitude, CancellationToken cancellationToken);
 }

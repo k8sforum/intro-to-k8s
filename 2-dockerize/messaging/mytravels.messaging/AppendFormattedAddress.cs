@@ -31,7 +31,7 @@ public class AppendFormattedAddress : MessageSubscriberBase<PointOfInterestMessa
             await semaphore.WaitAsync();
             using IServiceScope scope = _serviceScopeFactory.CreateScope();
             ICoreDbContext context = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-            IGoogleMapsService googleMapsService = scope.ServiceProvider.GetRequiredService<IGoogleMapsService>();
+            IMapsService mapsService = scope.ServiceProvider.GetRequiredService<IMapsService>();
 
             PointOfInterest point = await context.PointOfInterests.FirstOrDefaultAsync(x => x.Id == obj.PointOfInterestId, cancellationToken);
 
@@ -42,7 +42,7 @@ public class AppendFormattedAddress : MessageSubscriberBase<PointOfInterestMessa
 
             if (string.IsNullOrEmpty(point.FormattedAddress?.Trim()))
             {
-                point.FormattedAddress = await googleMapsService.GetAddressAsync(point.Latitude, point.Longitude, default);
+                point.FormattedAddress = await mapsService.GetAddressAsync(point.Latitude, point.Longitude, default);
                 var entry = context.Entry(point);
                 entry.State = EntityState.Unchanged;
                 entry.Property(nameof(point.FormattedAddress)).IsModified = true;
