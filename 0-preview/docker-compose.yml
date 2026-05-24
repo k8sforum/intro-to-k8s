@@ -103,7 +103,7 @@ services:
   # ASP.NET CORE API
   api:
     container_name: mytravels-api
-    image: tshepontlhokoa/mytravels-api:v1.0.2
+    image: tshepontlhokoa/mytravels-api:v1.0.3
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       GoogleApiKey: ${GOOGLE_API_KEY}
@@ -126,7 +126,7 @@ services:
   # MESSAGING APP
   messaging:
     container_name: mytravels-messaging
-    image: tshepontlhokoa/mytravels-messaging:v1.0.4
+    image: tshepontlhokoa/mytravels-messaging:v1.0.5
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}

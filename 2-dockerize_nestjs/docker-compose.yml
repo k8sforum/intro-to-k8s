@@ -75,7 +75,7 @@ services:
   # ASP.NET CORE API
   api:
     container_name: mytravels-api
-    image: mytravels-api:v1.0.2
+    image: mytravels-api:v1.0.3
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -102,7 +102,7 @@ services:
 
   messaging:
     container_name: mytravels-messaging
-    image: mytravels-messaging:v1.0.4
+    image: mytravels-messaging:v1.0.5
     build:
       context: .
       dockerfile: apps/messaging/Dockerfile

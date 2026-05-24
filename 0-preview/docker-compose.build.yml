@@ -9,13 +9,13 @@ services:
       dockerfile: common/mytravels.migration/Dockerfile
 
   api:
-    image: tshepontlhokoa/mytravels-api:v1.0.2
+    image: tshepontlhokoa/mytravels-api:v1.0.3
     build:
       context: .
       dockerfile: api/mytravels.api/Dockerfile
 
   messaging:
-    image: tshepontlhokoa/mytravels-messaging:v1.0.4
+    image: tshepontlhokoa/mytravels-messaging:v1.0.5
     build:
       context: .
       dockerfile: messaging/mytravels.messaging/Dockerfile
