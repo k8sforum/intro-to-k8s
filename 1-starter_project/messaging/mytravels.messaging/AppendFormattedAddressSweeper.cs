@@ -26,7 +26,7 @@ public class AppendFormattedAddressSweeper : CronJobBase
         {
             using IServiceScope scope = _serviceScopeFactory.CreateScope();
             ICoreDbContext context = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-            IGoogleMapsService googleMapsService = scope.ServiceProvider.GetRequiredService<IGoogleMapsService>();
+            IMapsService mapsService = scope.ServiceProvider.GetRequiredService<IMapsService>();
 
             List<PointOfInterest> points = await context.GetPointsOfInterestAsync(default);
 
@@ -35,7 +35,7 @@ public class AppendFormattedAddressSweeper : CronJobBase
 
             foreach (PointOfInterest point in points)
             {
-                point.FormattedAddress = await googleMapsService.GetAddressAsync(point.Latitude, point.Longitude, default);
+                point.FormattedAddress = await mapsService.GetAddressAsync(point.Latitude, point.Longitude, default);
                 var entry = context.Entry(point);
                 entry.State = EntityState.Unchanged;
                 entry.Property(nameof(point.FormattedAddress)).IsModified = true;

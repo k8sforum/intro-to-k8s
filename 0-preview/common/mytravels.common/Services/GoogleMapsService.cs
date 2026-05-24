@@ -10,7 +10,7 @@ using mytravels.contract.Interfaces;
 
 namespace mytravels.common.Services
 {
-    public class GoogleMapsService : IGoogleMapsService
+    public class GoogleMapsService : IMapsService
     {
         private readonly IConfiguration _configuration;
         private readonly int _maxRetryAttempts = 2;

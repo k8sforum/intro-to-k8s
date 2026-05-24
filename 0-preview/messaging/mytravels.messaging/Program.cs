@@ -38,7 +38,15 @@ builder.Services.Configure<MinIOConfig>(builder.Configuration.GetSection("MinIO"
 
 builder.Services.AddTransient<IGeoService, GeoService>();
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
-builder.Services.AddTransient<IGoogleMapsService, GoogleMapsService>();
+string googleApiKey = builder.Configuration.GetValue<string>("GoogleApiKey");
+if (!string.IsNullOrWhiteSpace(googleApiKey) && googleApiKey != "<YOUR_GOOGLE_API_KEY>")
+{
+    builder.Services.AddTransient<IMapsService, GoogleMapsService>();
+}
+else
+{
+    builder.Services.AddTransient<IMapsService, OpenStreetMapsService>();
+}
 builder.Services.AddTransient<IObjectStorageService, MinIOStorageService>();
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 
