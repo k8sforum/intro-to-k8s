@@ -4,7 +4,7 @@
 |------------------------------|-------|-------------------------------|---------------|
 | **mytravels.api**            | 5101  | http://localhost:5101         | HTTP          |
 | **mytravels.api (Swagger)**  | 5101  | http://localhost:5101/swagger | HTTP          |
-| **mytravels.messaging**      | –     | –                             | AMQP consumer |
+| **mytravels.messaging**      | 5102  | http://localhost:5102         | HTTP / AMQP consumer |
 | **PostgreSQL**               | 5432  | –                             | TCP           |
 | **RabbitMQ**                 | 5672  | –                             | AMQP          |
 | **RabbitMQ Management UI**   | 15672 | http://localhost:15672        | HTTP          |

@@ -108,6 +108,7 @@ services:
       dockerfile: apps/messaging/Dockerfile
     environment:
       NODE_ENV: production
+      PORT: 5102
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       RABBIT_MQ_URI: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
       MINIO_ENDPOINT: http://minio:9000
@@ -115,6 +116,8 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       GOOGLE_MAPS_URL: ${GOOGLE_MAPS_URL}
+    ports:
+      - "5102:5102"
     depends_on:
       rabbitmq:
         condition: service_healthy
