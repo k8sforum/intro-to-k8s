@@ -27,6 +27,7 @@ public class MinIOStorageService : IObjectStorageService
         _minioClient = new MinioClient()
                           .WithEndpoint(config.Endpoint)
                           .WithCredentials(config.AccessKey, config.SecretKey)
+                          .WithSSL(config.UseSSL)
                           .Build();
     }
 
