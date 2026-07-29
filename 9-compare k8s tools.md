@@ -79,3 +79,4 @@ talosctl upgrade --nodes <node-ip> --image ghcr.io/siderolabs/installer:<version
 # Stream logs from a service (e.g. kubelet)
 talosctl logs kubelet --nodes <node-ip>
 ```
+

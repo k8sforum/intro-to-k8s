@@ -108,6 +108,13 @@ tsconfig.tsbuildinfo
 *.tsbuildinfo
 
 # ========================
+# Python
+# ========================
+.venv/
+__pycache__/
+*.pyc
+
+# ========================
 # Editors & OS
 # ========================
 .DS_Store
