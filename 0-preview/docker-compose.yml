@@ -87,7 +87,7 @@ services:
       
 # Migrations
   migrate-core-db:
-    image: tshepontlhokoa/mytravels-migrations:v1.0.0
+    image: tshepontlhokoa/mytravels-migrations:v1.0.1
     working_dir: /s/src
     entrypoint: [""]
     command: >
@@ -103,7 +103,7 @@ services:
   # ASP.NET CORE API
   api:
     container_name: mytravels-api
-    image: tshepontlhokoa/mytravels-api:v1.0.3
+    image: tshepontlhokoa/mytravels-api:v1.0.4
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       GoogleApiKey: ${GOOGLE_API_KEY}
@@ -126,7 +126,7 @@ services:
   # MESSAGING APP
   messaging:
     container_name: mytravels-messaging
-    image: tshepontlhokoa/mytravels-messaging:v1.0.5
+    image: tshepontlhokoa/mytravels-messaging:v1.0.6
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}

@@ -59,7 +59,7 @@ services:
       retries: 5
 
   migrate:
-    image: mytravels-migrations:v1.0.0
+    image: mytravels-migrations:v1.0.1
     build:
       context: .
       dockerfile: Dockerfile.migrate
@@ -75,7 +75,7 @@ services:
   # ASP.NET CORE API
   api:
     container_name: mytravels-api
-    image: mytravels-api:v1.0.3
+    image: mytravels-api:v1.0.4
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -102,7 +102,7 @@ services:
 
   messaging:
     container_name: mytravels-messaging
-    image: mytravels-messaging:v1.0.5
+    image: mytravels-messaging:v1.0.6
     build:
       context: .
       dockerfile: apps/messaging/Dockerfile

@@ -87,7 +87,7 @@ services:
       
 # Migrations
   migrate-core-db:
-    image: tshepontlhokoa/mytravels-migrations:v1.0.0
+    image: tshepontlhokoa/mytravels-migrations:v1.0.1
     working_dir: /s/src
     entrypoint: [""]
     command: >
