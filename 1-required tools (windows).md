@@ -4,6 +4,8 @@ Install notes for the tools used across the runbooks in this repo. Each notebook
 
 All commands use `winget`, which ships built in on Windows 10 (1809+) and Windows 11. Run them from PowerShell.
 
+> **Run Windows Terminal as Administrator.** Open Windows Terminal (or PowerShell) with **Run as administrator** and use that same elevated window for every command below and in the rest of this repo's runbooks — some installs and WSL/Kubernetes operations fail silently or with permissions errors otherwise.
+
 ## Quick reference
 
 | Tool | Purpose | Install |
