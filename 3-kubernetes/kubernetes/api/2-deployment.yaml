@@ -38,16 +38,6 @@ spec:
                 secretKeyRef:
                   name: api-secret
                   key: ConnectionStrings__CoreDbContext
-            - name: GoogleApiKey
-              valueFrom:
-                secretKeyRef:
-                  name: api-secret
-                  key: GoogleApiKey
-            - name: GraphApiToken
-              valueFrom:
-                secretKeyRef:
-                  name: api-secret
-                  key: GraphApiToken
             - name: RabbitMQ__Uri
               valueFrom:
                 secretKeyRef:

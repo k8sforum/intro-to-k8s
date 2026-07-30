@@ -53,11 +53,6 @@ spec:
                 secretKeyRef:
                   name: messaging-secret
                   key: MinIO__SecretKey
-            - name: GoogleApiKey
-              valueFrom:
-                secretKeyRef:
-                  name: messaging-secret
-                  key: GoogleApiKey
             - name: ContentSafetyEndpoint
               valueFrom:
                 secretKeyRef:
