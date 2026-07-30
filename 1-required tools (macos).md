@@ -23,18 +23,13 @@ Open it and ensure the container engine is running before continuing — the men
 
 ## Docker / Docker Compose
 
-Rancher Desktop already provides both `docker` and `docker compose`. Only install these separately if you specifically want Docker Desktop instead of Rancher Desktop, or a CLI-only setup:
+Rancher Desktop already provides both `docker` and `docker compose`. Only install these separately if you want a CLI-only setup instead:
 
 ```bash
-# Docker Desktop (GUI, alternative to Rancher Desktop)
-brew install --cask docker
-
 # CLI-only, no GUI — needs a running engine such as Colima
 brew install docker docker-compose colima
 colima start
 ```
-
-Don't run Rancher Desktop and Docker Desktop at the same time — they both try to own the `docker` context and will conflict.
 
 ## k3d
 

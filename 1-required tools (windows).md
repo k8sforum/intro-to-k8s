@@ -27,13 +27,7 @@ Rancher Desktop on Windows runs its Linux container engine inside WSL2, so you n
 
 ## Docker / Docker Compose
 
-Rancher Desktop already provides both `docker` and `docker compose`. Only install these separately if you want Docker Desktop instead:
-
-```powershell
-winget install --id Docker.DockerDesktop -e
-```
-
-Don't run Rancher Desktop and Docker Desktop at the same time — both use WSL2 integration and will conflict over the `docker` context.
+Rancher Desktop already provides both `docker` and `docker compose`. No separate install is needed.
 
 ## k3d
 
