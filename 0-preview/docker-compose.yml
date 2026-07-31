@@ -146,6 +146,15 @@ services:
       migrate-core-db:
         condition: service_completed_successfully
 
+  # WEB UI
+  web:
+    container_name: mytravels-web
+    image: tshepontlhokoa/mytravels-ui:v1.0.0
+    ports:
+      - 5100:80
+    depends_on:
+      - api
+
 volumes:
   pgdata:
     driver: local
