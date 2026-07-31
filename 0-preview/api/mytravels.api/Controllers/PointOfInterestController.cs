@@ -41,6 +41,14 @@ namespace mytravels.api.Controllers
             return Ok(dtos);
         }
 
+        [HttpGet("{id:int}")]
+        [ProducesResponseType(typeof(string), 200)]
+        public async Task<IActionResult> GetImageAsync([FromRoute] int id, [FromQuery] bool resizedImage, CancellationToken cancellationToken)
+        {
+            string base64 = await _service.GetImageAsync(id, cancellationToken);
+            return Ok(base64);
+        }
+
         [HttpPut("status")]
         public async Task<IActionResult> UpdateStatusAsync([FromBody] UpdatePointOfInterestStatusDto dto, CancellationToken cancellationToken)
         {

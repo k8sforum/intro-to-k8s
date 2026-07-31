@@ -1,5 +1,6 @@
 using MetadataExtractor;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using mytravels.contract.CustomException;
 using mytravels.contract.Constants;
 using mytravels.contract.Dtos;
@@ -73,6 +74,17 @@ namespace mytravels.domain.Features.PointOfInterest
             await _context.AddImageToPointOfInterestAsync(objectName, point, cancellationToken);
             await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { PointOfInterestId = point.Id }, CancellationToken.None);
             return point.Id;
+        }
+
+        public async Task<string> GetImageAsync(int id, CancellationToken cancellationToken)
+        {
+            contract.Entities.PointOfInterest point = await _context.PointOfInterests
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+                ?? throw new DataNotFoundException($"Point of interest with id '{id}' was not found");
+
+            if (string.IsNullOrWhiteSpace(point.GeneratedBlobName)) return string.Empty;
+
+            return await _objectStorageService.GetBase64Async(BucketNames.ResizedImagesContainer, point.GeneratedBlobName, cancellationToken);
         }
 
         public async Task<int> UpdateStatusAsync(string pointOfInterestKey, int pointOfInterestStatusId, CancellationToken cancellationToken)
