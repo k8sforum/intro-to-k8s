@@ -25,9 +25,9 @@ services:
       dockerfile: messaging/mytravels.messaging/Dockerfile
 
   web:
-    image: tshepontlhokoa/mytravels-ui:v1.0.0-${ARCH}
+    image: tshepontlhokoa/mytravels-web:v1.0.0-${ARCH}
     build:
-      context: web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: web/Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
