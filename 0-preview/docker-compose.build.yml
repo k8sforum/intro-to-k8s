@@ -13,7 +13,7 @@ services:
       dockerfile: common/mytravels.migration/Dockerfile
 
   api:
-    image: tshepontlhokoa/mytravels-api:v1.0.4-${ARCH}
+    image: tshepontlhokoa/mytravels-api:v1.0.5-${ARCH}
     build:
       context: .
       dockerfile: api/mytravels.api/Dockerfile

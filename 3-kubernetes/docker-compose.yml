@@ -108,7 +108,7 @@ services:
   # ASP.NET CORE API
   api:
     container_name: mytravels-api
-    image: mytravels-api:v1.0.4
+    image: mytravels-api:v1.0.5
     build:
       context: .
       dockerfile: api/mytravels.api/Dockerfile
