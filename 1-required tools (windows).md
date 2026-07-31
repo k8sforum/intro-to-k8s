@@ -39,6 +39,16 @@ winget install --id k3d.k3d -e
 
 Used to create the local multi-node Kubernetes cluster in `3-kubernetes`. Requires Rancher Desktop (or another Docker engine) to be running first, and talks to it over the same named pipe Rancher Desktop's own `docker` CLI uses — no WSL-specific setup needed beyond what Rancher Desktop already configured.
 
+> **`%%bash` notebook cells run inside WSL, not this Windows install.** The `runbook.ipynb` cells use Jupyter's `%%bash` magic, which spawns whatever `bash` your `PATH` resolves to. Git for Windows deliberately doesn't put its own `bash.exe` on `PATH`, so the only one found is `C:\Users\<user>\AppData\Local\Microsoft\WindowsApps\bash.exe` — the WSL launcher. That means every `%%bash` cell actually runs inside your default WSL distro, not a native Windows shell.
+>
+> `docker` and `kubectl` still work there because Rancher Desktop forwards native Linux builds of both directly into that WSL distro. The `k3d.exe` installed above by `winget` is Windows-only, so it's invisible to WSL bash under the bare name `k3d` — and even calling it explicitly as `k3d.exe` from inside WSL doesn't help, since Windows binaries launched through WSL interop can't reach Rancher Desktop's Docker named pipe (`open //./pipe/docker_engine: The system cannot find the file specified`).
+>
+> **Fix:** also install a native Linux build of k3d inside WSL, matching how `docker`/`kubectl` already get there. Open your WSL distro (Start Menu → **Ubuntu**, or `wsl` from a terminal) and run:
+> ```bash
+> curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.9.0 bash
+> ```
+> This will prompt for your WSL sudo password and install to `/usr/local/bin/k3d`. Confirm with `k3d --version` inside WSL, then re-run the Prerequisites cell in `runbook.ipynb`.
+
 ## kubectl
 
 ```powershell
