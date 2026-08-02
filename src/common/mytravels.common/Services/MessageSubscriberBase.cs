@@ -66,6 +66,7 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
                 if (string.IsNullOrEmpty(message))
                 {
                     _logger.LogWarning("Received empty message.");
+                    await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken);
                     return;
                 }
 
@@ -75,17 +76,17 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
                     await ProcessMessageAsync(obj, cancellationToken);
                 }
 
+                await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken);
                 _logger.LogInformation("Processed message successfully.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing message.");
+                await channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: true, cancellationToken);
             }
-
-            await Task.CompletedTask;
         };
 
-        await channel.BasicConsumeAsync(_queueName, autoAck: true, consumer: consumer);
+        await channel.BasicConsumeAsync(_queueName, autoAck: false, consumer: consumer);
         _logger.LogInformation("Consuming messages from queue '{Queue}'.", _queueName);
     }
 

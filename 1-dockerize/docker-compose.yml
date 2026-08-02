@@ -134,7 +134,7 @@ services:
   # MESSAGING APP
   messaging:
     container_name: mytravels-messaging
-    image: mytravels-messaging:v1.0.6
+    image: mytravels-messaging:v1.0.7
     build:
       context: ../src
       dockerfile: messaging/mytravels.messaging/Dockerfile

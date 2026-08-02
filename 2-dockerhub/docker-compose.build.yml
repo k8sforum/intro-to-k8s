@@ -19,7 +19,7 @@ services:
       dockerfile: api/mytravels.api/Dockerfile
 
   messaging:
-    image: tshepontlhokoa/mytravels-messaging:v1.0.6-${ARCH}
+    image: tshepontlhokoa/mytravels-messaging:v1.0.7-${ARCH}
     build:
       context: ../src
       dockerfile: messaging/mytravels.messaging/Dockerfile

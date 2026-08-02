@@ -52,6 +52,7 @@ public class AppendFormattedAddress : MessageSubscriberBase<PointOfInterestMessa
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing AppendFormattedAddress message");
+            throw;
         }
         finally
         {

@@ -126,7 +126,7 @@ services:
   # MESSAGING APP
   messaging:
     container_name: mytravels-messaging
-    image: tshepontlhokoa/mytravels-messaging:v1.0.6
+    image: tshepontlhokoa/mytravels-messaging:v1.0.7
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
