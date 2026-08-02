@@ -5,9 +5,9 @@ WORKDIR /app
 COPY . .
 
 WORKDIR /app/api/mytravels.api/
-RUN dotnet restore
+RUN dotnet restore mytravels.api.csproj
 
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet publish mytravels.api.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 

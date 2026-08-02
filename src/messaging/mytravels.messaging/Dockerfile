@@ -6,9 +6,9 @@ COPY . .
 
 WORKDIR /app/messaging/mytravels.messaging/
 
-RUN dotnet restore
+RUN dotnet restore mytravels.messaging.csproj
 
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet publish mytravels.messaging.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 
