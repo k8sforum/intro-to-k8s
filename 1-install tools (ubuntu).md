@@ -11,6 +11,7 @@ Install notes for the tools used across the runbooks in this repo. Each notebook
 | k3d | Local Kubernetes cluster (used in `3-kubernetes`) | `curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh \| bash` |
 | kubectl | Kubernetes CLI | `sudo snap install kubectl --classic` |
 | JupyterLab | Run these notebooks | `sudo apt install -y pipx && pipx install jupyterlab` |
+| Node.js / npm | Run the Web app from source (used in `0-local`) | NodeSource repo — see below |
 | Freelens (or OpenLens) | Kubernetes cluster GUI (optional) | `sudo snap install freelens --classic` |
 
 ## Rancher Desktop
@@ -80,6 +81,17 @@ pipx install jupyterlab
 ```
 
 > **JupyterLab via pip:** `pip install jupyterlab` fails on stock Ubuntu with `Command 'pip' not found` — recent Ubuntu images don't ship `pip` by default. Installing it via `sudo apt install python3-pip` then works, but a plain `pip install jupyterlab` afterward hits Debian/Ubuntu's PEP 668 guard (`error: externally-managed-environment`), since the system Python is protected from arbitrary global installs. `pipx` sidesteps this entirely — it installs JupyterLab into its own isolated venv and puts the `jupyter-lab` command on your `PATH`, which is exactly what you want for a CLI tool like this.
+
+## Node.js / npm
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+> **Don't use the default apt `nodejs` package:** `sudo apt install nodejs` pulls whatever version shipped with your Ubuntu release — often several major versions behind — which is too old for this repo's Vite 8 / React 19 toolchain. The NodeSource script above adds their apt repo pinned to the Node 22 LTS line (matching `src/web/Dockerfile`) and installs `nodejs` and `npm` together.
+
+Confirm with `node --version` and `npm --version`.
 
 ## Freelens / OpenLens (optional)
 

@@ -15,6 +15,7 @@ All commands use `winget`, which ships built in on Windows 10 (1809+) and Window
 | k3d | Local Kubernetes cluster (used in `3-kubernetes`) | `winget install --id k3d.k3d -e` |
 | kubectl | Kubernetes CLI | `winget install --id Kubernetes.kubectl -e` |
 | JupyterLab | Run these notebooks | `winget install --id ProjectJupyter.JupyterLab -e` |
+| Node.js / npm | Run the Web app from source (used in `0-local`) | `winget install --id OpenJS.NodeJS.LTS -e` |
 | Freelens (or OpenLens) | Kubernetes cluster GUI (optional) | `winget install --id Freelensapp.Freelens -e` |
 
 ## Rancher Desktop
@@ -72,6 +73,14 @@ python -m pipx ensurepath
 # open a new terminal, then:
 pipx install jupyterlab
 ```
+
+## Node.js / npm
+
+```powershell
+winget install --id OpenJS.NodeJS.LTS -e
+```
+
+Installs the current Node.js LTS line (22.x, matching `src/web/Dockerfile`) and bundles `npm`. Close and reopen your terminal afterward, then confirm with `node --version` and `npm --version`.
 
 ## Freelens / OpenLens (optional)
 

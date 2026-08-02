@@ -11,6 +11,7 @@ Install notes for the tools used across the runbooks in this repo. Each notebook
 | k3d | Local Kubernetes cluster (used in `3-kubernetes`) | `brew install k3d` |
 | kubectl | Kubernetes CLI | `brew install kubectl` |
 | JupyterLab | Run these notebooks | `brew install jupyterlab` |
+| Node.js / npm | Run the Web app from source (used in `0-local`) | `brew install node@22` |
 | Freelens (or OpenLens) | Kubernetes cluster GUI (optional) | `brew install --cask freelens` |
 
 ## Rancher Desktop
@@ -50,6 +51,20 @@ brew install kubectl
 ```bash
 brew install jupyterlab
 ```
+
+## Node.js / npm
+
+```bash
+brew install node@22
+```
+
+`node@22` is Homebrew's keg-only LTS formula, so it isn't symlinked onto your `PATH` automatically:
+
+```bash
+echo 'export PATH="/opt/homebrew/opt/node@22/bin:$PATH"' >> ~/.zshrc
+```
+
+Use `/usr/local/opt/node@22/bin` instead on Intel Macs. Open a new terminal, then confirm with `node --version` and `npm --version` (npm is bundled with Node, no separate install needed). Node 22 matches the version the Web app's Dockerfile builds with (`src/web/Dockerfile`).
 
 ## Freelens / OpenLens (optional)
 
