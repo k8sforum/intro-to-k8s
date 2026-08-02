@@ -91,12 +91,12 @@ services:
   migrate-core-db:
     image: mytravels-migrations:v1.0.1
     build:
-      context: .
+      context: ../src
       dockerfile: common/mytravels.migration/Dockerfile
     working_dir: /s/src
     entrypoint: [""]
     command: >
-      sh -c "dotnet tool install --version 9.0.9 dotnet-ef && 
+      sh -c "dotnet tool restore &&
             dotnet ef database update --startup-project common/mytravels.migration --project common/mytravels.domain --context CoreDbContext"
     restart: "no"
     environment:
@@ -110,7 +110,7 @@ services:
     container_name: mytravels-api
     image: mytravels-api:v1.0.5
     build:
-      context: .
+      context: ../src
       dockerfile: api/mytravels.api/Dockerfile
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
@@ -136,7 +136,7 @@ services:
     container_name: mytravels-messaging
     image: mytravels-messaging:v1.0.6
     build:
-      context: .
+      context: ../src
       dockerfile: messaging/mytravels.messaging/Dockerfile
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}

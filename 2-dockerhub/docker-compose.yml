@@ -91,7 +91,7 @@ services:
     working_dir: /s/src
     entrypoint: [""]
     command: >
-      sh -c "dotnet tool install --version 9.0.9 dotnet-ef &&
+      sh -c "dotnet tool restore &&
             dotnet ef database update --startup-project common/mytravels.migration --project common/mytravels.domain --context CoreDbContext"
     restart: "no"
     environment:
