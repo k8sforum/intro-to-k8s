@@ -160,7 +160,7 @@ services:
   # WEB UI
   web:
     container_name: mytravels-web
-    image: mytravels-web:v1.0.1
+    image: mytravels-web:v1.0.2
     build:
       context: ../src
       dockerfile: web/Dockerfile

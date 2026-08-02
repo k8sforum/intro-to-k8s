@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { PointOfInterest } from "../api/types";
 import { getPointOfInterestImage } from "../api/client";
+import { Spinner } from "./Spinner";
 
 interface PoiDialogProps {
   poi: PointOfInterest;
@@ -22,6 +23,23 @@ type ImageState =
   | { status: "loading" }
   | { status: "loaded"; src: string }
   | { status: "error" };
+
+function ImagePlaceholderIcon() {
+  return (
+    <svg
+      className="h-12 w-12 text-neutral-300 dark:text-neutral-600"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="M21 15l-5-5L5 21" />
+    </svg>
+  );
+}
 
 export function PoiDialog({ poi, onClose }: PoiDialogProps) {
   const [image, setImage] = useState<ImageState>({ status: "loading" });
@@ -50,19 +68,20 @@ export function PoiDialog({ poi, onClose }: PoiDialogProps) {
         className="w-full max-w-md rounded-lg bg-white shadow-lg dark:bg-neutral-900"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-t-lg bg-neutral-100 dark:bg-neutral-800">
-          {image.status === "loaded" && (
+        <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-t-lg bg-neutral-100 dark:bg-neutral-800">
+          {image.status === "loaded" ? (
             <img
               src={image.src}
               alt={poi.formattedAddress}
               className="h-full w-full object-cover"
             />
+          ) : (
+            <ImagePlaceholderIcon />
           )}
           {image.status === "loading" && (
-            <span className="text-sm text-neutral-400">Loading image…</span>
-          )}
-          {image.status === "error" && (
-            <span className="text-sm text-neutral-400">Image unavailable</span>
+            <div className="absolute inset-0 flex items-center justify-center bg-neutral-100/60 dark:bg-neutral-800/60">
+              <Spinner className="h-6 w-6 text-neutral-400" />
+            </div>
           )}
         </div>
 

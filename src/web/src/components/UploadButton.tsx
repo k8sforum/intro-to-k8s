@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 import { uploadPointOfInterestImage } from '../api/client';
+import { Spinner } from './Spinner';
 
 type UploadState = 'idle' | 'uploading' | 'error';
 
 interface UploadButtonProps {
-  onUploaded: () => void;
+  onUploaded: () => Promise<void>;
 }
 
 export function UploadButton({ onUploaded }: UploadButtonProps) {
@@ -21,8 +22,8 @@ export function UploadButton({ onUploaded }: UploadButtonProps) {
     setError(null);
     try {
       await uploadPointOfInterestImage(file);
+      await onUploaded();
       setState('idle');
-      onUploaded();
     } catch {
       setState('error');
       setError(
@@ -44,7 +45,14 @@ export function UploadButton({ onUploaded }: UploadButtonProps) {
         onClick={() => inputRef.current?.click()}
         className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white shadow-md transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
       >
-        {state === 'uploading' ? 'Uploading…' : 'Upload Image'}
+        {state === 'uploading' ? (
+          <span className="flex items-center gap-2">
+            <Spinner className="h-4 w-4" />
+            Uploading…
+          </span>
+        ) : (
+          'Upload Image'
+        )}
       </button>
       <input
         ref={inputRef}

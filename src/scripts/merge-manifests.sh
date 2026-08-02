@@ -13,7 +13,7 @@ images=(
     "tshepontlhokoa/mytravels-migrations:v1.0.1"
     "tshepontlhokoa/mytravels-api:v1.0.5"
     "tshepontlhokoa/mytravels-messaging:v1.0.6"
-    "tshepontlhokoa/mytravels-web:v1.0.1"
+    "tshepontlhokoa/mytravels-web:v1.0.2"
 )
 
 for image in "${images[@]}"; do

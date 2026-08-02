@@ -49,8 +49,10 @@ function App() {
     }, POLL_INTERVAL_MS);
   }
 
-  function handleUploaded() {
-    pollUntilResolved(pois.length);
+  async function handleUploaded() {
+    const countBeforeUpload = pois.length;
+    await refresh();
+    pollUntilResolved(countBeforeUpload);
   }
 
   return (
