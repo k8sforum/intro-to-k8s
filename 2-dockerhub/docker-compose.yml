@@ -149,7 +149,7 @@ services:
   # WEB UI
   web:
     container_name: mytravels-web
-    image: tshepontlhokoa/mytravels-web:v1.0.0
+    image: tshepontlhokoa/mytravels-web:v1.0.1
     ports:
       - 5100:80
     depends_on:
