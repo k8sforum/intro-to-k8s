@@ -1,9 +1,0 @@
-﻿# robots.txt for Heatmaply
-
-User-agent: *
-Disallow: /admin/
-Disallow: /api/
-Disallow: /account/
-Allow: /
-
-Sitemap: https://www.mytravels.com/sitemap.xml
