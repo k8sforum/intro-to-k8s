@@ -157,6 +157,21 @@ services:
       migrate-core-db:
         condition: service_completed_successfully
 
+  # WEB UI
+  web:
+    container_name: mytravels-web
+    image: mytravels-web:v1.0.0
+    build:
+      context: ../src
+      dockerfile: web/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    ports:
+      - 5100:80
+    depends_on:
+      - api
+      - messaging
+
 volumes:
   pgdata:
     driver: local
