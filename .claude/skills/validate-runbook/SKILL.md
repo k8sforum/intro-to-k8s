@@ -53,3 +53,9 @@ Execute the notebook at `$ARGUMENTS` and fix any errors found until the runbook 
 - Run `jupyter nbconvert` from the notebook's directory so `.env`, `docker-compose.yml`, and other relative paths resolve correctly.
 - Execution timeout is 300 s per cell; increase `--ExecutePreprocessor.timeout` if a long-running cell (e.g. `docker compose up -d`) is timing out.
 - The `%%bash` magic cells are run by the `bash` kernel magic in IPython — they require the `bash_kernel` package or IPython's built-in `%%bash` cell magic (available in any IPython/Python kernel).
+
+## Known gotchas
+
+- **`docker info --format` fields are version-dependent.** On some Docker/Rancher Desktop versions, `{{.Username}}` and `{{.CredentialsStore}}` don't exist on the info struct — the template errors to stderr and stdout comes back empty, which can look like a false-negative auth check. Don't rely on `docker info --format` for auth checks. Instead read `credsStore` from `~/.docker/config.json` and query the credential helper (`docker-credential-<store> get`) for `Username`, falling back to `auths.<registry>.Username` in `config.json` if no credential store is configured. See `2-dockerhub/runbook.ipynb`'s auth-check cell for the working pattern.
+- **Never name a shell variable `USERNAME` in cells run via the Bash tool.** It's a readonly variable in that shell — assignment silently fails (error to stderr) and the variable keeps its pre-set value (the macOS login name), which can look like a plausible real value and mask a failing command. Use a collision-safe name like `DOCKER_USER` instead.
+- If a "fixed" cell's output looks suspiciously correct on the first try, double-check it isn't reading a stale/pre-set env var rather than the command's actual output.
