@@ -31,7 +31,7 @@ namespace mytravels.common.Services
             if (exifDirectory is null) return null;
 
             return exifDirectory.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out DateTime dateTaken)
-                ? dateTaken
+                ? DateTime.SpecifyKind(dateTaken, DateTimeKind.Utc)
                 : null;
         }
     }
