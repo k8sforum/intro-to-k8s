@@ -36,7 +36,7 @@ builder.Services.AddSingleton<IConnectionFactory>(sp =>
 
 builder.Services.Configure<MinIOConfig>(builder.Configuration.GetSection("MinIO"));
 
-builder.Services.AddTransient<IGeoService, GeoService>();
+builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
 string googleApiKey = builder.Configuration.GetValue<string>("GoogleApiKey");
 if (string.IsNullOrEmpty(googleApiKey) || googleApiKey == "<YOUR_GOOGLE_API_KEY>")

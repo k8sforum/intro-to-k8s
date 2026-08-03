@@ -61,7 +61,7 @@ builder.Services.AddSingleton<IConnectionFactory>(sp =>
 
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
 builder.Services.AddTransient<IObjectStorageService, MinIOStorageService>();
-builder.Services.AddTransient<IGeoService, GeoService>();
+builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 

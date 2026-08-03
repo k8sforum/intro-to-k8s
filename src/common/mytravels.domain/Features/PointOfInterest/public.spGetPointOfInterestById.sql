@@ -8,6 +8,7 @@ RETURNS TABLE (
     "Latitude" DOUBLE PRECISION,
     "Longitude" DOUBLE PRECISION,
     "DateCreated" TIMESTAMP WITH TIME ZONE,  -- ✅ corrected
+    "DateTaken" TIMESTAMP WITH TIME ZONE,
     "FormattedAddress" VARCHAR(300),
     "ImageResized" BOOLEAN,
     "TagId" INTEGER,
@@ -31,6 +32,7 @@ BEGIN
         poi."Latitude",
         poi."Longitude",
         poi."DateCreated",
+        poi."DateTaken",
         poi."FormattedAddress",
         poi."ImageResized",
         t."Id" AS "TagId",

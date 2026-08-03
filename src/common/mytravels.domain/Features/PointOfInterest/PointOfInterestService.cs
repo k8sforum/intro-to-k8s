@@ -1,4 +1,3 @@
-using MetadataExtractor;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using mytravels.contract.CustomException;
@@ -42,15 +41,16 @@ namespace mytravels.domain.Features.PointOfInterest
         public async Task<int> SaveFileAsPointOfInsterestAsync(IFormFile file, CancellationToken cancellationToken)
         {
             string objectName = await _objectStorageService.SaveObjectAsync(file, BucketNames.NewUploadedImagesContainer, cancellationToken);
-            GeoLocation geolocation = await GetCoordinatesAsync(objectName, cancellationToken);
+            ImageMetadata metadata = await GetImageMetadataAsync(objectName, cancellationToken);
 
             CreatePointOfInterestDto dto = new()
             {
                 OriginalFileName = file.FileName,
                 BlobName = objectName,
                 FormattedAddress = string.Empty,
-                Latitude = geolocation.Latitude,
-                Longitude = geolocation.Longitude,
+                Latitude = metadata.GeoLocation.Latitude,
+                Longitude = metadata.GeoLocation.Longitude,
+                DateTaken = metadata.DateTaken,
                 PointOfInterestTypeId = (int)PointOfInterestTypesEnum.Image
             };
 
@@ -98,13 +98,13 @@ namespace mytravels.domain.Features.PointOfInterest
             return point.Id;
         }
 
-        private async Task<GeoLocation> GetCoordinatesAsync(string generatedObjectName, CancellationToken cancellationToken)
+        private async Task<ImageMetadata> GetImageMetadataAsync(string generatedObjectName, CancellationToken cancellationToken)
         {
             Stream savedImage = await _objectStorageService.GetStreamAsync(BucketNames.NewUploadedImagesContainer, generatedObjectName, cancellationToken);
-            GeoLocation geolocation = _geoService.ExtractGeoLocation(savedImage);
-            if (geolocation.Latitude == 0 || geolocation.Longitude == 0)
+            ImageMetadata metadata = _geoService.ExtractImageMetadata(savedImage);
+            if (metadata.GeoLocation.Latitude == 0 || metadata.GeoLocation.Longitude == 0)
                 throw new InvalidOperationException("Image is not geocoded");
-            return geolocation;
+            return metadata;
         }
     }
 }

@@ -8,7 +8,7 @@ interface PoiDialogProps {
   onClose: () => void;
 }
 
-function formatDateCreated(value: string) {
+function formatDate(value: string) {
   const date = new Date(value);
   const weekday = date.toLocaleDateString("en-GB", { weekday: "long" });
   const day = date.getDate();
@@ -101,9 +101,9 @@ export function PoiDialog({ poi, onClose }: PoiDialogProps) {
           </div>
 
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-neutral-500 dark:text-neutral-400">
-            <dt>Added</dt>
+            <dt>Taken</dt>
             <dd className="text-neutral-800 dark:text-neutral-200">
-              {formatDateCreated(poi.dateCreated)}
+              {formatDate(poi.dateTaken ?? poi.dateCreated)}
             </dd>
           </dl>
         </div>

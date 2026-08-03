@@ -1,8 +1,10 @@
-﻿using MetadataExtractor;
+using MetadataExtractor;
 
 namespace mytravels.contract.Interfaces;
 
 public interface IGeoService
 {
-    GeoLocation ExtractGeoLocation(Stream stream);
+    ImageMetadata ExtractImageMetadata(Stream stream);
 }
+
+public record ImageMetadata(GeoLocation GeoLocation, DateTime? DateTaken);

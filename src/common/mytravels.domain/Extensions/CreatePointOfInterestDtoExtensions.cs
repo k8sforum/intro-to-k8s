@@ -17,6 +17,7 @@ namespace mytravels.domain.Extensions
                 DateCreated = DateTime.UtcNow,
                 Latitude = dto.Latitude,
                 Longitude = dto.Longitude,
+                DateTaken = dto.DateTaken,
                 PointOfInterestTypeId = dto.PointOfInterestTypeId,
                 FormattedAddress = dto.FormattedAddress,
                 PointOfInterestKey = Guid.NewGuid().ToString("N"),

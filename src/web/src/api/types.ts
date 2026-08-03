@@ -16,6 +16,7 @@ export interface PointOfInterest {
   primaryColor: string;
   secondaryColor: string;
   dateCreated: string;
+  dateTaken: string | null;
   formattedAddress: string;
   tags: Tag[];
 }

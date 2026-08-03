@@ -15,6 +15,7 @@ public class PointOfInterestDto
     public string PrimaryColor { get; set; }
     public string SecondaryColor { get; set; }
     public DateTime DateCreated { get; set; } = DateTime.UtcNow;
+    public DateTime? DateTaken { get; set; }
     [StringLength(300)]
     public string FormattedAddress { get; set; }
     public List<TagDto> Tags { get; set; } = new();

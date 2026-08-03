@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: tshepontlhokoa/mytravels-api:v1.0.5
+          image: tshepontlhokoa/mytravels-api:v1.0.6
           ports:
             - name: http
               containerPort: 5101
