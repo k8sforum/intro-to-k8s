@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: migrations-secret
+  namespace: {{ .Values.namespace.name }}
+type: Opaque
+stringData:
+  ConnectionStrings__CoreDbContext: {{ .Values.shared.connectionString | quote }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrations
+  namespace: {{ .Values.namespace.name }}
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: cleanup-migrations
+          image: {{ .Values.images.postgres }}
+          command: ["sh", "-c"]
+          args:
+            - |
+              until pg_isready -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                echo "Waiting for postgres..."; sleep 2
+              done
+              PGPASSWORD="$POSTGRES_PASSWORD" psql \
+                -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+                -c "DO \$\$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'config' AND table_name = 'EFMigrationsHistory') THEN DELETE FROM \"EFMigrationsHistory\" WHERE \"MigrationId\" IN ('20600930075821_SeedData', '20590930075747_UpdateStoredProcedure'); END IF; END \$\$;"
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+      containers:
+        - name: migrate-core-db
+          image: {{ .Values.images.migrations }}
+          command: ["sh", "-c"]
+          args:
+            - |
+              dotnet tool restore &&
+              dotnet ef database update \
+                --startup-project common/mytravels.migration \
+                --project common/mytravels.domain \
+                --context CoreDbContext
+          env:
+            - name: AllowedHosts
+              value: "*"
+            - name: ConnectionStrings__CoreDbContext
+              valueFrom:
+                secretKeyRef:
+                  name: migrations-secret
+                  key: ConnectionStrings__CoreDbContext

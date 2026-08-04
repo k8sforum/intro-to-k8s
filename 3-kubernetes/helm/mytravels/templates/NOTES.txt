@@ -1,0 +1,34 @@
+MyTravels was installed into namespace "{{ .Values.namespace.name }}".
+
+1. Wait for the db-migrations Job to complete before relying on the API/Messaging services
+   (they will crash-loop until the schema is migrated — Kubernetes will keep restarting them):
+
+     kubectl wait job/db-migrations -n {{ .Values.namespace.name }} --for=condition=Complete --timeout=300s
+     kubectl logs -n {{ .Values.namespace.name }} -l job-name=db-migrations -c migrate-core-db
+
+   Re-running `helm upgrade`? The Job is immutable — delete it first:
+     kubectl delete job db-migrations -n {{ .Values.namespace.name }}
+
+2. Check overall status:
+
+     kubectl get pods,pvc,svc,ingress -n {{ .Values.namespace.name }}
+
+{{- if .Values.ingress.enabled }}
+3. Add these to /etc/hosts (or your DNS) if you haven't already, then browse:
+
+     127.0.0.1  {{ .Values.ingress.rabbitmqHost }}
+     127.0.0.1  {{ .Values.ingress.minioHost }}
+     127.0.0.1  {{ .Values.ingress.apiHost }}
+     127.0.0.1  {{ .Values.ingress.messagingHost }}
+
+   - RabbitMQ Management: http://{{ .Values.ingress.rabbitmqHost }}:8080
+   - MinIO Console:       http://{{ .Values.ingress.minioHost }}:8080
+   - API (Swagger):       http://{{ .Values.ingress.apiHost }}:8080/swagger
+   - Messaging (health):  http://{{ .Values.ingress.messagingHost }}:8080/health
+{{- end }}
+
+{{- if .Values.traefikPostgres.enabled }}
+4. PostgreSQL is reachable at 127.0.0.1:{{ .Values.traefikPostgres.port }} via the Traefik "postgres"
+   TCP entrypoint, provided your cluster's load balancer maps host port {{ .Values.traefikPostgres.port }}
+   to the same port on Traefik (e.g. k3d cluster create -p "{{ .Values.traefikPostgres.port }}:{{ .Values.traefikPostgres.port }}@loadbalancer").
+{{- end }}

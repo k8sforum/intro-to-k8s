@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: messaging-secret
+  namespace: {{ .Values.namespace.name }}
+type: Opaque
+stringData:
+  ConnectionStrings__CoreDbContext: {{ .Values.shared.connectionString | quote }}
+  RabbitMQ__Uri: {{ .Values.shared.rabbitMqUri | quote }}
+  MinIO__AccessKey: {{ .Values.shared.minioAccessKey | quote }}
+  MinIO__SecretKey: {{ .Values.shared.minioSecretKey | quote }}
+  ContentSafetyEndpoint: {{ .Values.messaging.contentSafetyEndpoint | quote }}
+  ContentSafetyKey: {{ .Values.messaging.contentSafetyKey | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "mytravels.labels" (dict "app" "messaging" "root" $) | nindent 4 }}
+spec:
+  replicas: {{ .Values.messaging.replicaCount }}
+  selector:
+    matchLabels:
+      app: messaging
+  template:
+    metadata:
+      labels:
+        app: messaging
+    spec:
+      containers:
+        - name: messaging
+          image: {{ .Values.images.messaging }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.messaging.port }}
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: "http://+:{{ .Values.messaging.port }}"
+            - name: GoogleMapsUrl
+              value: {{ .Values.shared.googleMapsUrl | quote }}
+            - name: GooglePlacesUrl
+              value: {{ .Values.shared.googlePlacesUrl | quote }}
+            - name: MinIO__Endpoint
+              value: {{ .Values.shared.minioEndpoint | quote }}
+            - name: ConnectionStrings__CoreDbContext
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: ConnectionStrings__CoreDbContext
+            - name: RabbitMQ__Uri
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: RabbitMQ__Uri
+            - name: MinIO__AccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: MinIO__AccessKey
+            - name: MinIO__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: MinIO__SecretKey
+            - name: ContentSafetyEndpoint
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: ContentSafetyEndpoint
+            - name: ContentSafetyKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: ContentSafetyKey
+          resources:
+            {{- toYaml .Values.messaging.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: messaging
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "mytravels.labels" (dict "app" "messaging" "root" $) | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: messaging
+  ports:
+    - name: http
+      port: {{ .Values.messaging.port }}
+      targetPort: {{ .Values.messaging.port }}
+      protocol: TCP

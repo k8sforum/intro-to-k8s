@@ -1,0 +1,18 @@
+{{- if .Values.traefikPostgres.enabled }}
+# Patches the k3s-managed Traefik Helm release to add a TCP entrypoint for PostgreSQL.
+# k3s watches HelmChartConfig resources and restarts Traefik automatically (~15s) when this changes.
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    ports:
+      postgres:
+        port: {{ .Values.traefikPostgres.port }}
+        expose:
+          default: true
+        exposedPort: {{ .Values.traefikPostgres.port }}
+        protocol: TCP
+{{- end }}

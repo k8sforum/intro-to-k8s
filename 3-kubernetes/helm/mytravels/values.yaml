@@ -1,0 +1,114 @@
+# Default values for the mytravels chart.
+# Mirrors 3-kubernetes/manifests/ — see runbook.ipynb for the manual, step-by-step equivalent.
+
+namespace:
+  # Set to false if the namespace is already managed elsewhere (e.g. created by another chart/tool).
+  create: true
+  name: mytravels-default
+
+images:
+  postgres: postgres:17.6-alpine
+  rabbitmq: rabbitmq:3-management
+  minio: quay.io/minio/minio
+  migrations: tshepontlhokoa/mytravels-migrations:v1.0.2
+  api: tshepontlhokoa/mytravels-api:v1.0.6
+  messaging: tshepontlhokoa/mytravels-messaging:v1.0.8
+  pullPolicy: IfNotPresent
+
+postgres:
+  # Dummy tutorial credentials — replace before using this chart outside a local learning cluster.
+  user: user123
+  password: password123
+  database: CoreDb
+  storageClassName: local-path
+  storage: 200Mi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+rabbitmq:
+  user: user123
+  password: password123
+  storageClassName: local-path
+  dataStorage: 200Mi
+  configStorage: 50Mi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+minio:
+  rootUser: user123
+  rootPassword: password123
+  # MinIO uses hostPath-backed PVs pinned to a specific node — update to match your cluster's node names.
+  nodeHostname: k3d-mytravels-agent-2
+  hostPath:
+    data: /mnt/minio/data
+    config: /mnt/minio/config
+  storageClassName: manual
+  dataStorage: 200Mi
+  configStorage: 50Mi
+
+# Shared connection details injected into both the migrations Job and the API/Messaging deployments.
+shared:
+  connectionString: "Host=postgres;Port=5432;Database=CoreDb;Username=user123;Password=password123"
+  rabbitMqUri: "amqp://user123:password123@rabbitmq:5672"
+  minioEndpoint: "minio:9000"
+  minioAccessKey: user123
+  minioSecretKey: password123
+  googleMapsUrl: "https://maps.googleapis.com"
+  googlePlacesUrl: "https://places.googleapis.com"
+  googleApiKey: ""
+
+migrations:
+  backoffLimit: 3
+
+api:
+  replicaCount: 1
+  port: 5101
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+messaging:
+  replicaCount: 1
+  port: 5102
+  # Azure Content Safety values are specific to the messaging worker — not shared with the API.
+  contentSafetyEndpoint: "CHANGE_ME"
+  contentSafetyKey: "CHANGE_ME"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+ingress:
+  enabled: true
+  entrypoint: web
+  rabbitmqHost: rabbitmq.mytravels.local
+  minioHost: minio.mytravels.local
+  apiHost: api.mytravels.local
+  messagingHost: messaging.mytravels.local
+
+# Patches the k3s-managed Traefik HelmChartConfig to add a raw TCP entrypoint for PostgreSQL.
+# Only applicable to k3d/k3s clusters — disable on other distributions.
+traefikPostgres:
+  enabled: true
+  port: 5432
+
+# Read-only ServiceAccount + ClusterRole for the Backstage Kubernetes plugin.
+backstageRbac:
+  enabled: true
