@@ -1,7 +1,7 @@
 Create a React app (Vite + TypeScript + Tailwind CSS) called "MyTravels POI Viewer".
 
 Data source: a .NET API at http://localhost:5101 (CORS must be configured
-server-side for the Vite dev origin — assume http://localhost:5173).
+server-side for the Vite dev origin — assume http://localhost:5100).
 
 Endpoints used:
 - GET  /api/PointOfInterest
