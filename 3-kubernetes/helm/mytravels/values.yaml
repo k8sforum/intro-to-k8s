@@ -10,9 +10,9 @@ images:
   postgres: postgres:17.6-alpine
   rabbitmq: rabbitmq:3-management
   minio: quay.io/minio/minio
-  migrations: tshepontlhokoa/mytravels-migrations:v1.0.2
-  api: tshepontlhokoa/mytravels-api:v1.0.6
-  messaging: tshepontlhokoa/mytravels-messaging:v1.0.8
+  migrations: tshepontlhokoa/mytravels-migrations:v1.0.3
+  api: tshepontlhokoa/mytravels-api:v1.0.7
+  messaging: tshepontlhokoa/mytravels-messaging:v1.0.9
   pullPolicy: IfNotPresent
 
 postgres:
