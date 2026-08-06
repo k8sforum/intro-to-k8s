@@ -1,4 +1,4 @@
-import type { PointOfInterest, SaveEntityResponse } from './types';
+import type { Place, PointOfInterest, SaveEntityResponse } from './types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5101';
 
@@ -34,11 +34,39 @@ export async function getPointOfInterestImage(
   return response.text();
 }
 
-export function uploadPointOfInterestImage(file: File): Promise<SaveEntityResponse> {
+function postImage(
+  path: string,
+  file: File,
+  fields: Record<string, string> = {},
+): Promise<SaveEntityResponse> {
   const formData = new FormData();
   formData.append('image', file);
-  return fetch(`${BASE_URL}/api/PointOfInterest/image`, {
-    method: 'POST',
-    body: formData,
-  }).then((r) => unwrap<SaveEntityResponse>(r));
+  for (const [name, value] of Object.entries(fields)) formData.append(name, value);
+
+  return fetch(`${BASE_URL}${path}`, { method: 'POST', body: formData }).then((r) =>
+    unwrap<SaveEntityResponse>(r),
+  );
+}
+
+/** Uploads an image whose coordinates are read from its EXIF GPS metadata by the API. */
+export function uploadPointOfInterestImage(file: File): Promise<SaveEntityResponse> {
+  return postImage('/api/PointOfInterest/image', file);
+}
+
+/** Uploads an image that carries no GPS metadata, against a location the user picked. */
+export function uploadPointOfInterestImageAtPlace(
+  file: File,
+  place: Place,
+): Promise<SaveEntityResponse> {
+  return postImage('/api/PointOfInterest/image/coordinates', file, {
+    latitude: String(place.latitude),
+    longitude: String(place.longitude),
+    formattedAddress: place.formattedAddress,
+  });
+}
+
+export function searchPlaces(query: string, signal?: AbortSignal): Promise<Place[]> {
+  return fetch(`${BASE_URL}/api/Place?query=${encodeURIComponent(query)}`, {
+    signal,
+  }).then((r) => unwrap<Place[]>(r));
 }

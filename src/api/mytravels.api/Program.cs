@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Reflection;
 using mytravels.api.Middleware;
 using mytravels.common.Config;
+using mytravels.common.Extensions;
 using mytravels.common.Services;
 using mytravels.contract.Interfaces;
 using mytravels.domain;
@@ -62,6 +63,7 @@ builder.Services.AddSingleton<IConnectionFactory>(sp =>
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
 builder.Services.AddTransient<IObjectStorageService, MinIOStorageService>();
 builder.Services.AddTransient<IGeoService, ImageMetadataService>();
+builder.Services.AddMapsService(builder.Configuration);
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 

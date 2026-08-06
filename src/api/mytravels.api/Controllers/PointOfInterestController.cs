@@ -84,5 +84,24 @@ namespace mytravels.api.Controllers
             int id = await _service.SaveFileAsPointOfInsterestAsync(image, cancellationToken);
             return Ok(new SaveEntityResponseDto { Id = id });
         }
+
+        /// <summary>
+        /// Uploads an image that carries no GPS metadata, using the coordinates supplied by the caller instead.
+        /// </summary>
+        [HttpPost("image/coordinates")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(SaveEntityResponseDto), 200)]
+        public async Task<IActionResult> UploadImageWithCoordinatesAsync(IFormFile image, [FromForm] SaveCoordinatesDto coordinates, CancellationToken cancellationToken)
+        {
+            if (image is null) throw new RequiredParameterNotFoundException(nameof(image));
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            int id = await _service.SaveFileAsPointOfInsterestAsync(image, coordinates, cancellationToken);
+            return Ok(new SaveEntityResponseDto { Id = id });
+        }
     }
 }

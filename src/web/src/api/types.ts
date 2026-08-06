@@ -21,6 +21,12 @@ export interface PointOfInterest {
   tags: Tag[];
 }
 
+export interface Place {
+  formattedAddress: string;
+  latitude: number;
+  longitude: number;
+}
+
 export interface SaveEntityResponse {
   id: number;
 }

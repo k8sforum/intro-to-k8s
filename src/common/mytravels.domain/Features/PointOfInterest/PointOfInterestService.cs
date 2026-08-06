@@ -1,3 +1,4 @@
+using MetadataExtractor;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using mytravels.contract.CustomException;
@@ -43,24 +44,27 @@ namespace mytravels.domain.Features.PointOfInterest
             string objectName = await _objectStorageService.SaveObjectAsync(file, BucketNames.NewUploadedImagesContainer, cancellationToken);
             ImageMetadata metadata = await GetImageMetadataAsync(objectName, cancellationToken);
 
-            CreatePointOfInterestDto dto = new()
+            if (metadata.GeoLocation.Latitude == 0 || metadata.GeoLocation.Longitude == 0)
+                throw new InvalidOperationException("Image is not geocoded");
+
+            SaveCoordinatesDto coordinates = new()
             {
-                OriginalFileName = file.FileName,
-                BlobName = objectName,
-                FormattedAddress = string.Empty,
                 Latitude = metadata.GeoLocation.Latitude,
                 Longitude = metadata.GeoLocation.Longitude,
-                DateTaken = metadata.DateTaken,
-                PointOfInterestTypeId = (int)PointOfInterestTypesEnum.Image
+                FormattedAddress = string.Empty
             };
 
-            contract.Entities.PointOfInterest point = dto.ToEntity();
-            int id = await _context.CreatePointOfInterestAsync(point, cancellationToken);
+            return await CreatePointOfInterestAsync(file, objectName, coordinates, metadata.DateTaken, cancellationToken);
+        }
 
-            await _publisher.PublishAsync(ExchangeNames.AppendFormattedAddress, new PointOfInterestMessage { CorrelationId = Guid.NewGuid(), PointOfInterestId = id }, cancellationToken);
-            await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { PointOfInterestId = point.Id }, cancellationToken);
+        public async Task<int> SaveFileAsPointOfInsterestAsync(IFormFile file, SaveCoordinatesDto coordinates, CancellationToken cancellationToken)
+        {
+            string objectName = await _objectStorageService.SaveObjectAsync(file, BucketNames.NewUploadedImagesContainer, cancellationToken);
 
-            return id;
+            // The caller supplies the location, so the image is only read for its capture date and may carry no metadata at all.
+            ImageMetadata metadata = await TryGetImageMetadataAsync(objectName, cancellationToken);
+
+            return await CreatePointOfInterestAsync(file, objectName, coordinates, metadata?.DateTaken, cancellationToken);
         }
 
         public async Task<int> UpdatePointOfInterestAsync(IFormFile file, string pointOfInterestKey, CancellationToken cancellationToken)
@@ -98,13 +102,44 @@ namespace mytravels.domain.Features.PointOfInterest
             return point.Id;
         }
 
+        private async Task<int> CreatePointOfInterestAsync(IFormFile file, string objectName, SaveCoordinatesDto coordinates, DateTime? dateTaken, CancellationToken cancellationToken)
+        {
+            CreatePointOfInterestDto dto = new()
+            {
+                OriginalFileName = file.FileName,
+                BlobName = objectName,
+                FormattedAddress = coordinates.FormattedAddress ?? string.Empty,
+                Latitude = coordinates.Latitude,
+                Longitude = coordinates.Longitude,
+                DateTaken = dateTaken,
+                PointOfInterestTypeId = (int)PointOfInterestTypesEnum.Image
+            };
+
+            contract.Entities.PointOfInterest point = dto.ToEntity();
+            int id = await _context.CreatePointOfInterestAsync(point, cancellationToken);
+
+            await _publisher.PublishAsync(ExchangeNames.AppendFormattedAddress, new PointOfInterestMessage { CorrelationId = Guid.NewGuid(), PointOfInterestId = id }, cancellationToken);
+            await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { PointOfInterestId = point.Id }, cancellationToken);
+
+            return id;
+        }
+
         private async Task<ImageMetadata> GetImageMetadataAsync(string generatedObjectName, CancellationToken cancellationToken)
         {
             Stream savedImage = await _objectStorageService.GetStreamAsync(BucketNames.NewUploadedImagesContainer, generatedObjectName, cancellationToken);
-            ImageMetadata metadata = _geoService.ExtractImageMetadata(savedImage);
-            if (metadata.GeoLocation.Latitude == 0 || metadata.GeoLocation.Longitude == 0)
-                throw new InvalidOperationException("Image is not geocoded");
-            return metadata;
+            return _geoService.ExtractImageMetadata(savedImage);
+        }
+
+        private async Task<ImageMetadata> TryGetImageMetadataAsync(string generatedObjectName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await GetImageMetadataAsync(generatedObjectName, cancellationToken);
+            }
+            catch (ImageProcessingException)
+            {
+                return null;
+            }
         }
     }
 }

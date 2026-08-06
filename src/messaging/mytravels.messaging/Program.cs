@@ -3,6 +3,7 @@ using RabbitMQ.Client;
 using System.Globalization;
 using System.Reflection;
 using mytravels.common.Config;
+using mytravels.common.Extensions;
 using mytravels.common.Services;
 using mytravels.contract.Interfaces;
 using mytravels.domain;
@@ -38,15 +39,7 @@ builder.Services.Configure<MinIOConfig>(builder.Configuration.GetSection("MinIO"
 
 builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
-string googleApiKey = builder.Configuration.GetValue<string>("GoogleApiKey");
-if (string.IsNullOrEmpty(googleApiKey) || googleApiKey == "<YOUR_GOOGLE_API_KEY>")
-{
-    builder.Services.AddTransient<IMapsService, OpenStreetMapsService>();
-}
-else
-{
-    builder.Services.AddTransient<IMapsService, GoogleMapsService>();
-}
+builder.Services.AddMapsService(builder.Configuration);
 builder.Services.AddTransient<IObjectStorageService, MinIOStorageService>();
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 
