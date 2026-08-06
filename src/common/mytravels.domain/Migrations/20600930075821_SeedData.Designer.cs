@@ -40,6 +40,9 @@ namespace mytravels.domain.Migrations
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DateTaken")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("DateUpdated")
                         .HasColumnType("timestamp with time zone");
 
@@ -68,12 +71,6 @@ namespace mytravels.domain.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)");
 
-                    b.Property<int>("PointOfInterestStatusId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PointOfInterestTypeId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Reason")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -82,10 +79,6 @@ namespace mytravels.domain.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PointOfInterestStatusId");
-
-                    b.HasIndex("PointOfInterestTypeId");
 
                     b.ToTable("PointOfInterests");
                 });
@@ -126,31 +119,6 @@ namespace mytravels.domain.Migrations
                     b.ToTable("PointOfInterestAuditLogs");
                 });
 
-            modelBuilder.Entity("mytravels.contract.Entities.PointOfInterestStatus", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("PrimaryColor")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<string>("SecondaryColor")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PointOfInterestStatuses", "lookups");
-                });
-
             modelBuilder.Entity("mytravels.contract.Entities.PointOfInterestTagAssociation", b =>
                 {
                     b.Property<int>("Id")
@@ -175,31 +143,6 @@ namespace mytravels.domain.Migrations
                     b.HasIndex("TagId");
 
                     b.ToTable("PointOfInterestTagAssociations");
-                });
-
-            modelBuilder.Entity("mytravels.contract.Entities.PointOfInterestType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("PrimaryColor")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<string>("SecondaryColor")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PointOfInterestTypes", "lookups");
                 });
 
             modelBuilder.Entity("mytravels.contract.Entities.Tag", b =>
@@ -239,6 +182,9 @@ namespace mytravels.domain.Migrations
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DateTaken")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FormattedAddress")
                         .HasColumnType("text");
 
@@ -263,24 +209,6 @@ namespace mytravels.domain.Migrations
                     b.Property<string>("PointOfInterestKey")
                         .HasColumnType("text");
 
-                    b.Property<string>("PointOfInterestStatus")
-                        .HasColumnType("text");
-
-                    b.Property<int>("PointOfInterestStatusId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PointOfInterestType")
-                        .HasColumnType("text");
-
-                    b.Property<int>("PointOfInterestTypeId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PrimaryColor")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SecondaryColor")
-                        .HasColumnType("text");
-
                     b.Property<int?>("TagId")
                         .HasColumnType("integer");
 
@@ -293,25 +221,6 @@ namespace mytravels.domain.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
-                });
-
-            modelBuilder.Entity("mytravels.contract.Entities.PointOfInterest", b =>
-                {
-                    b.HasOne("mytravels.contract.Entities.PointOfInterestStatus", "PointOfInterestStatus")
-                        .WithMany()
-                        .HasForeignKey("PointOfInterestStatusId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("mytravels.contract.Entities.PointOfInterestType", "PointOfInterestType")
-                        .WithMany()
-                        .HasForeignKey("PointOfInterestTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PointOfInterestStatus");
-
-                    b.Navigation("PointOfInterestType");
                 });
 
             modelBuilder.Entity("mytravels.contract.Entities.PointOfInterestAuditLog", b =>

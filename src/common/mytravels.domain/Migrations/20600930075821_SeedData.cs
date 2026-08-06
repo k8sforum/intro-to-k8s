@@ -7,6 +7,7 @@ namespace mytravels.domain.Migrations
     /// <inheritdoc />
     public partial class SeedData : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             string baseDir = AppContext.BaseDirectory;

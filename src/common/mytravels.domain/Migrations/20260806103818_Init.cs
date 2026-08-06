@@ -12,39 +12,29 @@ namespace mytravels.domain.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.EnsureSchema(
-                name: "lookups");
-
             migrationBuilder.CreateTable(
-                name: "PointOfInterestStatuses",
-                schema: "lookups",
+                name: "PointOfInterests",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    PrimaryColor = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
-                    SecondaryColor = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true)
+                    PointOfInterestKey = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: true),
+                    Container = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),
+                    OriginalFileName = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),
+                    GeneratedBlobName = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),
+                    Latitude = table.Column<double>(type: "double precision", nullable: false),
+                    Longitude = table.Column<double>(type: "double precision", nullable: false),
+                    DateCreated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DateTaken = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    FormattedAddress = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: true),
+                    ImageResized = table.Column<bool>(type: "boolean", nullable: false),
+                    DateUpdated = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    Reason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PointOfInterestStatuses", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PointOfInterestTypes",
-                schema: "lookups",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    PrimaryColor = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
-                    SecondaryColor = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PointOfInterestTypes", x => x.Id);
+                    table.PrimaryKey("PK_PointOfInterests", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -59,46 +49,6 @@ namespace mytravels.domain.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tags", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PointOfInterests",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    PointOfInterestKey = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: true),
-                    Container = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),
-                    OriginalFileName = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),
-                    GeneratedBlobName = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: true),
-                    Latitude = table.Column<double>(type: "double precision", nullable: false),
-                    Longitude = table.Column<double>(type: "double precision", nullable: false),
-                    DateCreated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    FormattedAddress = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: true),
-                    ImageResized = table.Column<bool>(type: "boolean", nullable: false),
-                    PointOfInterestTypeId = table.Column<int>(type: "integer", nullable: false),
-                    PointOfInterestStatusId = table.Column<int>(type: "integer", nullable: false),
-                    DateUpdated = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    Reason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PointOfInterests", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PointOfInterests_PointOfInterestStatuses_PointOfInterestSta~",
-                        column: x => x.PointOfInterestStatusId,
-                        principalSchema: "lookups",
-                        principalTable: "PointOfInterestStatuses",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PointOfInterests_PointOfInterestTypes_PointOfInterestTypeId",
-                        column: x => x.PointOfInterestTypeId,
-                        principalSchema: "lookups",
-                        principalTable: "PointOfInterestTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -158,16 +108,6 @@ namespace mytravels.domain.Migrations
                 column: "PointOfInterestId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PointOfInterests_PointOfInterestStatusId",
-                table: "PointOfInterests",
-                column: "PointOfInterestStatusId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PointOfInterests_PointOfInterestTypeId",
-                table: "PointOfInterests",
-                column: "PointOfInterestTypeId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PointOfInterestTagAssociations_PointOfInterestId",
                 table: "PointOfInterestTagAssociations",
                 column: "PointOfInterestId");
@@ -198,14 +138,6 @@ namespace mytravels.domain.Migrations
 
             migrationBuilder.DropTable(
                 name: "Tags");
-
-            migrationBuilder.DropTable(
-                name: "PointOfInterestStatuses",
-                schema: "lookups");
-
-            migrationBuilder.DropTable(
-                name: "PointOfInterestTypes",
-                schema: "lookups");
         }
     }
 }
