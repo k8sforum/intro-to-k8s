@@ -9,11 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="SeedScripts\seed point of interest statuses.sql" />
-    <None Remove="SeedScripts\seed point of interest types.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
 <Content Include="Features\PointOfInterest\public.spGetPointOfInterestById.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -24,12 +19,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Features\PointOfInterest\public.spUpdatePointOfInterestTags.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SeedScripts\seed point of interest statuses.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="SeedScripts\seed point of interest types.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

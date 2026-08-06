@@ -13,13 +13,7 @@ RETURNS TABLE (
     "ImageResized" BOOLEAN,
     "TagId" INTEGER,
     "TagName" VARCHAR(50),
-    "PointOfInterestTypeId" INTEGER,
-    "PointOfInterestType" VARCHAR(20),
-    "PointOfInterestKey" VARCHAR(40),
-    "PointOfInterestStatusId" INTEGER,
-    "PointOfInterestStatus" VARCHAR(20),
-    "PrimaryColor" VARCHAR(30),
-    "SecondaryColor" VARCHAR(30)
+    "PointOfInterestKey" VARCHAR(40)
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -37,18 +31,8 @@ BEGIN
         poi."ImageResized",
         t."Id" AS "TagId",
         t."Name" AS "TagName",
-        poit."Id" AS "PointOfInterestTypeId",
-        poit."Name" AS "PointOfInterestType",
-        poi."PointOfInterestKey",
-        pois."Id" AS "PointOfInterestStatusId",
-        pois."Name" AS "PointOfInterestStatus",
-        pois."PrimaryColor",
-        pois."SecondaryColor"
+        poi."PointOfInterestKey"
     FROM public."PointOfInterests" poi
-    INNER JOIN lookups."PointOfInterestTypes" poit 
-        ON poit."Id" = poi."PointOfInterestTypeId"
-    INNER JOIN lookups."PointOfInterestStatuses" pois 
-        ON pois."Id" = poi."PointOfInterestStatusId"
     LEFT JOIN public."PointOfInterestTagAssociations" ita 
         ON ita."PointOfInterestId" = poi."Id"
     LEFT JOIN public."Tags" t 

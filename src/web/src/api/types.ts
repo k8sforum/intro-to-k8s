@@ -9,12 +9,6 @@ export interface PointOfInterest {
   pointOfInterestKey: string;
   latitude: number;
   longitude: number;
-  pointOfInterestTypeId: number;
-  pointOfInterestType: string;
-  pointOfInterestStatusId: number;
-  pointOfInterestStatus: string;
-  primaryColor: string;
-  secondaryColor: string;
   dateCreated: string;
   dateTaken: string | null;
   formattedAddress: string;

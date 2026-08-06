@@ -49,21 +49,6 @@ namespace mytravels.api.Controllers
             return Ok(base64);
         }
 
-        [HttpPut("status")]
-        public async Task<IActionResult> UpdateStatusAsync([FromBody] UpdatePointOfInterestStatusDto dto, CancellationToken cancellationToken)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            int id = await _service.UpdateStatusAsync(dto.PointOfInterestKey, dto.StatusId, cancellationToken);
-            return Ok(new SaveEntityResponseDto
-            {
-                Id = id
-            });
-        }
-
         [HttpPut]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(SaveEntityResponseDto), 200)]

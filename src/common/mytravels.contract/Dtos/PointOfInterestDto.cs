@@ -8,12 +8,6 @@ public class PointOfInterestDto
     public string PointOfInterestKey { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
-    public int PointOfInterestTypeId { get; set; }
-    public string PointOfInterestType { get; set; }
-    public int PointOfInterestStatusId { get; set; }
-    public string PointOfInterestStatus { get; set; }
-    public string PrimaryColor { get; set; }
-    public string SecondaryColor { get; set; }
     public DateTime DateCreated { get; set; } = DateTime.UtcNow;
     public DateTime? DateTaken { get; set; }
     [StringLength(300)]

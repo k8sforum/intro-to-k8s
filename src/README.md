@@ -174,7 +174,6 @@ Base path: `/api/pointofinterest`
 | `POST` | `/api/pointofinterest` | Save/update tags on one or more POIs |
 | `POST` | `/api/pointofinterest/coordinates` | Create a POI from coordinates |
 | `POST` | `/api/pointofinterest/image` | Upload an image (EXIF GPS data extracted automatically) |
-| `PUT` | `/api/pointofinterest/status` | Update a POI's status |
 | `PUT` | `/api/pointofinterest/address` | Update a POI's coordinates and address |
 | `PUT` | `/api/pointofinterest/image` | Replace a POI's image |
 
@@ -191,19 +190,16 @@ PointOfInterest
 ├── Latitude / Longitude
 ├── FormattedAddress         resolved by Google Maps asynchronously
 ├── ImageResized             set to true after thumbnail is created
-├── PointOfInterestType      (lookup)
-├── PointOfInterestStatus    (lookup)
 └── Tags                     many-to-many via PointOfInterestTagAssociation
 
 Tag
 └── Name                     unique
 
-PointOfInterestAuditLog      history of status/address changes
+PointOfInterestAuditLog      history of address changes
 ```
 
 **PostgreSQL schemas:**
 - `public` — main tables
-- `lookups` — PointOfInterestTypes, PointOfInterestStatuses
 - `config` — EF Core migrations history
 
 ## Async Processing (Messaging Service)

@@ -11,6 +11,8 @@ namespace mytravels.domain.Migrations
         {
             string baseDir = AppContext.BaseDirectory;
             var scriptsDir = Path.Combine(baseDir, "SeedScripts");
+            if (!Directory.Exists(scriptsDir)) return;
+
             string[] files = Directory.GetFiles(scriptsDir, "*.sql", SearchOption.AllDirectories);
             foreach (string file in files)
             {

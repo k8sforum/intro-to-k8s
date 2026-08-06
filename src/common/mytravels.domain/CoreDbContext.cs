@@ -4,7 +4,6 @@ using mytravels.contract.Dtos;
 using mytravels.contract.Entities;
 using mytravels.contract.Constants;
 using mytravels.contract.Interfaces;
-using mytravels.contract.Lookups;
 using mytravels.contract.Responses;
 using mytravels.domain.Features.PointOfInterest;
 using Tag = mytravels.contract.Entities.Tag;
@@ -23,8 +22,6 @@ namespace mytravels.domain
         public DbSet<Tag> Tags { get; set; }
         public DbSet<GetPointOfInterestResponse> GetPointOfInterestResponses { get; set; }
         public DbSet<PointOfInterestAuditLog> PointOfInterestAuditLogs { get; set; }
-        public DbSet<PointOfInterestType> PointOfInterestTypes { get; set; }
-        public DbSet<PointOfInterestStatus> PointOfInterestStatuses { get; set; }
  public void DetachObject(object entity) => Entry(entity).State = EntityState.Detached;
         public void DeleteObject(object entity) => Entry(entity).State = EntityState.Deleted;
         public void AddObject(object entity) => Entry(entity).State = EntityState.Added;
@@ -78,20 +75,9 @@ namespace mytravels.domain
         {
             point.Id = 0;
             point.Container = BucketNames.NewUploadedImagesContainer;
-            point.PointOfInterestTypeId = (int)PointOfInterestTypesEnum.Image;
             point.DateCreated = DateTime.UtcNow;
             point.GeneratedBlobName = blobName;
             point.OriginalFileName = blobName;
-            this.AddObject(point);
-            await this.SaveChangesAsync(cancellationToken);
-        }
-
-        public async Task UpdatePointOfInterestStatusAsync(int pointOfInterestStatusId, PointOfInterest point, CancellationToken cancellationToken)
-        {
-            point.Id = 0;
-            point.PointOfInterestStatusId = pointOfInterestStatusId;
-            point.DateCreated = DateTime.UtcNow;
-            point.DateUpdated = DateTime.UtcNow;
             this.AddObject(point);
             await this.SaveChangesAsync(cancellationToken);
         }

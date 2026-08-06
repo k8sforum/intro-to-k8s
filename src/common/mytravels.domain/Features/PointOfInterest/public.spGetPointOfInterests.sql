@@ -13,13 +13,7 @@ RETURNS TABLE (
     "ImageResized" BOOLEAN,
     "TagId" INTEGER,
     "TagName" VARCHAR(50),
-    "PointOfInterestTypeId" INTEGER,
-    "PointOfInterestType" VARCHAR(20),
-    "PointOfInterestKey" VARCHAR(40),
-    "PointOfInterestStatusId" INTEGER,
-    "PointOfInterestStatus" VARCHAR(20),
-    "PrimaryColor" VARCHAR(30),
-    "SecondaryColor" VARCHAR(30)
+    "PointOfInterestKey" VARCHAR(40)
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -37,13 +31,7 @@ BEGIN
         T."ImageResized",
         T."TagId",
         T."TagName",
-        T."PointOfInterestTypeId",
-        T."PointOfInterestType",
-        T."PointOfInterestKey",
-        T."PointOfInterestStatusId",
-        T."PointOfInterestStatus",
-        T."PrimaryColor",
-        T."SecondaryColor"
+        T."PointOfInterestKey"
     FROM (
         SELECT 
             poi."Id" AS "PointOfInterestId",
@@ -58,27 +46,16 @@ BEGIN
             poi."ImageResized",
             t."Id" AS "TagId",
             t."Name" AS "TagName",
-            poit."Id" AS "PointOfInterestTypeId",
-            poit."Name" AS "PointOfInterestType",
             poi."PointOfInterestKey",
-            pois."Id" AS "PointOfInterestStatusId",
-            pois."Name" AS "PointOfInterestStatus",
-            pois."PrimaryColor",
-            pois."SecondaryColor",
             ROW_NUMBER() OVER (
                 PARTITION BY poi."PointOfInterestKey" 
                 ORDER BY poi."DateCreated" DESC
             ) AS "ROW_NUM"
         FROM public."PointOfInterests" poi
-        INNER JOIN lookups."PointOfInterestTypes" poit 
-            ON poit."Id" = poi."PointOfInterestTypeId"
-        INNER JOIN lookups."PointOfInterestStatuses" pois 
-            ON pois."Id" = poi."PointOfInterestStatusId"
         LEFT JOIN public."PointOfInterestTagAssociations" ita 
             ON ita."PointOfInterestId" = poi."Id"
         LEFT JOIN public."Tags" t 
             ON t."Id" = ita."TagId"
-        WHERE pois."Name" != 'Removed'
     ) AS T
     WHERE T."ROW_NUM" = 1
     ORDER BY T."DateCreated";

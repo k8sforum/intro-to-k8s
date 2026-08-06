@@ -15,8 +15,6 @@ public interface ICoreDbContext
     DbSet<PointOfInterestTagAssociation> PointOfInterestTagAssociations { get; set; }
     DbSet<Tag> Tags { get; set; }
     DbSet<PointOfInterestAuditLog> PointOfInterestAuditLogs { get; set; }
-    DbSet<PointOfInterestType> PointOfInterestTypes { get; set; }
-    DbSet<PointOfInterestStatus> PointOfInterestStatuses { get; set; }
     EntityEntry Entry(object entity);
     DbSet<TEntity> Set<TEntity>() where TEntity : class;
     Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken);
@@ -31,7 +29,6 @@ public interface ICoreDbContext
     Task<int> UpdatePointOfInterestTagsAsync(List<SavePointOfInterestDto> dtos, CancellationToken cancellationToken);
     Task<int> CreatePointOfInterestAsync(PointOfInterest point, CancellationToken cancellationToken);
     Task AddImageToPointOfInterestAsync(string blobName, PointOfInterest point, CancellationToken cancellationToken);
-    Task UpdatePointOfInterestStatusAsync(int pointOfInterestStatusId, PointOfInterest point, CancellationToken cancellationToken);
     Task UpdateAddressAsync(UpdateAddressDto dto, CancellationToken cancellationToken);
     Task<List<GetPointOfInterestResponse>> GetPointsOfInterestByTagAsync(string tagName, CancellationToken cancellationToken);
     Task<List<GetPointOfInterestResponse>> GetPointsOfInterestByKeyAsync(string pointOfInterestKey, CancellationToken cancellationToken);

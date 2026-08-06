@@ -18,12 +18,5 @@ public class GetPointOfInterestResponse
     public bool ImageResized { get; set; }
     public int? TagId { get; set; }
     public string TagName { get; set; }
-    public int PointOfInterestTypeId { get; set; }
-    public string PointOfInterestType { get; set; }
     public string PointOfInterestKey { get; set; }
-    public int PointOfInterestStatusId { get; set; }
-    public string PointOfInterestStatus { get; set; }
-    public string PrimaryColor { get; set; }
-    public string SecondaryColor { get; set; }
-
 }

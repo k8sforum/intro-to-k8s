@@ -5,7 +5,6 @@ using mytravels.contract.CustomException;
 using mytravels.contract.Constants;
 using mytravels.contract.Dtos;
 using mytravels.contract.Interfaces;
-using mytravels.contract.Lookups;
 using mytravels.contract.Messages;
 using mytravels.contract.Responses;
 using mytravels.domain.Extensions;
@@ -91,17 +90,6 @@ namespace mytravels.domain.Features.PointOfInterest
             return await _objectStorageService.GetBase64Async(BucketNames.ResizedImagesContainer, point.GeneratedBlobName, cancellationToken);
         }
 
-        public async Task<int> UpdateStatusAsync(string pointOfInterestKey, int pointOfInterestStatusId, CancellationToken cancellationToken)
-        {
-            List<contract.Entities.PointOfInterest> points = await _context.GetPointsOfInterestAsync(cancellationToken);
-            contract.Entities.PointOfInterest point = points.Where(x => x.PointOfInterestKey == pointOfInterestKey)
-                                                   .OrderByDescending(x => x.DateCreated)
-                                                   .FirstOrDefault() ?? throw new EntityNotFoundException(nameof(point));
-
-            await _context.UpdatePointOfInterestStatusAsync(pointOfInterestStatusId, point, cancellationToken);
-            return point.Id;
-        }
-
         private async Task<int> CreatePointOfInterestAsync(IFormFile file, string objectName, SaveCoordinatesDto coordinates, DateTime? dateTaken, CancellationToken cancellationToken)
         {
             CreatePointOfInterestDto dto = new()
@@ -111,8 +99,7 @@ namespace mytravels.domain.Features.PointOfInterest
                 FormattedAddress = coordinates.FormattedAddress ?? string.Empty,
                 Latitude = coordinates.Latitude,
                 Longitude = coordinates.Longitude,
-                DateTaken = dateTaken,
-                PointOfInterestTypeId = (int)PointOfInterestTypesEnum.Image
+                DateTaken = dateTaken
             };
 
             contract.Entities.PointOfInterest point = dto.ToEntity();

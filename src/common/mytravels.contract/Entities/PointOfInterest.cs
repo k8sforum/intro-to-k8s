@@ -24,10 +24,6 @@ public class PointOfInterest
     [StringLength(300)]
     public string FormattedAddress { get; set; }
     public bool ImageResized { get; set; }
-    public virtual int PointOfInterestTypeId { get; set; }
-    public virtual PointOfInterestType PointOfInterestType { get; set; }
-    public virtual int PointOfInterestStatusId { get; set; }
-    public virtual PointOfInterestStatus PointOfInterestStatus { get; set; }
     public virtual HashSet<PointOfInterestTagAssociation> PointOfInterestTagAssociations { get; set; }
     public virtual HashSet<PointOfInterestAuditLog> PointOfInterestAuditLogs { get; set; }
     public DateTime? DateUpdated { get; set; }

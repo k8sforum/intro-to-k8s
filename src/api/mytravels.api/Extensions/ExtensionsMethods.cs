@@ -21,13 +21,7 @@ namespace mytravels.api.Extensions
                     FormattedAddress = first.FormattedAddress,
                     Latitude = first.Latitude,
                     Longitude = first.Longitude,
-                    PointOfInterestType = first.PointOfInterestType,
-                    PointOfInterestTypeId = first.PointOfInterestTypeId,
                     PointOfInterestKey = first.PointOfInterestKey,
-                    PointOfInterestStatusId = first.PointOfInterestStatusId,
-                    PointOfInterestStatus = first.PointOfInterestStatus,
-                    PrimaryColor = first.PrimaryColor,
-                    SecondaryColor = first.SecondaryColor,
                     Tags = group.ToList()
                                 .Where(x => x.TagId is not null)
                                 .Select(x => new TagDto

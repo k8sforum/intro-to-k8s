@@ -7,6 +7,5 @@ public class CreatePointOfInterestDto
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public DateTime? DateTaken { get; set; }
-    public int PointOfInterestTypeId { get; set; }
     public string FormattedAddress { get; set; }
 }
