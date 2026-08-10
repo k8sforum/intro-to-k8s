@@ -2,8 +2,9 @@
 #
 # The API URL is NOT configurable here — Vite inlines VITE_API_BASE_URL into the
 # JavaScript bundle at image build time, so the browser calls whatever host the
-# image was built with. To point the app at the in-cluster API, rebuild the image
-# with VITE_API_BASE_URL=http://api.mytravels.local:8080 and bump the tag below.
+# image was built with. v1.0.5 was built with VITE_API_BASE_URL=http://api.mytravels.local:8080,
+# so it reaches the API through the Traefik ingress. If you rebuild, keep that
+# build arg (or update it) and bump the tag below to match.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,7 +26,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: tshepontlhokoa/mytravels-web:v1.0.4
+          image: tshepontlhokoa/mytravels-web:v1.0.5
           ports:
             - name: http
               containerPort: 80

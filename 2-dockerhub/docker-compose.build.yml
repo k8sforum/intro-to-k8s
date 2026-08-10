@@ -25,7 +25,7 @@ services:
       dockerfile: messaging/mytravels.messaging/Dockerfile
 
   web:
-    image: tshepontlhokoa/mytravels-web:v1.0.4-${ARCH}
+    image: tshepontlhokoa/mytravels-web:v1.0.5-${ARCH}
     build:
       context: ../src
       dockerfile: web/Dockerfile
