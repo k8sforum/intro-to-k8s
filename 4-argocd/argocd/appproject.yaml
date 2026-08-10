@@ -23,19 +23,14 @@ spec:
     - server: https://kubernetes.default.svc
       namespace: mytravels-default
 
-  # Cluster-scoped resources are denied unless listed here. This stack needs four:
-  #   Namespace                     — manifests/namespace.yaml
-  #   PersistentVolume              — the manual hostPath PVs in manifests/minio/
-  #   ClusterRole/ClusterRoleBinding — manifests/backstage-rbac.yaml
+  # Cluster-scoped resources are denied unless listed here. This stack needs two:
+  #   Namespace        — manifests/namespace.yaml
+  #   PersistentVolume — the manual hostPath PVs in manifests/minio/
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
     - group: ""
       kind: PersistentVolume
-    - group: rbac.authorization.k8s.io
-      kind: ClusterRole
-    - group: rbac.authorization.k8s.io
-      kind: ClusterRoleBinding
 
   namespaceResourceWhitelist:
     - group: "*"
