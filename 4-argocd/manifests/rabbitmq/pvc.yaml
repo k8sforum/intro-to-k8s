@@ -12,18 +12,3 @@ spec:
   resources:
     requests:
       storage: 200Mi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: rabbitmq-config-pvc
-  namespace: mytravels-default
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  storageClassName: local-path
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 50Mi
