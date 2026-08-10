@@ -21,7 +21,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-
+#Messaging - https://hub.docker.com/_/rabbitmq
   rabbitmq:
     image: rabbitmq:3-management
     container_name: mytravels-rabbitmq
