@@ -11,7 +11,9 @@ RUN npm ci
 COPY web/. .
 RUN npm run build
 
-FROM nginx:1.27-alpine AS runtime
+# alpine-slim drops the njs/geoip modules and entrypoint templating helpers,
+# none of which this static site uses.
+FROM nginx:1.27-alpine-slim AS runtime
 
 COPY --from=build /app/web/dist /usr/share/nginx/html
 COPY web/nginx.conf /etc/nginx/conf.d/default.conf

@@ -87,12 +87,8 @@ services:
       
 # Migrations
   migrate-core-db:
-    image: tshepontlhokoa/mytravels-migrations:v1.0.3
-    working_dir: /s/src
-    entrypoint: [""]
-    command: >
-      sh -c "dotnet tool install --version 9.0.9 dotnet-ef &&
-            dotnet ef database update --startup-project common/mytravels.migration --project common/mytravels.domain --context CoreDbContext"
+    image: tshepontlhokoa/mytravels-migrations:v1.0.4
+    command: ["--connection", "${CORE_DB_CONTEXT}"]
     restart: "no"
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}

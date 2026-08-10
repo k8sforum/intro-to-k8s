@@ -38,15 +38,10 @@ spec:
                   key: POSTGRES_DB
       containers:
         - name: migrate-core-db
-          image: tshepontlhokoa/mytravels-migrations:v1.0.3
-          command: ["sh", "-c"]
-          args:
-            - |
-              dotnet tool restore &&
-              dotnet ef database update \
-                --startup-project common/mytravels.migration \
-                --project common/mytravels.domain \
-                --context CoreDbContext
+          image: tshepontlhokoa/mytravels-migrations:v1.0.4
+          # The image entrypoint is the EF migrations bundle; $(VAR) is expanded
+          # by Kubernetes from the env entries below.
+          args: ["--connection", "$(ConnectionStrings__CoreDbContext)"]
           env:
             - name: AllowedHosts
               value: "*"

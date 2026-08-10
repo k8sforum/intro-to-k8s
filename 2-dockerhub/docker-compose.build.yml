@@ -7,7 +7,7 @@
 
 services:
   migration-tool:
-    image: tshepontlhokoa/mytravels-migrations:v1.0.3-${ARCH}
+    image: tshepontlhokoa/mytravels-migrations:v1.0.4-${ARCH}
     build:
       context: ../src
       dockerfile: common/mytravels.migration/Dockerfile
