@@ -1,0 +1,42 @@
+# An AppProject is the blast radius for a group of Applications: which repos they
+# may deploy from, which cluster/namespaces they may deploy to, and which kinds
+# they are allowed to create.
+#
+# The built-in `default` project allows everything from everywhere. Defining an
+# explicit project is the habit worth forming — if a manifest in this repo ever
+# grows a resource the project does not permit, the sync fails loudly instead of
+# quietly creating it.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: mytravels
+  namespace: argocd
+spec:
+  description: MyTravels application stack
+
+  # Only this repository may be used as a source.
+  sourceRepos:
+    - https://github.com/k8sforum/intro-to-k8s.git
+
+  # Namespaced resources may only land in mytravels-default on the local cluster.
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: mytravels-default
+
+  # Cluster-scoped resources are denied unless listed here. This stack needs four:
+  #   Namespace                     — manifests/namespace.yaml
+  #   PersistentVolume              — the manual hostPath PVs in manifests/minio/
+  #   ClusterRole/ClusterRoleBinding — manifests/backstage-rbac.yaml
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: ""
+      kind: PersistentVolume
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

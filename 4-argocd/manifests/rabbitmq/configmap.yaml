@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+data:
+  enabled_plugins: |
+    [rabbitmq_management].

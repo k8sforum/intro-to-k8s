@@ -1,0 +1,23 @@
+# Exposes the Argo CD web UI at http://argocd.mytravels.local:8080
+#
+# Requires `server.insecure: "true"` in argocd-cmd-params-cm (see server-params.yaml),
+# otherwise argocd-server redirects HTTP -> HTTPS and the browser loops.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server
+  namespace: argocd
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: argocd.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80

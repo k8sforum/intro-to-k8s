@@ -1,0 +1,27 @@
+# Adds a raw-TCP `postgres` entrypoint to the k3s-bundled Traefik so the
+# IngressRouteTCP in manifests/ingress.yaml can route port 5432.
+#
+# Why this file lives outside manifests/ and is applied with kubectl:
+#
+#   1. It is cluster infrastructure, not application config — it patches a Helm
+#      release owned by k3s in kube-system, which is outside the mytravels
+#      AppProject's destination namespace.
+#   2. Applying it restarts Traefik, which briefly drops the ingress Argo CD's own
+#      UI is served through. Not something you want a sync to trigger.
+#
+# Drawing that line — what the GitOps controller owns vs. what the cluster
+# bootstrap owns — is a real decision every team makes.
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    ports:
+      postgres:
+        port: 5432
+        expose:
+          default: true
+        exposedPort: 5432
+        protocol: TCP

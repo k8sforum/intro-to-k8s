@@ -1,0 +1,21 @@
+# Runs argocd-server in HTTP-only mode.
+#
+# By default argocd-server serves HTTPS with a self-signed certificate and
+# redirects plain HTTP to it. Behind the Traefik `web` (HTTP) entrypoint that
+# produces a redirect loop in the browser, so we turn TLS off at the server and
+# let the ingress own the edge. That is the standard pattern — in a real cluster
+# you would terminate real TLS at the ingress instead.
+#
+# This ConfigMap is created empty by the upstream install manifest; applying this
+# file afterwards fills in the parameter. argocd-server must be restarted to pick
+# it up (see the runbook).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cmd-params-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  server.insecure: "true"

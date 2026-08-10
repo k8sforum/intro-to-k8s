@@ -1,0 +1,57 @@
+# The Application is the whole point of the lesson: instead of `kubectl apply -f`
+# per service, one object tells Argo CD "make the cluster look like this folder in
+# git" and the application-controller keeps it that way.
+#
+# Argo clones the repo from *inside* the cluster, so the manifests it deploys are
+# the ones on the remote — pushing is now part of deploying.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mytravels
+  namespace: argocd
+  finalizers:
+    # Deleting the Application also deletes everything it created. Without this
+    # finalizer the Application disappears and the workloads are left orphaned.
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: mytravels
+
+  source:
+    repoURL: https://github.com/k8sforum/intro-to-k8s.git
+    targetRevision: main
+    path: 4-argocd/manifests
+    directory:
+      # Without this Argo only reads the YAML directly under `path` and ignores
+      # the api/, postgres/, ... subfolders.
+      recurse: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mytravels-default
+
+  syncPolicy:
+    automated:
+      # Delete resources that were removed from git.
+      prune: true
+      # Left off deliberately for now — with selfHeal on, `kubectl edit` is undone
+      # within seconds, which makes the diagnostics steps confusing. The runbook
+      # turns it on later as its own step.
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
+      # Show the diff Argo would apply rather than only the final state.
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+
+  ignoreDifferences:
+    # Kubernetes writes spec.claimRef into a PersistentVolume when it binds, which
+    # is not in git — without this the minio PVs sit permanently OutOfSync.
+    - group: ""
+      kind: PersistentVolume
+      jsonPointers:
+        - /spec/claimRef

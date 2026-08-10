@@ -1,0 +1,107 @@
+# Exposes services via host-based routing:
+#   rabbitmq-management  — http://rabbitmq.mytravels.local
+#   minio-console        — http://minio.mytravels.local
+#   api                  — http://api.mytravels.local
+#   postgres             — TCP via the 'postgres' Traefik entrypoint (see note below)
+#
+# postgres note: HTTP Ingress does not support raw TCP. The IngressRouteTCP below
+# requires a dedicated TCP entrypoint named 'postgres' to be configured in Traefik,
+# e.g. --entrypoints.postgres.address=:5432
+#
+# Replace host values with your actual domain before applying.
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: management-ingress
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: rabbitmq.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rabbitmq-management
+                port:
+                  number: 15672
+    - host: minio.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minio-console
+                port:
+                  number: 9090
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: api.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 5101
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: messaging-ingress
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: messaging.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: messaging
+                port:
+                  number: 5102
+
+---
+
+# Traefik CRD for raw TCP — routes all connections on the 'postgres' entrypoint
+# to the postgres service. HostSNI(*) is required for non-TLS TCP routes.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: postgres-tcp-ingress
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  entryPoints:
+    - postgres
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: postgres
+          port: 5432

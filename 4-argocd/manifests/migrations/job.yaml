@@ -1,0 +1,68 @@
+# Unlike lesson 3, this Job is an Argo CD *sync hook* rather than a plain manifest.
+#
+# A Job's pod template is immutable, so if Argo tracked this as an ordinary
+# resource the second sync would try to patch the existing db-migrations Job and
+# fail. As a hook it is deleted and recreated on every sync instead.
+#
+#   hook: Sync              runs as part of the sync, so sync-wave still applies
+#                           (PreSync would run before wave 0 — postgres would not
+#                           exist yet and the initContainer would wait forever)
+#   sync-wave: "1"          after postgres is Healthy (wave 0), before the apps (wave 2)
+#   hook-delete-policy      remove the previous Job right before creating the new one,
+#     BeforeHookCreation    which leaves the last run's pod around for `kubectl logs`
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrations
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: cleanup-migrations
+          image: postgres:17.6-alpine
+          command: ["sh", "-c"]
+          args:
+            - |
+              until pg_isready -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                echo "Waiting for postgres..."; sleep 2
+              done
+              PGPASSWORD="$POSTGRES_PASSWORD" psql \
+                -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+                -c "DO \$\$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'config' AND table_name = 'EFMigrationsHistory') THEN DELETE FROM \"EFMigrationsHistory\" WHERE \"MigrationId\" IN ('20600930075821_SeedData', '20590930075747_UpdateStoredProcedure'); END IF; END \$\$;"
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+      containers:
+        - name: migrate-core-db
+          image: tshepontlhokoa/mytravels-migrations:v1.0.4
+          # The image entrypoint is the EF migrations bundle; $(VAR) is expanded
+          # by Kubernetes from the env entries below.
+          args: ["--connection", "$(ConnectionStrings__CoreDbContext)"]
+          env:
+            - name: AllowedHosts
+              value: "*"
+            - name: ConnectionStrings__CoreDbContext
+              valueFrom:
+                secretKeyRef:
+                  name: migrations-secret
+                  key: ConnectionStrings__CoreDbContext
