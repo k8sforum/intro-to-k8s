@@ -1,0 +1,47 @@
+# Adds a local `user123` account with full admin rights.
+#
+# The built-in `admin` account CANNOT be renamed — it is hardcoded in Argo CD. So
+# "username = user123" means creating an additional local account and granting it
+# the admin role, which is what this file does. The runbook sets the password for
+# both accounts to the same value so there is no lockout if something goes wrong.
+#
+# Capabilities granted to the account:
+#   login   — may sign in to the web UI and the CLI
+#   apiKey  — may generate API tokens (`argocd account generate-token`)
+#
+# The password itself is NOT here. It lives in the `argocd-secret` Secret as a
+# bcrypt hash, applied by the runbook from `.env` — same reasoning as the
+# application secrets in Step 9: credentials do not belong in git.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  accounts.user123: apiKey, login
+
+  # In production you would disable the built-in admin once a real account exists.
+  # Left enabled here so a failed password change cannot lock you out of the lab.
+  # admin.enabled: "false"
+---
+# Grants user123 the built-in `role:admin` (full read/write on every Application).
+#
+# `policy.default: ''` means anyone NOT matched by a rule above gets nothing —
+# deny-by-default. Argo ships `role:readonly` and `role:admin` out of the box; real
+# deployments define per-team roles scoped to an AppProject, e.g.
+#   p, role:mytravels-dev, applications, sync, mytravels/*, allow
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  policy.csv: |
+    g, user123, role:admin
+  policy.default: ''

@@ -2,6 +2,7 @@
 #   rabbitmq-management  — http://rabbitmq.mytravels.local
 #   minio-console        — http://minio.mytravels.local
 #   api                  — http://api.mytravels.local
+#   web                  — http://web.mytravels.local
 #   postgres             — TCP via the 'postgres' Traefik entrypoint (see note below)
 #
 # postgres note: HTTP Ingress does not support raw TCP. The IngressRouteTCP below
@@ -82,6 +83,28 @@ spec:
                 name: messaging
                 port:
                   number: 5102
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-ingress
+  namespace: mytravels-default
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: web.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80
 
 ---
 
