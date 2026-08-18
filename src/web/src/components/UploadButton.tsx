@@ -6,6 +6,7 @@ import {
 import type { Place } from '../api/types';
 import { LocationSearchDialog } from './LocationSearchDialog';
 import { Spinner } from './Spinner';
+import { PostmarkGlyph } from './icons';
 
 type UploadState = 'idle' | 'uploading' | 'error';
 
@@ -88,43 +89,46 @@ export function UploadButton({ onUploaded }: UploadButtonProps) {
   return (
     <div ref={containerRef} className="relative flex flex-col items-end gap-2">
       {error && (
-        <p className="max-w-64 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700 shadow dark:bg-red-950 dark:text-red-300">
+        <p className="max-w-64 rounded-md border border-postmark/40 bg-postmark/10 px-3 py-2 font-sans text-xs text-postmark shadow dark:border-postmark-light/40 dark:bg-postmark-light/10 dark:text-postmark-light">
           {error}
         </p>
       )}
 
       {menuOpen && (
-        <div className="absolute right-0 bottom-full mb-2 w-64 overflow-hidden rounded-md bg-white shadow-lg dark:bg-neutral-800">
+        <div className="absolute right-0 bottom-full mb-2 w-64 overflow-hidden rounded-md border border-brass/30 bg-paper shadow-lg dark:border-brass/25 dark:bg-harbor-2">
           <button
             type="button"
             onClick={() => pickFile('search')}
-            className="w-full px-4 py-3 text-left text-sm text-neutral-700 transition hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-700"
+            className="w-full px-4 py-3 text-left font-sans text-sm text-ink transition hover:bg-brass/10 dark:text-bone dark:hover:bg-brass/10"
           >
-            Upload without location data
-            <span className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
+            No GPS on this photo?
+            <span className="mt-0.5 block text-xs text-ink/60 dark:text-bone/60">
               Search for the place instead
             </span>
           </button>
         </div>
       )}
 
-      <div className="flex items-stretch overflow-hidden rounded-full bg-neutral-900 shadow-md dark:bg-white">
+      <div className="flex items-stretch overflow-hidden rounded-md border border-brass/40 bg-ink shadow-md dark:border-brass/30 dark:bg-harbor-2">
         <button
           type="button"
           disabled={uploading}
           onClick={() => pickFile('gps')}
-          className="px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60 dark:text-neutral-900 dark:hover:bg-neutral-200"
+          className="px-4 py-2.5 font-sans text-sm font-medium text-bone transition hover:bg-ink-2 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-harbor"
         >
           {uploading ? (
             <span className="flex items-center gap-2">
               <Spinner className="h-4 w-4" />
-              Uploading…
+              Stamping…
             </span>
           ) : (
-            'Upload Image'
+            <span className="flex items-center gap-2">
+              <PostmarkGlyph className="h-4 w-4 text-postmark-light" />
+              Log a photo
+            </span>
           )}
         </button>
-        <span className="my-2 w-px bg-white/25 dark:bg-neutral-900/25" aria-hidden="true" />
+        <span className="my-2 w-px bg-brass/30" aria-hidden="true" />
         <button
           type="button"
           disabled={uploading}
@@ -132,7 +136,7 @@ export function UploadButton({ onUploaded }: UploadButtonProps) {
           aria-label="More upload options"
           aria-expanded={menuOpen}
           aria-haspopup="menu"
-          className="px-3 py-2 text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60 dark:text-neutral-900 dark:hover:bg-neutral-200"
+          className="px-3 py-2 text-bone transition hover:bg-ink-2 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-harbor"
         >
           <svg
             className={`h-4 w-4 transition-transform ${menuOpen ? 'rotate-180' : ''}`}

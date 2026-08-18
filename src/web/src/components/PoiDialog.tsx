@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { PointOfInterest } from "../api/types";
 import { getPointOfInterestImage } from "../api/client";
 import { Spinner } from "./Spinner";
+import { PostmarkGlyph } from "./icons";
 
 interface PoiDialogProps {
   poi: PointOfInterest;
@@ -27,7 +28,7 @@ type ImageState =
 function ImagePlaceholderIcon() {
   return (
     <svg
-      className="h-12 w-12 text-neutral-300 dark:text-neutral-600"
+      className="h-12 w-12 text-brass/40 dark:text-brass/30"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -65,47 +66,56 @@ export function PoiDialog({ poi, onClose }: PoiDialogProps) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-lg bg-white shadow-lg dark:bg-neutral-900"
+        className="w-full max-w-md rounded-md border border-brass/30 bg-paper shadow-xl dark:border-brass/25 dark:bg-harbor-2"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-t-lg bg-neutral-100 dark:bg-neutral-800">
-          {image.status === "loaded" ? (
-            <img
-              src={image.src}
-              alt={poi.formattedAddress}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <ImagePlaceholderIcon />
-          )}
-          {image.status === "loading" && (
-            <div className="absolute inset-0 flex items-center justify-center bg-neutral-100/60 dark:bg-neutral-800/60">
-              <Spinner className="h-6 w-6 text-neutral-400" />
-            </div>
-          )}
+        <div className="p-2">
+          <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-sm bg-ink/5 ring-1 ring-brass/25 dark:bg-bone/5">
+            {image.status === "loaded" ? (
+              <img
+                src={image.src}
+                alt={poi.formattedAddress}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <ImagePlaceholderIcon />
+            )}
+            {image.status === "loading" && (
+              <div className="absolute inset-0 flex items-center justify-center bg-paper/60 dark:bg-harbor-2/60">
+                <Spinner className="h-6 w-6 text-brass" />
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-3 p-5">
+        <div className="space-y-4 px-5 pt-1 pb-5">
           <div className="flex items-start justify-between gap-2">
-            <h2 className="text-base font-medium text-neutral-900 dark:text-neutral-100">
+            <h2 className="font-display text-lg font-medium text-ink dark:text-bone">
               {poi.formattedAddress || "Address pending"}
             </h2>
             <button
               type="button"
               onClick={onClose}
-              className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+              className="text-brass transition hover:text-postmark dark:hover:text-postmark-light"
               aria-label="Close"
             >
               ✕
             </button>
           </div>
 
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-neutral-500 dark:text-neutral-400">
-            <dt>Taken</dt>
-            <dd className="text-neutral-800 dark:text-neutral-200">
-              {formatDate(poi.dateTaken ?? poi.dateCreated)}
-            </dd>
-          </dl>
+          <div className="flex items-center gap-3 border-t border-brass/20 pt-4">
+            <div className="flex h-10 w-10 shrink-0 -rotate-6 items-center justify-center rounded-full border border-dashed border-postmark/60 text-postmark dark:border-postmark-light/60 dark:text-postmark-light">
+              <PostmarkGlyph className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-mono text-[10px] tracking-[0.16em] text-brass uppercase">
+                Taken
+              </p>
+              <p className="font-sans text-sm text-ink dark:text-bone">
+                {formatDate(poi.dateTaken ?? poi.dateCreated)}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

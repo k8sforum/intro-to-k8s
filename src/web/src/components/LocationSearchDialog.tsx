@@ -56,23 +56,23 @@ export function LocationSearchDialog({
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-md flex-col rounded-lg bg-white shadow-lg dark:bg-neutral-900"
+        className="flex w-full max-w-md flex-col rounded-md border border-brass/30 bg-paper shadow-xl dark:border-brass/25 dark:bg-harbor-2"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="space-y-3 p-5">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h2 className="text-base font-medium text-neutral-900 dark:text-neutral-100">
+              <h2 className="font-display text-lg font-medium text-ink italic dark:text-bone">
                 Where was this taken?
               </h2>
-              <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="mt-0.5 truncate font-mono text-xs text-brass">
                 {fileName}
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+              className="text-brass transition hover:text-postmark dark:hover:text-postmark-light"
               aria-label="Close"
             >
               ✕
@@ -89,21 +89,21 @@ export function LocationSearchDialog({
                 setSelected(null);
               }}
               placeholder="Search for a place, e.g. Table Mountain"
-              className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:focus:border-neutral-500"
+              className="w-full rounded-md border border-brass/40 bg-bone px-3 py-2 font-sans text-sm text-ink outline-none focus:border-postmark dark:border-brass/30 dark:bg-harbor dark:text-bone dark:focus:border-postmark-light"
             />
             {search.status === "searching" && (
-              <Spinner className="absolute top-2.5 right-3 h-4 w-4 text-neutral-400" />
+              <Spinner className="absolute top-2.5 right-3 h-4 w-4 text-brass" />
             )}
           </div>
 
           <div className="max-h-56 overflow-y-auto">
             {search.status === "loaded" && search.places.length === 0 && (
-              <p className="px-1 py-2 text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="px-1 py-2 font-sans text-sm text-ink/60 dark:text-bone/60">
                 No places matched that name.
               </p>
             )}
             {search.status === "error" && (
-              <p className="px-1 py-2 text-sm text-red-600 dark:text-red-400">
+              <p className="px-1 py-2 font-sans text-sm text-postmark dark:text-postmark-light">
                 Search failed. Please try again.
               </p>
             )}
@@ -114,10 +114,10 @@ export function LocationSearchDialog({
                     <button
                       type="button"
                       onClick={() => setSelected(place)}
-                      className={`w-full rounded-md px-3 py-2 text-left text-sm transition ${
+                      className={`w-full rounded-md px-3 py-2 text-left font-sans text-sm transition ${
                         selected === place
-                          ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
-                          : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                          ? "bg-postmark text-bone dark:bg-postmark-light dark:text-ink"
+                          : "text-ink hover:bg-brass/10 dark:text-bone dark:hover:bg-brass/10"
                       }`}
                     >
                       {place.formattedAddress}
@@ -129,11 +129,11 @@ export function LocationSearchDialog({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-neutral-200 px-5 py-3 dark:border-neutral-800">
+        <div className="flex justify-end gap-2 border-t border-brass/20 px-5 py-3">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full px-4 py-2 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            className="rounded-md px-4 py-2 font-sans text-sm font-medium text-ink/70 transition hover:bg-brass/10 dark:text-bone/70 dark:hover:bg-brass/10"
           >
             Cancel
           </button>
@@ -141,9 +141,9 @@ export function LocationSearchDialog({
             type="button"
             disabled={!selected}
             onClick={() => selected && onSelect(selected)}
-            className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white shadow-md transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            className="rounded-md bg-ink px-4 py-2 font-sans text-sm font-medium text-bone shadow-md transition hover:bg-ink-2 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-harbor dark:hover:bg-harbor-2"
           >
-            Upload here
+            Pin this place
           </button>
         </div>
       </div>

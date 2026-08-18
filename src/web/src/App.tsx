@@ -5,6 +5,7 @@ import { hasCoordinates } from './api/types';
 import { MapView } from './components/MapView';
 import { PoiDialog } from './components/PoiDialog';
 import { UploadButton } from './components/UploadButton';
+import { PostmarkGlyph } from './components/icons';
 
 const POLL_INTERVAL_MS = 3000;
 const POLL_MAX_ATTEMPTS = 10;
@@ -57,10 +58,18 @@ function App() {
 
   return (
     <div className="relative h-svh w-full">
-      <header className="absolute top-4 right-5 z-[500]">
-        <h1 className="rounded-full bg-white/90 px-4 py-1.5 text-sm font-medium text-neutral-800 shadow dark:bg-neutral-900/90 dark:text-neutral-100">
-          MyTravels POI Viewer
-        </h1>
+      <header className="absolute top-4 right-4 z-[500] sm:top-5 sm:right-5">
+        <div className="flex items-center gap-2.5 rounded-md border border-brass/40 bg-paper/95 px-3.5 py-2 shadow-md backdrop-blur-sm dark:border-brass/30 dark:bg-harbor-2/95">
+          <PostmarkGlyph className="h-4.5 w-4.5 shrink-0 text-postmark dark:text-postmark-light" />
+          <h1 className="leading-tight">
+            <span className="block font-display text-[15px] font-medium tracking-tight text-ink italic dark:text-bone">
+              MyTravels
+            </span>
+            <span className="block font-mono text-[9px] tracking-[0.18em] text-brass uppercase">
+              Field Log
+            </span>
+          </h1>
+        </div>
       </header>
 
       <MapView pois={pois} onSelect={setSelectedPoi} />
