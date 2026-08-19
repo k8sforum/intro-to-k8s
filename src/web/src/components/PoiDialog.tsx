@@ -15,9 +15,12 @@ function formatDate(value: string) {
   const day = date.getDate();
   const month = date.toLocaleDateString("en-GB", { month: "long" });
   const year = date.getFullYear();
-  const hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  return `${weekday}, ${day} ${month} ${year} at ${hours}h${minutes}m`;
+  const time = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${weekday}, ${day} ${month} ${year} at ${time}`;
 }
 
 type ImageState =
