@@ -58,8 +58,7 @@ services:
       test: ["CMD-SHELL", "PGPASSWORD=${POSTGRES_PASSWORD} pg_isready -h localhost -p 5432 -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      
+      retries: 5      
 # DB Script Runner - runs after Postgres is healthy to execute custom SQL commands
   cleanup-migrations:
     image: postgres:17.6-alpine
@@ -85,8 +84,7 @@ services:
         END IF;
       END
       $$;
-      EOSQL
-      
+      EOSQL   
 # Migrations
   migrate-core-db:
     image: mytravels-migrations:v1.0.4
@@ -99,8 +97,7 @@ services:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
     depends_on:
       postgres:
-        condition: service_healthy
-        
+        condition: service_healthy    
   # ASP.NET CORE API
   api:
     container_name: mytravels-api
@@ -126,7 +123,6 @@ services:
         condition: service_healthy
       migrate-core-db:
         condition: service_completed_successfully
-
   # MESSAGING APP
   messaging:
     container_name: mytravels-messaging
@@ -152,7 +148,6 @@ services:
         condition: service_healthy
       migrate-core-db:
         condition: service_completed_successfully
-
   # WEB UI
   web:
     container_name: mytravels-web
