@@ -5,4 +5,4 @@ metadata:
   namespace: mytravels-default
 data:
   enabled_plugins: |
-    [rabbitmq_management].
+    [rabbitmq_management,rabbitmq_prometheus].

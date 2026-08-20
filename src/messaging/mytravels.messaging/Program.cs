@@ -1,4 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using OpenTelemetry;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using RabbitMQ.Client;
 using System.Globalization;
 using System.Reflection;
@@ -12,6 +16,20 @@ using mytravels.functions;
 using mytravels.storage;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var otelServiceName = builder.Configuration["OTEL_SERVICE_NAME"] ?? "mytravels-messaging";
+
+builder.Services.AddOpenTelemetry()
+       .ConfigureResource(resource => resource.AddService(otelServiceName))
+       .WithMetrics(metrics => metrics
+           .AddAspNetCoreInstrumentation()
+           .AddHttpClientInstrumentation()
+           .AddRuntimeInstrumentation())
+       .WithTracing(tracing => tracing
+           .AddAspNetCoreInstrumentation()
+           .AddHttpClientInstrumentation()
+           .AddSource("Npgsql"))
+       .UseOtlpExporter();
 
 builder.Services.AddDbContext<ICoreDbContext, CoreDbContext>(
 options =>

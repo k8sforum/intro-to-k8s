@@ -27,6 +27,9 @@ spec:
             - name: management
               containerPort: 15672
               protocol: TCP
+            - name: metrics
+              containerPort: 15692
+              protocol: TCP
           env:
             - name: RABBITMQ_DEFAULT_USER
               valueFrom:

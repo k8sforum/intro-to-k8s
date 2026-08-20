@@ -12,6 +12,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_PROMETHEUS_AUTH_TYPE: public
     volumes:
       - minio-data:/data
       - minio-config:/root/.minio
@@ -28,12 +29,14 @@ services:
     ports:
       - "5672:5672"      # for messaging
       - "15672:15672"    # for the management UI
+      - "15692:15692"    # for Prometheus metrics (rabbitmq_prometheus plugin)
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
     volumes:
       - mqdata:/var/lib/rabbitmq
       - mqconfig:/etc/rabbitmq
+      - ./observability/rabbitmq-enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
       interval: 5s
@@ -116,6 +119,8 @@ services:
       MinIO__Endpoint: ${MINIO_ENDPOINT}
       MinIO__AccessKey: ${MINIO_ROOT_USER}
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SERVICE_NAME: mytravels-api
     ports:
       - 5101:5101
     depends_on:
@@ -141,6 +146,8 @@ services:
       GoogleApiKey: ${GOOGLE_API_KEY}
       GoogleMapsUrl: ${GOOGLE_MAPS_URL}
       GooglePlacesUrl: ${GOOGLE_PLACES_URL}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SERVICE_NAME: mytravels-messaging
     ports:
       - 5102:5102
     depends_on:
@@ -157,11 +164,91 @@ services:
       dockerfile: web/Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
     ports:
       - 5100:80
     depends_on:
       - api
       - messaging
+# Observability
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.116.1
+    container_name: mytravels-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC (api/messaging)
+      - "4318:4318"   # OTLP HTTP (browser RUM)
+      - "8889:8889"   # Prometheus scrape target
+    # No healthcheck: the contrib image is distroless (no wget/curl) so an
+    # exec-based probe can't run. Services depend on it by start order only.
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: mytravels-prometheus
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9091:9090"   # host 9091 — 9090 is already taken by the minio console
+    depends_on:
+      - otel-collector
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  tempo:
+    image: grafana/tempo:2.6.1
+    container_name: mytravels-tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo query API (Grafana explore / manual trace search)
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: mytravels-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: mytravels-cadvisor
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    ports:
+      - "8081:8080"
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: mytravels-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - tempo
 
 volumes:
   pgdata:
@@ -173,4 +260,10 @@ volumes:
   minio-data:
     driver: local
   minio-config:
+    driver: local
+  prometheus-data:
+    driver: local
+  tempo-data:
+    driver: local
+  grafana-data:
     driver: local

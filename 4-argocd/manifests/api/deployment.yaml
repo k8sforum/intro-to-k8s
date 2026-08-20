@@ -55,6 +55,10 @@ spec:
                 secretKeyRef:
                   name: api-secret
                   key: MinIO__SecretKey
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector:4317
+            - name: OTEL_SERVICE_NAME
+              value: mytravels-api
           resources:
             requests:
               cpu: 100m

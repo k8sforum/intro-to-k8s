@@ -5,6 +5,10 @@
 # image was built with. v1.0.5 was built with VITE_API_BASE_URL=http://api.mytravels.local:8080,
 # so it reaches the API through the Traefik ingress. If you rebuild, keep that
 # build arg (or update it) and bump the tag below to match.
+#
+# Same applies to VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT (browser RUM traces):
+# it must be baked in at build time as http://otel.mytravels.local:8080/v1/traces
+# so the browser can reach the collector through the ingress.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

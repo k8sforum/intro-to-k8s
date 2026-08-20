@@ -1,0 +1,19 @@
+# Headless (clusterIP: None) so Kubernetes publishes a DNS SRV record with one
+# entry per node's cadvisor pod — Prometheus's dns_sd_configs discovers all of
+# them, instead of a normal ClusterIP Service load-balancing to just one.
+apiVersion: v1
+kind: Service
+metadata:
+  name: cadvisor
+  namespace: mytravels-default
+  labels:
+    app: cadvisor
+spec:
+  clusterIP: None
+  selector:
+    app: cadvisor
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

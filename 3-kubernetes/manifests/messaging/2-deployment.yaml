@@ -63,6 +63,10 @@ spec:
                 secretKeyRef:
                   name: messaging-secret
                   key: ContentSafetyKey
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector:4317
+            - name: OTEL_SERVICE_NAME
+              value: mytravels-messaging
           resources:
             requests:
               cpu: 100m

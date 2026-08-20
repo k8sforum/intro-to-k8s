@@ -16,6 +16,10 @@ spec:
       port: 5672
       targetPort: 5672
       protocol: TCP
+    - name: metrics
+      port: 15692
+      targetPort: 15692
+      protocol: TCP
 ---
 apiVersion: v1
 kind: Service
