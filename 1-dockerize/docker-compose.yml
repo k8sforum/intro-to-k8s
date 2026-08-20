@@ -155,6 +155,33 @@ services:
         condition: service_healthy
       migrate-core-db:
         condition: service_completed_successfully
+  # MCP SERVER
+  mcp:
+    container_name: mytravels-mcp
+    image: mytravels-mcp:v1.0.0
+    build:
+      context: ../src
+      dockerfile: api/mytravels.mcp/Dockerfile
+    environment:
+      ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
+      GoogleApiKey: ${GOOGLE_API_KEY}
+      GoogleMapsUrl: ${GOOGLE_MAPS_URL}
+      GooglePlacesUrl: ${GOOGLE_PLACES_URL}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ASPNETCORE_URLS: http://+:5103
+      RabbitMQ__Uri: ${RABBIT_MQ_URI}
+      MinIO__Endpoint: ${MINIO_ENDPOINT}
+      MinIO__AccessKey: ${MINIO_ROOT_USER}
+      MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SERVICE_NAME: mytravels-mcp
+    ports:
+      - 5103:5103
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      migrate-core-db:
+        condition: service_completed_successfully
   # WEB UI
   web:
     container_name: mytravels-web

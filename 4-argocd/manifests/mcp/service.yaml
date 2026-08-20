@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp
+  namespace: mytravels-default
+  labels:
+    app: mcp
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  type: ClusterIP
+  selector:
+    app: mcp
+  ports:
+    - name: http
+      port: 5103
+      targetPort: 5103
+      protocol: TCP

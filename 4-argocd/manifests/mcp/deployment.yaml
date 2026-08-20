@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp
+  namespace: mytravels-default
+  labels:
+    app: mcp
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp
+  template:
+    metadata:
+      labels:
+        app: mcp
+    spec:
+      containers:
+        - name: mcp
+          image: tshepontlhokoa/mytravels-mcp:v1.0.0
+          ports:
+            - name: http
+              containerPort: 5103
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:5103
+            - name: GoogleMapsUrl
+              value: https://maps.googleapis.com
+            - name: GooglePlacesUrl
+              value: https://places.googleapis.com
+            - name: MinIO__Endpoint
+              value: minio:9000
+            - name: ConnectionStrings__CoreDbContext
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-secret
+                  key: ConnectionStrings__CoreDbContext
+            - name: RabbitMQ__Uri
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-secret
+                  key: RabbitMQ__Uri
+            - name: MinIO__AccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-secret
+                  key: MinIO__AccessKey
+            - name: MinIO__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-secret
+                  key: MinIO__SecretKey
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector:4317
+            - name: OTEL_SERVICE_NAME
+              value: mytravels-mcp
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5103
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 10

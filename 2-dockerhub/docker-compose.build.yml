@@ -24,6 +24,12 @@ services:
       context: ../src
       dockerfile: messaging/mytravels.messaging/Dockerfile
 
+  mcp:
+    image: tshepontlhokoa/mytravels-mcp:v1.0.0-${ARCH}
+    build:
+      context: ../src
+      dockerfile: api/mytravels.mcp/Dockerfile
+
   web:
     image: tshepontlhokoa/mytravels-web:v1.0.5-${ARCH}
     build:

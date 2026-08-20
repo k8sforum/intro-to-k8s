@@ -13,6 +13,7 @@ images=(
     "tshepontlhokoa/mytravels-migrations:v1.0.4"
     "tshepontlhokoa/mytravels-api:v1.0.7"
     "tshepontlhokoa/mytravels-messaging:v1.0.9"
+    "tshepontlhokoa/mytravels-mcp:v1.0.0"
     "tshepontlhokoa/mytravels-web:v1.0.5"
 )
 
