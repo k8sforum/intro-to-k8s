@@ -3,6 +3,7 @@
 #   minio-console        — http://minio.mytravels.local
 #   api                  — http://api.mytravels.local
 #   web                  — http://web.mytravels.local
+#   mcp                  — http://mcp.mytravels.local
 #   grafana              — http://grafana.mytravels.local
 #   prometheus           — http://prometheus.mytravels.local
 #   otel-collector       — http://otel.mytravels.local (OTLP/HTTP, for browser RUM traces)
@@ -138,6 +139,28 @@ spec:
                 name: web
                 port:
                   number: 80
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mcp-ingress
+  namespace: mytravels-default
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: mcp.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mcp
+                port:
+                  number: 5103
 
 ---
 
