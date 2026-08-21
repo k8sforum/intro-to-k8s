@@ -16,6 +16,11 @@ spec:
       labels:
         app: cadvisor
     spec:
+      # cadvisor reads cgroups and the container runtime directly; it never calls the
+      # Kubernetes API. Declining the token also removes the projected volume at
+      # /var/run/secrets/..., which cannot be created underneath the read-only
+      # /var/run hostPath mount below (the image symlinks /var/run -> /run).
+      automountServiceAccountToken: false
       containers:
         - name: cadvisor
           image: gcr.io/cadvisor/cadvisor:v0.49.1
