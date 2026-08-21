@@ -38,7 +38,7 @@ spec:
                   key: POSTGRES_DB
       containers:
         - name: migrate-core-db
-          image: tshepontlhokoa/mytravels-migrations:v1.0.4
+          image: tshepontlhokoa/mytravels-migrations:v1.0.5
           # The image entrypoint is the EF migrations bundle; $(VAR) is expanded
           # by Kubernetes from the env entries below.
           args: ["--connection", "$(ConnectionStrings__CoreDbContext)"]

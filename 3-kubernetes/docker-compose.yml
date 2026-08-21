@@ -89,7 +89,7 @@ services:
       
 # Migrations
   migrate-core-db:
-    image: mytravels-migrations:v1.0.4
+    image: mytravels-migrations:v1.0.5
     build:
       context: ../src
       dockerfile: common/mytravels.migration/Dockerfile
@@ -104,7 +104,7 @@ services:
   # ASP.NET CORE API
   api:
     container_name: mytravels-api
-    image: mytravels-api:v1.0.7
+    image: mytravels-api:v1.0.8
     build:
       context: ../src
       dockerfile: api/mytravels.api/Dockerfile
@@ -130,7 +130,7 @@ services:
   # MESSAGING APP
   messaging:
     container_name: mytravels-messaging
-    image: mytravels-messaging:v1.0.9
+    image: mytravels-messaging:v1.0.10
     build:
       context: ../src
       dockerfile: messaging/mytravels.messaging/Dockerfile

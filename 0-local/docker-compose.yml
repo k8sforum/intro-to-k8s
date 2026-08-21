@@ -87,7 +87,7 @@ services:
       
 # Migrations
   migrate-core-db:
-    image: tshepontlhokoa/mytravels-migrations:v1.0.4
+    image: tshepontlhokoa/mytravels-migrations:v1.0.5
     command: ["--connection", "${CORE_DB_CONTEXT}"]
     restart: "no"
     environment:

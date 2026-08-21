@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: tshepontlhokoa/mytravels-web:v1.0.5
+          image: tshepontlhokoa/mytravels-web:v1.0.6
           ports:
             - name: http
               containerPort: 80
