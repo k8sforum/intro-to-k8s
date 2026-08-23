@@ -440,7 +440,11 @@ All three services call `.UseOtlpExporter()` with `AddAspNetCoreInstrumentation`
 
 ### 10.5 `web` (Vite build-time env)
 
-`VITE_API_BASE_URL` — baked into the static bundle at Docker build time via `ARG`/`ENV` (not runtime-configurable). Defaults to `http://localhost:5101` if unset (`src/web/src/api/client.ts:3`).
+`VITE_API_BASE_URL` — baked into the static bundle at Docker build time via `ARG`/`ENV`. Defaults to `http://localhost:5101` if unset (`src/web/src/api/client.ts:3`).
+
+`VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` — same mechanism, read at `src/web/src/telemetry.ts:10`. **No default**: the whole OpenTelemetry setup sits behind `if (otlpEndpoint)` (`telemetry.ts:17`), so an unset build arg makes that branch statically false and Vite tree-shakes the entire browser-RUM block out of the bundle. The published `mytravels-web:v1.0.6` image was built this way (`2-dockerhub/docker-compose.build.yml` passed only `VITE_API_BASE_URL`), so it ships with no browser tracing at all.
+
+Neither value is runtime-configurable *in the image*, but as of `v1.0.7` both are runtime-configurable *at deploy time* in the Kubernetes stages: the image is built with the sentinel placeholders `__API_BASE_URL__` and `__OTLP_TRACES_ENDPOINT__`, and a `render-config` init container copies the docroot into an `emptyDir`, `sed`s the sentinels to values from the `web-config` ConfigMap, and mounts that over nginx's docroot (`3-kubernetes/manifests/web/{1-configmap,2-deployment}.yaml`, `4-argocd/manifests/web/{configmap,deployment}.yaml`). Both sentinels are non-empty precisely so the tree-shaking above does not fire. The Compose stages (1, 2) are unaffected — they pin earlier tags built with literal URLs.
 
 ### 10.6 Docker Compose / Kubernetes env-var surface (cross-stage, from deployment-topology research)
 
@@ -448,7 +452,8 @@ All three services call `.UseOtlpExporter()` with `AddAspNetCoreInstrumentation`
 |---|---|---|
 | `GOOGLE_API_KEY` | yes (1, 2) | **no — dropped entirely, Finding F-14** |
 | `GRAPH_API_TOKEN` | yes (`.env.example`, stages 0–3) | no — and never consumed by any Compose service either; dead variable |
-| `VITE_API_BASE_URL` | yes, value differs per stage (`http://localhost:5101` in 1/2, `http://api.mytravels.local:8080` in 3) | n/a (baked at web image build time, stage 4 doesn't build images) |
+| `VITE_API_BASE_URL` | yes, value differs per stage (`http://localhost:5101` in 1/2) | `web-config` ConfigMap in 3 and 4, substituted into the built bundle by the `render-config` init container (`http://api.mytravels.local:8080`) |
+| `VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | stage 1 only (`http://localhost:4318/v1/traces`); never passed to the published image build before `v1.0.7` | `web-config` ConfigMap in 3 and 4 (`http://otel.mytravels.local:8080/v1/traces`) |
 | `MINIO_ENDPOINT` / console port | consistent `9090:9090` everywhere | consistent, `minio-console` Service port `9090` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_SERVICE_NAME` | stage 1 only (`http://otel-collector:4317`); absent in 0 and 2 | set inline on the api/mcp/messaging Deployments in stages 3–4 |
 | Argo CD-only vars (`ARGOCD_USER`, `ARGOCD_PASSWORD`, `CONTENT_SAFETY_ENDPOINT`, `CONTENT_SAFETY_KEY`) | only in `4-argocd/.env.example` | applied out-of-band via `kubectl create secret`, not committed |

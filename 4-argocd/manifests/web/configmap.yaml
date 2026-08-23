@@ -1,0 +1,26 @@
+# Deploy-time configuration for the browser bundle.
+#
+# Vite inlines VITE_* values into the JavaScript at image build time, so they are
+# normally frozen into the image tag. The web image is instead built with sentinel
+# placeholders (__API_BASE_URL__, __OTLP_TRACES_ENDPOINT__ — see
+# 2-dockerhub/docker-compose.build.yml), and the Deployment's init container
+# substitutes the values below into the bundle before nginx serves it.
+#
+# Both URLs are resolved by the *browser*, not by a pod, so they must be the
+# ingress hostnames reachable from the host — not in-cluster service names.
+#
+# Changing a URL is now a plain git commit that Argo CD syncs, with no image
+# rebuild and no tag bump. Argo CD does not restart pods when only a ConfigMap
+# changes, so bump config-revision in deployment.yaml in the SAME commit.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  namespace: mytravels-default
+  labels:
+    app: web
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+data:
+  VITE_API_BASE_URL: http://api.mytravels.local:8080
+  VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel.mytravels.local:8080/v1/traces

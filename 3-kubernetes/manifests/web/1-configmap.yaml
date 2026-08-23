@@ -1,0 +1,23 @@
+# Deploy-time configuration for the browser bundle.
+#
+# Vite inlines VITE_* values into the JavaScript at image build time, so they are
+# normally frozen into the image tag. The web image is instead built with sentinel
+# placeholders (__API_BASE_URL__, __OTLP_TRACES_ENDPOINT__ — see
+# 2-dockerhub/docker-compose.build.yml), and the Deployment's init container
+# substitutes the values below into the bundle before nginx serves it.
+#
+# Both URLs are resolved by the *browser*, not by a pod, so they must be the
+# ingress hostnames reachable from the host — not in-cluster service names.
+#
+# After editing, roll the Deployment to re-run the substitution:
+#   kubectl rollout restart deployment/web -n mytravels-default
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  namespace: mytravels-default
+  labels:
+    app: web
+data:
+  VITE_API_BASE_URL: http://api.mytravels.local:8080
+  VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel.mytravels.local:8080/v1/traces
