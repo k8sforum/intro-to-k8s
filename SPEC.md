@@ -21,32 +21,38 @@ Throughout, **Observed:** marks behavior read directly from code/config; **Infer
 | Component | Role | Source |
 |---|---|---|
 | `mytravels.api` | REST API — CRUD for POIs, image upload, place search | `src/api/mytravels.api/` |
+| `mytravels.mcp` | Model Context Protocol tool server — exposes photo upload and place search as MCP tools for LLM clients | `src/api/mytravels.mcp/` |
 | `mytravels.messaging` | Background worker — image resize, address resolution, retry sweep | `src/messaging/mytravels.messaging/` |
 | `mytravels.migration` | One-shot EF Core migration bundle runner | `src/common/mytravels.migration/` |
 | `web` | React SPA — map UI, upload flow | `src/web/` |
 | `mytravels.common` / `mytravels.contract` / `mytravels.domain` / `mytravels.storage` | Shared libraries (DTOs, entities, EF Core context, geo/maps services, object storage) | `src/common/` |
 
+An **observability stack** (OTel Collector → Prometheus/Tempo → Grafana, plus postgres-exporter and cAdvisor) runs alongside the app in stages 1, 3, and 4. It is infrastructure rather than a MyTravels component, so it is specified separately in §4 and §14 rather than given a row above.
+
 **Runtime topology** (Observed, from `1-dockerize/docker-compose.yml` and `3-kubernetes/manifests/`):
 
 ```
-                    ┌──────────────┐
-   browser ───────► │  web (nginx) │
-                    └──────┬───────┘
-                           │ REST (baked-in base URL)
-                           ▼
+                    ┌──────────────┐          ┌──────────────┐
+   browser ───────► │  web (nginx) │          │ MCP client   │
+                    └──────┬───────┘          │ (LLM host)   │
+                           │ REST             └──────┬───────┘
+                           │ (baked-in URL)          │ MCP over streamable HTTP
+                           ▼                         ▼
+                    ┌──────────────┐        ┌──────────────┐
+                    │ api (5101)   │        │  mcp (5103)  │
+                    └──────┬───────┘        └──────┬───────┘
+                           │                       │
+                           └───────┬───────────────┘
+                                   │ both use IPointOfInterestService / IMapsService
+                                   ▼
                     ┌──────────────┐        ┌───────────────┐
-                    │ api (5101)   │◄──────►│  PostgreSQL   │
-                    └──────┬───────┘        │  (5432)       │
-                           │ publish             ▲
-                           ▼                      │
-                    ┌──────────────┐              │
-                    │  RabbitMQ    │              │
-                    │ (5672/15672) │              │
-                    └──────┬───────┘              │
+                    │  RabbitMQ    │◄───────│  PostgreSQL   │
+                    │ (5672/15672) │        │  (5432)       │
+                    └──────┬───────┘        └───────▲───────┘
                            │ consume                │
-                           ▼                      │
-                    ┌──────────────┐              │
-                    │ messaging    │──────────────┘
+                           ▼                        │
+                    ┌──────────────┐                │
+                    │ messaging    │────────────────┘
                     │ (5102)       │
                     └──────┬───────┘
                            │
@@ -55,6 +61,9 @@ Throughout, **Observed:** marks behavior read directly from code/config; **Infer
                     │  MinIO (S3)  │
                     │ (9000/9090)  │
                     └──────────────┘
+
+   api, mcp, messaging ──OTLP──► otel-collector ──► Prometheus (metrics) / Tempo (traces) ──► Grafana
+   web (browser RUM)   ──OTLP/HTTP──┘                                    (stages 1, 3, 4 only)
 ```
 
 Five deployment stages progressively wrap this same topology:
@@ -62,8 +71,8 @@ Five deployment stages progressively wrap this same topology:
 | Stage | Directory | Adds |
 |---|---|---|
 | 0 | `0-local/` | Infra (Postgres/RabbitMQ/MinIO) via Compose; app run from source (`dotnet run` / `npm run dev`) |
-| 1 | `1-dockerize/` | Full stack containerized, built locally via Compose |
-| 2 | `2-dockerhub/` | Images built & pushed to Docker Hub, stack runs from registry images |
+| 1 | `1-dockerize/` | Full stack containerized, built locally via Compose; adds the full observability stack |
+| 2 | `2-dockerhub/` | Images built & pushed to Docker Hub, stack runs from registry images (observability dropped) |
 | 3 | `3-kubernetes/` | Deployed to a k3d Kubernetes cluster via raw `kubectl apply` manifests + Traefik ingress |
 | 4 | `4-argocd/` | Same manifests, GitOps-deployed via Argo CD (Application/AppProject, sync waves, drift/self-heal) |
 
@@ -77,12 +86,19 @@ Five deployment stages progressively wrap this same topology:
 
 ```
 mytravels.api ────────────────┐
-mytravels.messaging ──────────┼──► mytravels.common ──► mytravels.contract
+mytravels.messaging ──────────┤
+mytravels.mcp ────────────────┼──► mytravels.common ──► mytravels.contract
                                ├──► mytravels.domain ──► mytravels.contract
                                └──► mytravels.storage ─► mytravels.contract
 mytravels.migration ───────────────► mytravels.domain (design-time only)
 web (React, separate npm project, no dependency on any C# project)
 ```
+
+**Observed:** `mytravels.mcp` has exactly the same `ProjectReference` set as `mytravels.api` (common, contract, domain, storage) and registers the same DI graph in `Program.cs` — `IPointOfInterestService`, `IMapsService`, `IObjectStorageService`, `IMessagePublisher`, `ICoreDbContext`. It is a **second front end onto the same domain layer**, not a client of the REST API: `PointOfInterestMcpTools` calls `IPointOfInterestService.SaveFileAsPointOfInsterestAsync` directly, synthesising an `IFormFile` from base64 input via a private `ToFormFile` helper.
+
+Consequence: a behaviour change in POI creation or geocoding lands on both entry points at once, but their **input validation is maintained separately** — the controller relies on `[ApiController]`/`ModelState` to validate `SaveCoordinatesDto`, while the MCP tool hand-rolls the equivalent check with `Validator.TryValidateObject`. The two are currently consistent; nothing structurally keeps them that way (Finding F-16).
+
+The two surfaces are also **not feature-equivalent**: the REST API exposes list, filter, fetch-image, and update-image operations that have no MCP counterpart. The MCP server is write-plus-search only (`upload_photo`, `upload_photo_with_coordinates`, `search_place`) — an MCP client can create points of interest but cannot read any back.
 
 **Message flow** (Observed, `src/common/mytravels.contract/Constants/ExchangeNames.cs`, `MessageSubscriberBase.cs`, consumer files):
 
@@ -125,23 +141,28 @@ intro-to-k8s/
 │   └── scripts/migrations.ps1
 ├── 1-dockerize/                 # Stage 1: full stack containerized (local build)
 │   ├── docker-compose.yml
+│   ├── observability/           # otel-collector, prometheus, tempo configs + Grafana provisioning/dashboards
+│   ├── tools/                   # stray dir: only a gitignored node_modules/, no tracked source
 │   └── runbook.ipynb
 ├── 2-dockerhub/                 # Stage 2: images built & pushed to Docker Hub
-│   ├── docker-compose.yml       # pulls from registry
-│   ├── docker-compose.build.yml # multi-arch build/push helper
+│   ├── docker-compose.yml       # pulls from registry; no observability stack
+│   ├── docker-compose.build.yml # multi-arch build/push helper — the authoritative image tags
 │   └── runbook.ipynb
 ├── 3-kubernetes/                # Stage 3: raw kubectl-applied manifests + Traefik ingress
 │   ├── docker-compose.yml       # infra-only, no `web` service
-│   ├── manifests/               # api/, messaging/, migrations/, minio/, postgres/, rabbitmq/, web/
+│   ├── manifests/               # api/, mcp/, messaging/, migrations/, minio/, observability/,
+│   │                            #   postgres/, rabbitmq/, web/ — files numbered for apply order
 │   ├── roadmap.md
 │   └── runbook.ipynb
 ├── 4-argocd/                    # Stage 4: GitOps deploy of the stage-3 manifests via Argo CD
 │   ├── argocd/                  # Application, AppProject, accounts, ingress, server-params
 │   ├── cluster/traefik-config.yaml
-│   ├── manifests/                # same shape as 3-kubernetes/manifests, secrets removed, sync-wave annotations added
+│   ├── manifests/                # same shape as 3-kubernetes/manifests, secrets removed,
+│   │                             #   filename number prefixes dropped, sync-wave annotations added
 │   └── runbook.ipynb
 ├── src/                          # Application source (the actual MyTravels app)
 │   ├── api/mytravels.api/        # ASP.NET Core REST API (net10.0)
+│   ├── api/mytravels.mcp/        # MCP tool server (net10.0, Web SDK) — Tools/, Dockerfile, appsettings
 │   ├── messaging/mytravels.messaging/  # Background worker (net10.0, Web SDK)
 │   ├── common/
 │   │   ├── mytravels.common/     # Shared services: geo, maps, RabbitMQ pub/sub, cron base classes
@@ -153,7 +174,8 @@ intro-to-k8s/
 │   └── scripts/                  # DB grant script, manifest merge script
 ├── scripts/init-dbs.sql          # Postgres first-run hook (currently a no-op)
 ├── drawio/architecture.drawio    # Architecture diagram source
-├── prompts/scaffold react app.md # Original prompt used to scaffold the web frontend
+├── prompts/                      # Original scaffolding prompts: "scaffold react app.md",
+│                                 #   "scaffold api mcp.md", "update drawio diagrams.md"
 ├── CERTIFICATION.md              # CNCF/Linux Foundation cert-path reference notes
 ├── AGENTS.md                     # Agent instruction: never refactor bin/obj/Migrations
 └── 0-vs code extensions.md, 1-install tools (*).md, 3-install certificates.md, 9-compare k8s tools.md
@@ -179,6 +201,15 @@ Excluded from the tree above (per instructions/format norms): `node_modules/`, `
 | Magick.NET-Q16-AnyCPU | 14.10.0 | `src/messaging/mytravels.messaging/mytravels.messaging.csproj` |
 | Flurl.Http | 4.0.2 | `src/common/mytravels.common/mytravels.common.csproj` |
 | Polly | 8.5.2 | `src/common/mytravels.common/mytravels.common.csproj` |
+| ModelContextProtocol / ModelContextProtocol.AspNetCore | 2.2.0 | `src/api/mytravels.mcp/mytravels.mcp.csproj` |
+| OpenTelemetry (Exporter.OpenTelemetryProtocol, Extensions.Hosting, Instrumentation.AspNetCore / .Http / .Runtime) | 1.17.0 | `src/api/mytravels.api/`, `src/api/mytravels.mcp/`, `src/messaging/mytravels.messaging/` `.csproj` |
+| `@opentelemetry/*` (browser RUM: sdk-trace-web, instrumentation-fetch, instrumentation-document-load, exporter-trace-otlp-http, context-zone) | 2.10.x / 0.221.x | `src/web/package.json:13-22` |
+| OpenTelemetry Collector (contrib) | 0.116.1 | `1-dockerize/docker-compose.yml`, `*/manifests/observability/*otel-collector-deployment.yaml` |
+| Prometheus | v3.1.0 | same |
+| Grafana | 11.4.0 | same |
+| Grafana Tempo | 2.6.1 | same |
+| postgres-exporter | v0.15.0 | same |
+| cAdvisor | v0.49.1 | Compose service (stage 1); DaemonSet in stages 3–4 |
 | Swashbuckle.AspNetCore (Swagger) | 9.0.5 | `src/api/mytravels.api/mytravels.api.csproj` |
 | Newtonsoft.Json | 13.0.4 | `src/api/mytravels.api/mytravels.api.csproj`, `mytravels.common.csproj` |
 | MetadataExtractor (EXIF) | 2.8.1 | `src/common/mytravels.contract/mytravels.contract.csproj`, `mytravels.common.csproj` |
@@ -208,6 +239,7 @@ Excluded from the tree above (per instructions/format norms): `node_modules/`, `
 | Module | Purpose | Owned domain | Key types | Depends on |
 |---|---|---|---|---|
 | `mytravels.api` | Public REST surface | HTTP request/response, Swagger docs, CORS, global exception mapping | `PointOfInterestController`, `PlaceController`, `ApiExceptionMiddleware` | common, contract, domain, storage |
+| `mytravels.mcp` | MCP tool surface for LLM clients | Tool schema/descriptions, base64→`IFormFile` marshalling, tool-level argument validation | `PointOfInterestMcpTools`, `PlaceMcpTools` | common, contract, domain, storage |
 | `mytravels.messaging` | Async processing | Image resize, address resolution, retry sweep | `ResizeImage`, `AppendFormattedAddress`, `AppendFormattedAddressSweeper` (all `IHostedService`/`BackgroundService`) | common, contract, domain, storage |
 | `mytravels.migration` | Schema management | Produces `efbundle` — a self-contained EF Core migration-apply executable; not itself a migration runner at execution time (see Finding F-3) | `CoreDbContextFactory` (design-time only) | domain |
 | `mytravels.common` | Cross-cutting services | Geocoding (Google/OSM), RabbitMQ publish/subscribe base classes, cron scheduling base class | `GoogleMapsService`, `OpenStreetMapsService`, `ImageMetadataService`, `MessagePublisher`, `MessageSubscriberBase<T>`, `CronJobBase` | contract |
@@ -236,26 +268,38 @@ Global error shape (`ApiErrorDto`, from `ApiExceptionMiddleware.cs`): `{ Id, Htt
 
 Swagger UI is mounted at `/swagger` in **every environment**, not gated to Development (Finding F-4).
 
-### 6.2 `mytravels.messaging` — HTTP surface
+### 6.2 `mytravels.mcp` — MCP tool surface (streamable HTTP, port 5103)
 
-Only a catch-all `MapGet("{**path}", ...)` returning `"Service is running..."` — exists purely so the container has a bindable HTTP port for orchestrator liveness checks; the real work happens via hosted services (§6.3), not HTTP.
+Mounted via `app.MapMcp()` after `AddMcpServer().WithHttpTransport().WithTools<PointOfInterestMcpTools>().WithTools<PlaceMcpTools>()`. There is no REST surface and no Swagger; the only plain HTTP route is `GET /health` → `200 "mcp is running..."`, which is what the k8s `livenessProbe` targets. Like the API, **every tool is anonymous** — the MCP server implements no authentication and is exposed through its own ingress host (`mcp.mytravels.local`) in stages 3–4.
 
-### 6.3 Message-queue interfaces (RabbitMQ, both fanout exchanges, durable queue = exchange name, no DLX/TTL/max-length arguments)
+| Tool | Arguments | Returns | Validation / errors |
+|---|---|---|---|
+| `upload_photo` | `fileContentBase64`, `fileName` | `SaveEntityResponseDto { Id }` | `McpException` if either argument is blank or the base64 is malformed; wraps `InvalidOperationException` (e.g. photo carries no EXIF GPS) into `McpException`. Its tool description explicitly tells the caller to fall back to `upload_photo_with_coordinates` in that case. |
+| `upload_photo_with_coordinates` | `fileContentBase64`, `fileName`, `latitude`, `longitude`, `formattedAddress` | `SaveEntityResponseDto { Id }` | Builds a `SaveCoordinatesDto` and runs `Validator.TryValidateObject(..., validateAllProperties: true)`, surfacing all `[Range]`/`[Required]` failures as one `McpException`. **No try/catch around the service call** — unlike `upload_photo`, a domain exception here escapes as a raw protocol error rather than an `McpException` (Finding F-17). |
+| `search_place` | `query`, `limit` | `List<PlaceDto>` | `McpException` if `query` is blank; `limit` is coerced to a default of 5 when omitted or non-positive. |
+
+Both upload tools funnel through the private `ToFormFile` helper, which wraps the decoded bytes in a `FormFile` with field name `"image"` and a hardcoded `ContentType` of `application/octet-stream`. **Observed:** this is harmless — no code in the solution reads `IFormFile.ContentType`, and `MinIOStorageService` hardcodes the same value on upload (`MinIOStorageService.cs:82`), so the MCP and REST paths store byte-identical objects. The whole base64→`IFormFile` round-trip exists only because the domain layer's entry point (`SaveFileAsPointOfInsterestAsync`) is typed against ASP.NET's `IFormFile` rather than a transport-neutral stream — the one place the domain layer leaks an HTTP-specific type into a non-HTTP caller.
+
+### 6.3 `mytravels.messaging` — HTTP surface
+
+Only a catch-all `MapGet("{**path}", ...)` returning `"Service is running..."` — exists purely so the container has a bindable HTTP port for orchestrator liveness checks; the real work happens via hosted services (§6.4), not HTTP.
+
+### 6.4 Message-queue interfaces (RabbitMQ, both fanout exchanges, durable queue = exchange name, no DLX/TTL/max-length arguments)
 
 | Exchange/Queue | Publisher | Consumer | Payload |
 |---|---|---|---|
 | `append-formatted-address` | `PointOfInterestService.CreatePointOfInterestAsync` | `AppendFormattedAddress` (HostedService) | `PointOfInterestMessage { CorrelationId, PointOfInterestId }` |
 | `resize-image` | `PointOfInterestService.CreatePointOfInterestAsync`, `UpdatePointOfInterestAsync` | `ResizeImage` (HostedService) | `PointOfInterestMessage { CorrelationId, PointOfInterestId }` |
 
-### 6.4 `ICoreDbContext` (library interface consumed within the .NET solution)
+### 6.5 `ICoreDbContext` (library interface consumed within the .NET solution)
 
 Exposes `DbSet`s plus domain methods: `GetPointsOfInterestAsync`, `GetPointsOfInterestByTagAsync`, `GetPointsOfInterestByKeyAsync`, `GetAllPointsOfInterestAsync`, `CreatePointOfInterestAsync`, `UpdatePointOfInterestTagsAsync`, `AddImageToPointOfInterestAsync`, `UpdateAddressAsync`, plus generic `Add`/`Delete`/`DetachObject`/`ExecuteSqlInterpolatedAsync`.
 
-### 6.5 `IObjectStorageService` (library interface, two implementations — see §5, §17)
+### 6.6 `IObjectStorageService` (library interface, two implementations — see §5, §17)
 
 `GetBase64Async`, `GetObjectAsync<T>`, `GetStreamAsync`, `ListObjectsAsync`, `ListBucketsAsync`, `ObjectExistsAsync`, `RemoveObjectAsync`, `SaveObjectAsync` (×3 overloads), `SaveBase64StringAsync`.
 
-### 6.6 Web frontend → API calls (`src/web/src/api/client.ts`)
+### 6.7 Web frontend → API calls (`src/web/src/api/client.ts`)
 
 | # | Method | Path | Purpose |
 |---|---|---|---|
@@ -375,6 +419,19 @@ Navigation: `PointOfInterestTagAssociations` (1:N), `PointOfInterestAuditLogs` (
 
 ### 10.2 `mytravels.messaging` — identical config surface to `mytravels.api` (same `appsettings.json` shape, same keys, same defaults).
 
+### 10.2a `mytravels.mcp`
+
+Same `appsettings.json` shape as api/messaging (`ConnectionStrings:CoreDbContext`, `RabbitMQ:Uri`, `MinIO:*`, `GoogleApiKey`, `GoogleMapsUrl`, `GooglePlacesUrl`, `AllowedHosts`) with the same committed `user123`/`password123` local-dev defaults — **minus `CorsHosts`**, which it neither defines nor reads (it registers no CORS policy, consistent with having no browser client). Its configuration chain (`SetBasePath` → `appsettings.json` → environment variables → `AddUserSecrets<Program>()`) is character-for-character the same as `mytravels.api`'s; `mytravels.messaging` is the odd one out, building no explicit chain and calling no `AddUserSecrets`.
+
+### 10.2b OpenTelemetry configuration (api, mcp, messaging)
+
+| Key | Default | Notes |
+|---|---|---|
+| `OTEL_SERVICE_NAME` | `mytravels-api` / `mytravels-mcp` / `mytravels-messaging` (hardcoded per-service fallback) | read via `builder.Configuration["OTEL_SERVICE_NAME"]` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset → OTel SDK default `http://localhost:4317` | set to `http://otel-collector:4317` in stage 1 Compose and in the stage 3/4 Deployments; **set nowhere in stages 0 and 2**, where export therefore fails against a non-existent local collector (non-fatal; produces connection-refused noise) |
+
+All three services call `.UseOtlpExporter()` with `AddAspNetCoreInstrumentation`, `AddHttpClientInstrumentation`, `AddRuntimeInstrumentation` (metrics) and `AddSource("Npgsql")` (traces). There is no sampling configuration and no `OTEL_TRACES_SAMPLER` handling — every request is traced.
+
 ### 10.3 `mytravels.migration` — `ConnectionStrings:CoreDbContext` only, plus whatever `--connection` argument is passed to the built `efbundle` at runtime (Kubernetes Job overrides via `$(ConnectionStrings__CoreDbContext)` env var, `4-argocd/manifests/migrations/job.yaml`).
 
 ### 10.4 `mytravels.storage`
@@ -393,6 +450,7 @@ Navigation: `PointOfInterestTagAssociations` (1:N), `PointOfInterestAuditLogs` (
 | `GRAPH_API_TOKEN` | yes (`.env.example`, stages 0–3) | no — and never consumed by any Compose service either; dead variable |
 | `VITE_API_BASE_URL` | yes, value differs per stage (`http://localhost:5101` in 1/2, `http://api.mytravels.local:8080` in 3) | n/a (baked at web image build time, stage 4 doesn't build images) |
 | `MINIO_ENDPOINT` / console port | consistent `9090:9090` everywhere | consistent, `minio-console` Service port `9090` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_SERVICE_NAME` | stage 1 only (`http://otel-collector:4317`); absent in 0 and 2 | set inline on the api/mcp/messaging Deployments in stages 3–4 |
 | Argo CD-only vars (`ARGOCD_USER`, `ARGOCD_PASSWORD`, `CONTENT_SAFETY_ENDPOINT`, `CONTENT_SAFETY_KEY`) | only in `4-argocd/.env.example` | applied out-of-band via `kubectl create secret`, not committed |
 
 Stage 4's `.env.example` is structurally distinct from stages 0–3 (drops most app config vars since it never builds images or runs Compose — `.env` there is purely input to a "create the k8s secrets" runbook step).
@@ -402,17 +460,20 @@ Stage 4's `.env.example` is structurally distinct from stages 0–3 (drops most 
 ## 11. Authentication, Authorization & Security
 
 **Observed:** there is **no authentication or authorization anywhere in the application layer.**
-- No `AddAuthentication`/`AddAuthorization`/`UseAuthentication`/`UseAuthorization` in either `mytravels.api/Program.cs` or `mytravels.messaging/Program.cs`.
+- No `AddAuthentication`/`AddAuthorization`/`UseAuthentication`/`UseAuthorization` in `mytravels.api/Program.cs`, `mytravels.mcp/Program.cs`, or `mytravels.messaging/Program.cs`.
 - No `[Authorize]` attribute exists anywhere in the solution.
 - Every REST endpoint, including image upload, is fully anonymous.
+- **Every MCP tool is likewise anonymous**, and the MCP server gets its own ingress host (`mcp.mytravels.local`) in stages 3–4. `ModelContextProtocol.AspNetCore` is registered with no auth handler, so anything that can reach port 5103 can write points of interest and drive the geocoding provider. This widens the unauthenticated write surface from one service to two.
 - Swagger UI is exposed unauthenticated in every environment (not gated behind `IsDevelopment()`).
 - CORS policy `AllowSpecificOrigin` uses `AllowAnyHeader()`+`AllowAnyMethod()`, restricted only by the `CorsHosts` origin list (default `*` in `appsettings.json`, meaning **any origin** unless overridden).
 
 **Secrets handling:**
-- Local dev credentials (`user123`/`password123` for DB/RabbitMQ/MinIO) are committed in plaintext in `appsettings.json` across `mytravels.api`, `mytravels.messaging`, and `mytravels.migration`.
-- `appsettings.Development.json` (gitignored, `.gitignore:59`) contains a real-format Google Maps API key on this machine — not committed to the repo, consistent with the April 2026 secret-scrub incident that added this gitignore pattern.
-- `3-kubernetes/manifests/messaging/1-secret.yaml` (also gitignored via `*secret.yaml`, `.gitignore:132`) contains, on this machine, a real-looking base64-encoded Azure Content Safety endpoint/key — again local-only, not committed.
-- Stage 4 (`4-argocd`) removes **all** Secret manifests from the repo entirely, applying them out-of-band via `kubectl create secret` from `.env` — a deliberate, documented fix over stage 3's committed-secret pattern (which itself is gitignored per-file, not structurally prevented).
+- Local dev credentials (`user123`/`password123` for DB/RabbitMQ/MinIO) are committed in plaintext in `appsettings.json` across `mytravels.api`, `mytravels.mcp`, `mytravels.messaging`, and `mytravels.migration`.
+- `appsettings.Development.json` (genuinely gitignored, `.gitignore:59`) contains a real-format Google Maps API key on this machine — not committed, consistent with the April 2026 secret-scrub incident that added this pattern.
+- **⚠️ All eight stage-3 Secret manifests are committed to git, not ignored (Finding F-18).** `.gitignore` is 130 lines long and contains **no `secret` rule of any kind** — an earlier revision of this spec asserted a `*secret.yaml` pattern at `.gitignore:132`; that line does not exist and never matched anything. `git ls-files | grep secret` returns `3-kubernetes/manifests/{api,mcp,messaging,migrations,minio,postgres,rabbitmq}/1-secret.yaml` and `observability/16-grafana-secret.yaml`.
+- Most of those hold only the `user123`/`password123` tutorial credentials, which is harmless by design. **`3-kubernetes/manifests/messaging/1-secret.yaml` does not**: it carries a real-format Azure Content Safety endpoint (`…cognitiveservices.azure.com`) and an 84-character API key, base64-encoded, present in `HEAD` and introduced in commit `a270e7d`. Base64 is encoding, not encryption. This credential should be treated as compromised — rotate it at the provider, then scrub history; removing the file in a new commit does not remove it from the history that clones already carry.
+- `3-kubernetes/manifests/mcp/1-secret.yaml` follows the same committed pattern as its siblings, but holds only tutorial credentials (DB connection string, RabbitMQ URI, MinIO keys).
+- Stage 4 (`4-argocd`) removes **all** Secret manifests from the repo entirely, applying them out-of-band via `kubectl create secret` from `.env` — a deliberate, documented fix over stage 3's pattern. Given the above, this is the stage-3 problem's actual remedy, not merely a stylistic upgrade: stage 3's secrets are structurally unprotected, not "gitignored per-file".
 - Argo CD is configured with `server.insecure: true` (TLS disabled) and a local admin-equivalent account (`user123`, `role:admin`), intended for the local k3d tutorial context, not production.
 - No PII handling policy is evident; uploaded photos may contain identifying metadata (EXIF), which is read (for GPS) but not stripped before storage — thumbnails and originals both retain any other embedded EXIF fields.
 - No rate limiting, no CSRF protection (not applicable to a token-less anonymous JSON API, but also means no anti-automation protection on the upload endpoint).
@@ -465,13 +526,15 @@ Stage 4's `.env.example` is structurally distinct from stages 0–3 (drops most 
 | Azure Blob Storage | never invoked — `AzureStorageService` is unregistered dead code | connection-string (never configured) | n/a — unreachable code path |
 | Azure Content Safety (messaging-secret, k8s only) | `ContentSafetyEndpoint`/`ContentSafetyKey` secret keys exist in `3-kubernetes/manifests/messaging/1-secret.yaml` | API key | **no code in `src/messaging` references `ContentSafety*` anywhere** — the Secret provisions credentials for an integration that doesn't exist in the current codebase (dead config, or a feature removed without cleaning up its secret — see Finding F-15) |
 | RabbitMQ | `RabbitMQ:Uri` | username/password in URI | no DLX, infinite redelivery on poison messages (§12) |
+| OTLP collector (traces + metrics from api/mcp/messaging, and browser RUM from `web`) | `OTEL_EXPORTER_OTLP_ENDPOINT`, default `http://localhost:4317`; browser posts OTLP/HTTP to `otel.mytravels.local` in stages 3–4 | none | export failures are non-fatal and logged by the OTel SDK; absent in stages 0 and 2, where the default endpoint resolves to nothing |
+| MCP clients (LLM hosts) | inbound to `mcp` on 5103, streamable HTTP via `MapMcp()` | **none — fully anonymous** | tool errors returned as `McpException`, except the gap noted in F-17 |
 
 ---
 
 ## 15. Runtime Behaviour & Edge Cases
 
 - **Startup (api/messaging):** DI container built, EF Core context registered (throws immediately if connection string missing), RabbitMQ `IConnectionFactory` built (lazy — doesn't connect until first use), culture forced to `InvariantCulture` process-wide. No explicit readiness gate on RabbitMQ/Postgres availability at startup beyond `EnableRetryOnFailure()`; in Kubernetes, ordering is enforced externally via Job/init-container dependencies (migration Job runs before api/messaging Deployments are expected to work, though nothing blocks them from starting concurrently).
-- **Health/liveness:** api's `livenessProbe` hits `/swagger` (not a dedicated health endpoint); messaging's `livenessProbe` is commented out in both k8s manifest sets; neither has a `readinessProbe`. Only `web`'s Deployment has both probes, checking `/`.
+- **Health/liveness:** api's `livenessProbe` hits `/swagger` (not a dedicated health endpoint); messaging's `livenessProbe` is commented out in both k8s manifest sets; neither has a `readinessProbe`. `mcp` is the only application service with a purpose-built health endpoint — `GET /health` → `200 "mcp is running..."`, which its `livenessProbe` targets (still no `readinessProbe`). Only `web`'s Deployment has both probes, checking `/`. Within the observability stack, Prometheus, Tempo, and Grafana all define proper `readinessProbe`s, so the tutorial's own infrastructure is better instrumented than the app it observes.
 - **Empty input:** uploading with no `image` file → `RequiredParameterNotFoundException` → HTTP 403 (not 400).
 - **Malformed/no-EXIF image:** falls back to `(0,0)` coordinates and `null` date-taken — not treated as an error; the frontend's `hasCoordinates` filter is the only place this is distinguished from a "real" pin.
 - **Oversized input:** no explicit request body size limit configured anywhere found in `Program.cs` (relies on ASP.NET Core/Kestrel defaults).
@@ -502,13 +565,18 @@ Stage 4's `.env.example` is structurally distinct from stages 0–3 (drops most 
 - **F-11** — `AppendFormattedAddressSweeper` filters on `FormattedAddress == ""` (strict empty-string) while the live consumer's guard is `IsNullOrEmpty(...Trim())`; since `FormattedAddress` is a nullable column, a `NULL` row is retried by the live consumer but permanently skipped by the sweeper. `src/messaging/mytravels.messaging/AppendFormattedAddressSweeper.cs:33` vs. `AppendFormattedAddress.cs:43`.
 - **F-12** — Race condition: `AppendFormattedAddress`'s per-class semaphore has no counterpart in `AppendFormattedAddressSweeper`, which runs concurrently in the same process with no locking and no optimistic-concurrency token on the entity — a POI can be geocoded twice under contention. `src/messaging/mytravels.messaging/AppendFormattedAddressSweeper.cs` (whole file) vs. `AppendFormattedAddress.cs:14`.
 - **F-14** — `GOOGLE_API_KEY`/`GoogleApiKey` is wired through Docker Compose (`1-dockerize/docker-compose.yml:113`, `2-dockerhub/docker-compose.yml:105`) but never appears in any Kubernetes manifest (`3-kubernetes/manifests/**`, `4-argocd/manifests/**`) — deploying to k8s silently loses the configured Google Maps key and falls back to OpenStreetMap, unless this is intentional for the tutorial.
+- **F-17** — Inconsistent error handling between the two MCP upload tools in the same file: `upload_photo` wraps its service call in `try/catch (InvalidOperationException)` and rethrows as `McpException` (a clean, client-readable tool error), while `upload_photo_with_coordinates` calls the same service with **no try/catch at all**, so an equivalent domain failure escapes as an unwrapped exception rather than a structured MCP error. `src/api/mytravels.mcp/Tools/PointOfInterestMcpTools.cs:33-41` vs `:72`.
+- **F-18** — **All eight stage-3 Secret manifests are committed to the repository.** `.gitignore` (130 lines) contains no `secret` rule whatsoever, so nothing has ever excluded them. Seven hold only tutorial credentials, but `3-kubernetes/manifests/messaging/1-secret.yaml` commits a real-format Azure Content Safety endpoint and 84-character key (present in `HEAD`, added in `a270e7d`) — base64-encoded, which is not protection. Requires provider-side rotation plus a history scrub, not just deletion. `.gitignore`, `3-kubernetes/manifests/*/1-secret.yaml`.
 
 ### Fragile or risky logic
 
 - **F-4** — Swagger UI is mounted unconditionally in every environment (not gated by `IsDevelopment()`), and combined with zero authentication anywhere, the full API surface/schema is discoverable in any deployment of this image as-is. `src/api/mytravels.api/Program.cs:86-91`.
 - **F-5** — No authentication/authorization anywhere in the API — every endpoint including image upload is fully anonymous; `CorsHosts` defaults to `*`. `src/api/mytravels.api/Program.cs` (no `UseAuthentication`/`UseAuthorization` calls); `appsettings.json:CorsHosts`.
 - **F-7** — `UseHttpsRedirection()` is called unconditionally, but the container only exposes/binds HTTP (`ASPNETCORE_URLS=http://0.0.0.0:5101`) — the redirect middleware has no HTTPS port to target inside the container, effectively dead unless TLS termination happens upstream and the app is never actually asked to redirect. `src/api/mytravels.api/Program.cs:105`, `Dockerfile:27-29`.
-- **F-9** — Every first-party .NET project targets `net10.0` but pins EF Core / Npgsql / Microsoft.Extensions.* packages to the `9.0.x` line — a consistent framework/package version skew across the whole solution. All `*.csproj` files under `src/`.
+- **F-9** — Every first-party .NET project targets `net10.0` but pins EF Core / Npgsql / Microsoft.Extensions.* packages to the `9.0.x` line — a consistent framework/package version skew across the whole solution. `mytravels.mcp` follows the same pattern (EF Core 9.0.9 / Npgsql 9.0.4 under `net10.0`). All `*.csproj` files under `src/`.
+- **F-16** — The REST controller and the MCP tool layer validate the same inputs through two independently maintained code paths: `PointOfInterestController` leans on `[ApiController]`/`ModelState` for `SaveCoordinatesDto`, while `PointOfInterestMcpTools` hand-rolls the equivalent via `Validator.TryValidateObject`. They agree today; nothing enforces that they keep agreeing, and neither file references the other. Adding a validation attribute to a DTO will be picked up automatically on the REST path and silently ignored on any MCP argument not routed through a validated DTO. `src/api/mytravels.api/Controllers/PointOfInterestController.cs:79-90` vs `src/api/mytravels.mcp/Tools/PointOfInterestMcpTools.cs:57-69`.
+- **Two unauthenticated write surfaces instead of one** — the MCP server duplicates the API's complete lack of auth (§11) while adding its own public ingress host, so hardening the REST API alone would no longer close the write path. `src/api/mytravels.mcp/Program.cs`, `*/manifests/ingress.yaml` (`mcp.mytravels.local`).
+- **No OpenTelemetry sampling is configured** on any of the three instrumented services — `.UseOtlpExporter()` with default always-on sampling means trace volume scales 1:1 with request volume, and there is no `OTEL_TRACES_SAMPLER` handling to dial it back. Fine for a tutorial, a cost/throughput risk if copied into a real deployment. `src/api/mytravels.api/Program.cs:23-32`, `src/api/mytravels.mcp/Program.cs:22-32`, `src/messaging/mytravels.messaging/Program.cs:22-32`.
 - **RabbitMQ consumers have no dead-letter exchange, TTL, or max-length** on their queues — any permanently-failing message (e.g., a stale `PointOfInterestId`) triggers infinite `nack(requeue:true)` redelivery with no backoff. `src/common/mytravels.common/Services/MessageSubscriberBase.cs` (queue declaration, no `arguments`).
 - **`MessagePublisher` opens a new AMQP connection+channel per publish call** — no pooling, a throughput/latency risk under load. `src/common/mytravels.common/Services/MessagePublisher.cs:19-37`.
 - **`AppendFormattedAddressSweeper` does a full unfiltered `SELECT *` on `PointOfInterests` every 30 minutes**, filtering in memory — scales poorly as the table grows. `src/common/mytravels.domain/CoreDbContext.cs:32-33` (`GetPointsOfInterestAsync`) via `AppendFormattedAddressSweeper.cs:31`.
@@ -517,7 +585,7 @@ Stage 4's `.env.example` is structurally distinct from stages 0–3 (drops most 
 - **Migration/`db-migrations` Job has no resource requests/limits** set, unlike every other Deployment in the same manifest set. `3-kubernetes/manifests/migrations/2-job.yaml`, `4-argocd/manifests/migrations/job.yaml`.
 - **No `readinessProbe` on postgres/rabbitmq/minio/api Deployments** (only `livenessProbe`); messaging's `livenessProbe` is commented out entirely. `3-kubernetes/manifests/{postgres,rabbitmq,minio,api,messaging}/*deployment.yaml`.
 - **Orphan `rabbitmq-config-pvc`** created but never mounted by the RabbitMQ Deployment in stage 3 (fixed in stage 4 per commit `4ced81d`, but the stage-3 manifest was never updated to match). `3-kubernetes/manifests/rabbitmq/3-pvc.yaml` vs. `4-deployment.yaml`.
-- **`3-kubernetes/manifests/messaging/1-secret.yaml` provisions `ContentSafetyEndpoint`/`ContentSafetyKey`** for an Azure Content Safety integration that no code in `src/messaging` references at all — a secret kept for a feature that isn't (or is no longer) implemented (F-15).
+- **`3-kubernetes/manifests/messaging/1-secret.yaml` provisions `ContentSafetyEndpoint`/`ContentSafetyKey`** for an Azure Content Safety integration that no code in `src/messaging` references at all — a secret kept for a feature that isn't (or is no longer) implemented (F-15). Compounding this: that Secret is committed (F-18), so the repo carries a live-format Azure credential for an integration it does not even use.
 - **`mytravels.migration.csproj` targets `net10.0` but its EF Core/Hosting/Npgsql packages and pinned `dotnet-ef` CLI tool are all on the `9.0.x` line** — consistent with F-9 but worth flagging separately since it directly affects the migration-bundle build. `src/common/mytravels.migration/mytravels.migration.csproj`, `src/.config/dotnet-tools.json`.
 
 ### Dead code / ambiguous logic / undocumented behaviour
@@ -543,7 +611,9 @@ Stage 4's `.env.example` is structurally distinct from stages 0–3 (drops most 
 - **Web frontend's `README.md` is the unmodified Vite template README** — not project-specific documentation. `src/web/README.md`.
 - **`tsconfig.app.json`/`tsconfig.node.json` do not visibly set `strict: true`**, unusual for a current Vite/React template default — worth confirming there's no extended base config, since none was found in the directory listing.
 - **PV/nodeAffinity for MinIO is hard-pinned to a specific k3d node name** (`k3d-mytravels-agent-2`) in both k8s manifest stages — reasonable for a `hostPath`-backed tutorial cluster, but a portability constraint baked into application manifests rather than infra config.
-- **Version skew between Compose and k8s `web` images**: `1-dockerize`/`2-dockerhub` Compose files run `mytravels-web:v1.0.4` while the build helper (`docker-compose.build.yml`) and both k8s manifest sets deploy `v1.0.5`.
+- **Version skew between Compose and k8s `web` images**: `1-dockerize`/`2-dockerhub` Compose files run `mytravels-web:v1.0.4` while the build helper (`2-dockerhub/docker-compose.build.yml`) and both k8s manifest sets deploy `v1.0.6` — the Compose stages are two tags behind what is actually built and pushed, so stages 1–2 and stages 3–4 demonstrate different frontend builds. Current tags elsewhere: `api:v1.0.8`, `messaging:v1.0.10`, `migrations:v1.0.5`, `mcp:v1.0.0`.
+- **`mcp` is pinned at `v1.0.0` in every stage** while the services it was added alongside have iterated — combined with the tag skew above, there is no single "current" version of the stack expressed anywhere in the repo.
+- **`1-dockerize/tools/` contains only a gitignored `node_modules/`** (tsx, typescript, json-schema-to-ts) with no tracked source file — a leftover scaffold directory that reads as meaningful content until opened.
 
 ---
 
@@ -558,9 +628,16 @@ Stage 4's `.env.example` is structurally distinct from stages 0–3 (drops most 
 | **efbundle** | A self-contained native executable produced by `dotnet ef migrations bundle`, used as the migration container's actual entrypoint (distinct from `mytravels.migration`'s `Program.cs`) |
 | **Sync wave** | Argo CD annotation (`argocd.argoproj.io/sync-wave`) controlling the order in which manifests are applied during a GitOps sync |
 | **Self-heal** | Argo CD feature (`syncPolicy.automated.selfHeal`) that automatically reverts manual cluster drift back to the Git-defined state; deliberately introduced as a separate lesson step in stage 4 rather than enabled from the start |
+| **MCP** | Model Context Protocol — the tool-calling protocol `mytravels.mcp` speaks, letting an LLM client create points of interest and search places without going through the REST API |
+| **MCP tool** | A named, described, schema-typed function an MCP server exposes (`upload_photo`, `upload_photo_with_coordinates`, `search_place`); declared here with `[McpServerTool]` + `[Description]` attributes |
+| **OTLP** | OpenTelemetry Protocol — the wire format api/mcp/messaging use to ship traces and metrics to the collector (gRPC on 4317; OTLP/HTTP for browser RUM) |
+| **RUM** | Real User Monitoring — browser-side tracing in `src/web`, capturing document load and `fetch` spans and exporting them to the collector |
+| **Tempo** | Grafana's trace backend; the collector's trace sink, queried through Grafana alongside Prometheus metrics |
 | **k3d** | A tool for running lightweight k3s Kubernetes clusters inside Docker, used as the tutorial's local cluster |
 | **CKAD / CKA / CKS / KCNA** | CNCF/Linux Foundation Kubernetes certifications referenced in `CERTIFICATION.md` as the tutorial's target learning outcomes |
 
 ---
 
-*End of specification. 18/18 sections present, none marked N/A. Findings: 15 lettered (F-1…F-15) plus additional unlettered items in the "fragile" and "dead code" sub-buckets — 30+ total findings.*
+*End of specification. 18/18 sections present, none marked N/A. Findings: 18 lettered (F-1…F-18) plus additional unlettered items in the "fragile" and "dead code" sub-buckets — 35+ total findings.*
+
+*Revised 2026-08-23: added `mytravels.mcp` and the OpenTelemetry/Prometheus/Tempo/Grafana observability stack, which the original spec predated (§1–§6, §10, §14, §15, §18). Corrected §11's secrets claims — the asserted `*secret.yaml` gitignore rule does not exist and stage-3 secrets are committed, including a live-format Azure credential (F-18). Corrected the `web` image skew from v1.0.5 to v1.0.6.*
