@@ -2298,4 +2298,222 @@
       </root>
     </mxGraphModel>
   </diagram>
+  <diagram id="NetworkBoundaries1" name="Network Boundaries">
+    <mxGraphModel dx="1222" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="nb-1" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=22;fontStyle=1;" value="Network Boundaries" vertex="1">
+          <mxGeometry height="32" width="470" x="40" y="18" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-2" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=11;fontColor=#666666;" value="MyTravels on k3d &amp;mdash; how a request crosses from the laptop to a pod, and which objects are &lt;b&gt;intent&lt;/b&gt; versus &lt;b&gt;infrastructure&lt;/b&gt;." vertex="1">
+          <mxGeometry height="34" width="470" x="40" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#B3B3B3;container=0;" value="" vertex="1">
+          <mxGeometry height="100" width="270" x="520" y="18" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-4" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=10;fontStyle=1;" value="Object classes" vertex="1">
+          <mxGeometry height="18" width="240" x="532" y="22" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;container=0;" value="" vertex="1">
+          <mxGeometry height="16" width="16" x="534" y="46" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-6" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=9;" value="&lt;b&gt;Intent&lt;/b&gt; &amp;mdash; what you declare in YAML" vertex="1">
+          <mxGeometry height="20" width="220" x="558" y="44" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;container=0;" value="" vertex="1">
+          <mxGeometry height="16" width="16" x="534" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-8" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=9;" value="&lt;b&gt;Infrastructure&lt;/b&gt; &amp;mdash; what realises it" vertex="1">
+          <mxGeometry height="20" width="220" x="558" y="68" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-9" parent="1" style="shape=line;html=1;strokeWidth=2;strokeColor=#D79B00;dashed=1;container=0;" value="" vertex="1">
+          <mxGeometry height="16" width="20" x="532" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-10" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=9;fontColor=#996600;" value="dashed arrow = &lt;b&gt;realised by&lt;/b&gt;" vertex="1">
+          <mxGeometry height="18" width="220" x="558" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-11" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=1;dashPattern=8 4;strokeWidth=2;container=0;" value="" vertex="1">
+          <mxGeometry height="100" width="440" x="60" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-12" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=10;fontStyle=1;fontColor=#666666;" value="Local machine &amp;mdash; host network" vertex="1">
+          <mxGeometry height="18" width="300" x="72" y="136" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-13" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;container=0;fontSize=10;" value="&lt;b&gt;Browser&lt;/b&gt;&lt;br&gt;http://web.mytravels.local:&lt;b&gt;8080&lt;/b&gt;" vertex="1">
+          <mxGeometry height="60" width="200" x="78" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-14" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;container=0;fontSize=9;" value="&lt;b&gt;/etc/hosts&lt;/b&gt;&lt;br&gt;127.0.0.1 web.mytravels.local&lt;br&gt;&#8230; api / mcp / messaging / rabbitmq / minio" vertex="1">
+          <mxGeometry height="60" width="200" x="292" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e15" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;strokeColor=#999999;dashed=1;fontSize=9;fontColor=#666666;labelBackgroundColor=#FFFFFF;endArrow=open;endFill=0;" value="resolves" edge="1" source="nb-14" target="nb-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-16" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#0DB7ED;dashed=1;dashPattern=8 4;strokeWidth=2;container=0;" value="" vertex="1">
+          <mxGeometry height="98" width="440" x="60" y="264" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-17" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=10;fontStyle=1;fontColor=#0DB7ED;" value="Docker network &amp;mdash; k3d bridge" vertex="1">
+          <mxGeometry height="18" width="300" x="72" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-18" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;container=0;fontSize=10;" value="&lt;b&gt;k3d-mytravels-serverlb&lt;/b&gt;&lt;br&gt;load balancer container &amp;mdash; the only HTTP port published&lt;br&gt;host &lt;b&gt;8080&lt;/b&gt; &#8594; cluster &lt;b&gt;80&lt;/b&gt;" vertex="1">
+          <mxGeometry height="60" width="412" x="78" y="292" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e19" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#326CE5;fontSize=11;fontStyle=1;fontColor=#326CE5;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;" value=":8080" edge="1" source="nb-13" target="nb-18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-20" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#326CE5;strokeWidth=2;container=0;" value="" vertex="1">
+          <mxGeometry height="748" width="730" x="60" y="394" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-21" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=10;fontStyle=1;fontColor=#326CE5;" value="Kubernetes cluster &amp;mdash; k3d-mytravels (2 servers &#183; 4 agents) &#183; namespace &lt;b&gt;mytravels-default&lt;/b&gt;" vertex="1">
+          <mxGeometry height="18" width="500" x="72" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-22" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;container=0;fontSize=10;align=left;spacingLeft=62;" value="&lt;b&gt;Service&lt;/b&gt; &#183; type: LoadBalancer&lt;br&gt;traefik &#183; kube-system &#183; port &lt;b&gt;80&lt;/b&gt; (entrypoint web)" vertex="1">
+          <mxGeometry height="60" width="360" x="90" y="432" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-23" parent="1" style="aspect=fixed;sketch=0;html=1;dashed=0;whitespace=wrap;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#2875E2;strokeColor=#ffffff;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.kubernetes.icon2;kubernetesLabel=1;container=0;prIcon=svc" value="" vertex="1">
+          <mxGeometry height="46" width="48" x="98" y="438" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-24" parent="1" style="shape=note;strokeWidth=2;size=16;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#666600;fontSize=10;align=left;verticalAlign=top;container=0;" value="The cluster&#39;s only HTTP entrypoint. Created by&lt;br&gt;&lt;b&gt;k3d cluster create -p &quot;8080:80@loadbalancer&quot;&lt;/b&gt;&lt;br&gt;Every host name is routed on this one port." vertex="1">
+          <mxGeometry height="72" width="306" x="474" y="426" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e25" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#326CE5;fontSize=11;fontStyle=1;fontColor=#326CE5;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;" value=":80" edge="1" source="nb-18" target="nb-22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e26" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#D79B00;dashed=1;fontSize=9;fontColor=#996600;labelBackgroundColor=#FFFFFF;endArrow=open;endFill=0;" value="realised by" edge="1" source="nb-22" target="nb-18">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="72" y="480" /><mxPoint x="72" y="336" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="nb-27" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;container=0;fontSize=10;align=left;spacingLeft=62;" value="&lt;b&gt;Ingress Controller&lt;/b&gt;&lt;br&gt;Traefik Deployment &#183; kube-system&lt;br&gt;reads Ingress objects, terminates HTTP,&lt;br&gt;routes by Host header" vertex="1">
+          <mxGeometry height="90" width="360" x="90" y="524" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-28" parent="1" style="aspect=fixed;sketch=0;html=1;dashed=0;whitespace=wrap;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#2875E2;strokeColor=#ffffff;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.kubernetes.icon2;kubernetesLabel=1;container=0;prIcon=pod" value="" vertex="1">
+          <mxGeometry height="46" width="48" x="98" y="546" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-29" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;container=0;fontSize=10;align=left;spacingLeft=62;" value="&lt;b&gt;Ingress&lt;/b&gt; &#215; 5&lt;br&gt;host rules on *.mytravels.local&lt;br&gt;web &#183; api &#183; messaging &#183; mcp&lt;br&gt;rabbitmq &amp; minio consoles" vertex="1">
+          <mxGeometry height="90" width="306" x="474" y="524" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-30" parent="1" style="aspect=fixed;sketch=0;html=1;dashed=0;whitespace=wrap;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#2875E2;strokeColor=#ffffff;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.kubernetes.icon2;kubernetesLabel=1;container=0;prIcon=ing" value="" vertex="1">
+          <mxGeometry height="46" width="48" x="482" y="546" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e31" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#D79B00;dashed=1;fontSize=9;fontColor=#996600;labelBackgroundColor=#FFFFFF;endArrow=open;endFill=0;" value="realised by" edge="1" source="nb-29" target="nb-27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e32" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#326CE5;fontSize=11;fontStyle=1;fontColor=#326CE5;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;" value="" edge="1" source="nb-22" target="nb-27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-33" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;container=0;fontSize=10;align=left;verticalAlign=top;spacingTop=4;spacingLeft=8;" value="&lt;b&gt;Services&lt;/b&gt; &#183; ClusterIP &#183; stable virtual IP + DNS name" vertex="1">
+          <mxGeometry height="104" width="530" x="90" y="654" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-34" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82B366;fontSize=9;container=0;" value="web&lt;br&gt;port &lt;b&gt;80&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="96" y="698" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-35" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82B366;fontSize=9;container=0;" value="api&lt;br&gt;port &lt;b&gt;5101&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="171" y="698" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-36" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82B366;fontSize=9;container=0;" value="messaging&lt;br&gt;port &lt;b&gt;5102&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="246" y="698" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-37" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82B366;fontSize=9;container=0;" value="mcp&lt;br&gt;port &lt;b&gt;5103&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="321" y="698" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-38" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82B366;fontSize=9;container=0;" value="postgres&lt;br&gt;port &lt;b&gt;5432&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="396" y="698" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-39" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82B366;fontSize=9;container=0;" value="rabbitmq&lt;br&gt;port &lt;b&gt;5672&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="471" y="698" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-40" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82B366;fontSize=9;container=0;" value="minio&lt;br&gt;port &lt;b&gt;9000&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="546" y="698" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-41" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;container=0;fontSize=9;align=center;verticalAlign=bottom;spacingBottom=4;" value="&lt;b&gt;kube-proxy&lt;/b&gt;&lt;br&gt;iptables / IPVS rules&lt;br&gt;on every node" vertex="1">
+          <mxGeometry height="104" width="140" x="640" y="654" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-42" parent="1" style="aspect=fixed;sketch=0;html=1;dashed=0;whitespace=wrap;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#2875E2;strokeColor=#ffffff;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.kubernetes.icon2;kubernetesLabel=1;container=0;prIcon=k_proxy" value="" vertex="1">
+          <mxGeometry height="46" width="48" x="692" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e43" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#D79B00;dashed=1;fontSize=9;fontColor=#996600;labelBackgroundColor=#FFFFFF;endArrow=open;endFill=0;" value="realised by" edge="1" source="nb-33" target="nb-41">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e44" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#326CE5;fontSize=11;fontStyle=1;fontColor=#326CE5;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;" value="" edge="1" source="nb-27" target="nb-33">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-45" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;container=0;fontSize=10;align=left;verticalAlign=top;spacingTop=4;spacingLeft=8;" value="&lt;b&gt;Pods&lt;/b&gt; &#183; the actual running containers, on some node" vertex="1">
+          <mxGeometry height="104" width="530" x="90" y="798" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-46" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D79B00;fontSize=9;container=0;" value="web&lt;br&gt;container&lt;br&gt;&lt;b&gt;80&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="96" y="842" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-47" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D79B00;fontSize=9;container=0;" value="api&lt;br&gt;container&lt;br&gt;&lt;b&gt;5101&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="171" y="842" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-48" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D79B00;fontSize=9;container=0;" value="messaging&lt;br&gt;container&lt;br&gt;&lt;b&gt;5102&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="246" y="842" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-49" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D79B00;fontSize=9;container=0;" value="mcp&lt;br&gt;container&lt;br&gt;&lt;b&gt;5103&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="321" y="842" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-50" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D79B00;fontSize=9;container=0;" value="postgres&lt;br&gt;container&lt;br&gt;&lt;b&gt;5432&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="396" y="842" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-51" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D79B00;fontSize=9;container=0;" value="rabbitmq&lt;br&gt;container&lt;br&gt;&lt;b&gt;5672&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="471" y="842" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-52" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D79B00;fontSize=9;container=0;" value="minio&lt;br&gt;container&lt;br&gt;&lt;b&gt;9000&lt;/b&gt;" vertex="1">
+          <mxGeometry height="48" width="68" x="546" y="842" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-53" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;container=0;fontSize=9;align=center;verticalAlign=bottom;spacingBottom=4;" value="&lt;b&gt;Deployment&lt;/b&gt;&lt;br&gt;+ Job (migrations)&lt;br&gt;replicas &amp; pod template" vertex="1">
+          <mxGeometry height="104" width="140" x="640" y="798" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-54" parent="1" style="aspect=fixed;sketch=0;html=1;dashed=0;whitespace=wrap;verticalLabelPosition=bottom;verticalAlign=top;fillColor=#2875E2;strokeColor=#ffffff;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.kubernetes.icon2;kubernetesLabel=1;container=0;prIcon=deploy" value="" vertex="1">
+          <mxGeometry height="46" width="48" x="692" y="804" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e55" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#D79B00;dashed=1;fontSize=9;fontColor=#996600;labelBackgroundColor=#FFFFFF;endArrow=open;endFill=0;" value="realised by" edge="1" source="nb-53" target="nb-45">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e56" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#326CE5;fontSize=11;fontStyle=1;fontColor=#326CE5;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;" value="targetPort" edge="1" source="nb-33" target="nb-45">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-57" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#326CE5;dashed=1;dashPattern=8 4;container=0;" value="" vertex="1">
+          <mxGeometry height="186" width="690" x="90" y="942" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-58" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=10;fontStyle=1;fontColor=#326CE5;" value="Node &amp;mdash; k3d-mytravels-agent-2 (MinIO pinned here by nodeSelector; PVs bound by nodeAffinity)" vertex="1">
+          <mxGeometry height="18" width="560" x="100" y="946" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-59" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=9;fontStyle=1;fontColor=#5A8A44;align=center;" value="&lt;b&gt;PVC&lt;/b&gt;&lt;br&gt;intent" vertex="1">
+          <mxGeometry height="52" width="92" x="98" y="972" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-60" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=9;fontStyle=1;fontColor=#996600;align=center;" value="&lt;b&gt;PV&lt;/b&gt;&lt;br&gt;infrastructure" vertex="1">
+          <mxGeometry height="52" width="92" x="98" y="1048" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-61" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;container=0;fontSize=9;" value="minio-data-pvc&lt;br&gt;200Mi &#183; &lt;b&gt;manual&lt;/b&gt;" vertex="1">
+          <mxGeometry height="52" width="180" x="200" y="972" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-62" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;container=0;fontSize=9;" value="minio-data-pv&lt;br&gt;hostPath /mnt/minio/data" vertex="1">
+          <mxGeometry height="52" width="180" x="200" y="1048" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e63" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#D79B00;dashed=1;fontSize=9;fontColor=#996600;labelBackgroundColor=#FFFFFF;endArrow=open;endFill=0;" value="" edge="1" source="nb-61" target="nb-62">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e64" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#326CE5;fontSize=11;fontStyle=1;fontColor=#326CE5;labelBackgroundColor=#FFFFFF;endArrow=blockThin;endFill=1;endArrow=none;strokeWidth=2;" value="volumeMounts" edge="1" source="nb-45" target="nb-61">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="300" y="922" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="nb-65" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;container=0;fontSize=9;" value="minio-config-pvc&lt;br&gt;50Mi &#183; &lt;b&gt;manual&lt;/b&gt;" vertex="1">
+          <mxGeometry height="52" width="180" x="390" y="972" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-66" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;container=0;fontSize=9;" value="minio-config-pv&lt;br&gt;hostPath /mnt/minio/config" vertex="1">
+          <mxGeometry height="52" width="180" x="390" y="1048" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e67" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#D79B00;dashed=1;fontSize=9;fontColor=#996600;labelBackgroundColor=#FFFFFF;endArrow=open;endFill=0;" value="bound to" edge="1" source="nb-65" target="nb-66">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-68" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;container=0;fontSize=9;" value="postgres-data-pvc&lt;br&gt;200Mi &#183; &lt;b&gt;local-path&lt;/b&gt;" vertex="1">
+          <mxGeometry height="52" width="180" x="580" y="972" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-69" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;container=0;fontSize=9;" value="PV provisioned on demand&lt;br&gt;by the local-path provisioner" vertex="1">
+          <mxGeometry height="52" width="180" x="580" y="1048" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-e70" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#D79B00;dashed=1;fontSize=9;fontColor=#996600;labelBackgroundColor=#FFFFFF;endArrow=open;endFill=0;" value="" edge="1" source="nb-68" target="nb-69">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
 </mxfile>
