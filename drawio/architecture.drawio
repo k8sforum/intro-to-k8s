@@ -2363,7 +2363,7 @@
         <mxCell id="nb-20" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#326CE5;strokeWidth=2;container=0;" value="" vertex="1">
           <mxGeometry height="748" width="730" x="60" y="394" as="geometry" />
         </mxCell>
-        <mxCell id="nb-21" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=10;fontStyle=1;fontColor=#326CE5;" value="Kubernetes cluster &amp;mdash; k3d-mytravels (2 servers &#183; 4 agents) &#183; namespace &lt;b&gt;mytravels-default&lt;/b&gt;" vertex="1">
+        <mxCell id="nb-21" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;container=0;fontSize=10;fontStyle=1;fontColor=#326CE5;" value="Kubernetes cluster &amp;mdash; k3d-mytravels (3 servers &#183; 4 agents) &#183; namespace &lt;b&gt;mytravels-default&lt;/b&gt;" vertex="1">
           <mxGeometry height="18" width="500" x="72" y="400" as="geometry" />
         </mxCell>
         <mxCell id="nb-22" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;container=0;fontSize=10;align=left;spacingLeft=62;" value="&lt;b&gt;Service&lt;/b&gt; &#183; type: LoadBalancer&lt;br&gt;traefik &#183; kube-system &#183; port &lt;b&gt;80&lt;/b&gt; (entrypoint web)" vertex="1">
