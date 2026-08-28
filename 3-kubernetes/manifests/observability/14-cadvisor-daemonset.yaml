@@ -19,6 +19,18 @@ spec:
       # /var/run/secrets/..., which cannot be created underneath the read-only
       # /var/run hostPath mount below (the image symlinks /var/run -> /run).
       automountServiceAccountToken: false
+      initContainers:
+        - name: increase-ulimit
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              echo "Increasing file descriptor limits..."
+              sysctl -w fs.file-max=2097152 fs.nr_open=2097152 || true
+              cat /proc/sys/fs/file-max /proc/sys/fs/nr_open
+          securityContext:
+            privileged: true
       containers:
         - name: cadvisor
           image: gcr.io/cadvisor/cadvisor:v0.49.1
