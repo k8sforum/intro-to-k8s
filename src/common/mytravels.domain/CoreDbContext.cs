@@ -22,7 +22,7 @@ namespace mytravels.domain
         public DbSet<Tag> Tags { get; set; }
         public DbSet<GetPointOfInterestResponse> GetPointOfInterestResponses { get; set; }
         public DbSet<PointOfInterestAuditLog> PointOfInterestAuditLogs { get; set; }
- public void DetachObject(object entity) => Entry(entity).State = EntityState.Detached;
+        public void DetachObject(object entity) => Entry(entity).State = EntityState.Detached;
         public void DeleteObject(object entity) => Entry(entity).State = EntityState.Deleted;
         public void AddObject(object entity) => Entry(entity).State = EntityState.Added;
 
