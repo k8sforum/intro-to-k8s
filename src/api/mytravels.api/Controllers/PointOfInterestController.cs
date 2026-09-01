@@ -41,6 +41,15 @@ namespace mytravels.api.Controllers
             return Ok(dtos);
         }
 
+        [HttpGet("search")]
+        [ProducesResponseType(typeof(List<PointOfInterestDto>), 200)]
+        public async Task<IActionResult> SearchAsync([FromQuery] string term, CancellationToken cancellationToken)
+        {
+            List<GetPointOfInterestResponse> response = await _service.SearchAsync(term, cancellationToken);
+            List<PointOfInterestDto> dtos = response.ToDto();
+            return Ok(dtos);
+        }
+
         [HttpGet("{id:int}")]
         [ProducesResponseType(typeof(string), 200)]
         public async Task<IActionResult> GetImageAsync([FromRoute] int id, [FromQuery] bool resizedImage, CancellationToken cancellationToken)

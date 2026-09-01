@@ -33,4 +33,5 @@ public interface ICoreDbContext
     Task<List<GetPointOfInterestResponse>> GetPointsOfInterestByTagAsync(string tagName, CancellationToken cancellationToken);
     Task<List<GetPointOfInterestResponse>> GetPointsOfInterestByKeyAsync(string pointOfInterestKey, CancellationToken cancellationToken);
     Task<List<GetPointOfInterestResponse>> GetAllPointsOfInterestAsync(CancellationToken cancellationToken);
+    Task<List<GetPointOfInterestResponse>> SearchPointsOfInterestByFormattedAddressAsync(string searchTerm, CancellationToken cancellationToken);
 }

@@ -41,6 +41,32 @@ namespace mytravels.domain
         public async Task<List<GetPointOfInterestResponse>> GetAllPointsOfInterestAsync(CancellationToken cancellationToken)
             => await ExecuteProcRawAsync<GetPointOfInterestResponse>("SELECT * FROM public.spGetPointOfInterest()");
 
+        public async Task<List<GetPointOfInterestResponse>> SearchPointsOfInterestByFormattedAddressAsync(string searchTerm, CancellationToken cancellationToken)
+        {
+            var results = await this.PointOfInterests
+                .Where(p => EF.Functions.ILike(p.FormattedAddress, $"%{searchTerm}%"))
+                .Select(p => new GetPointOfInterestResponse
+                {
+                    RowId = p.Id,
+                    PointOfInterestId = p.Id,
+                    Container = p.Container,
+                    OriginalFileName = p.OriginalFileName,
+                    GeneratedBlobName = p.GeneratedBlobName,
+                    Latitude = p.Latitude,
+                    Longitude = p.Longitude,
+                    DateCreated = p.DateCreated,
+                    DateTaken = p.DateTaken,
+                    FormattedAddress = p.FormattedAddress,
+                    ImageResized = p.ImageResized,
+                    PointOfInterestKey = p.PointOfInterestKey,
+                    TagId = null,
+                    TagName = null
+                })
+                .ToListAsync(cancellationToken);
+
+            return results;
+        }
+
         public async Task<int> UpdatePointOfInterestTagsAsync(List<SavePointOfInterestDto> dtos, CancellationToken cancellationToken)
         {
             if (dtos.Count == 0) return 0;

@@ -18,78 +18,45 @@ public class PointOfInterestMcpTools
         _service = service ?? throw new ArgumentNullException(nameof(service));
     }
 
-    [McpServerTool(Name = "upload_photo")]
-    [Description("Uploads a photo as a new point of interest, reading GPS coordinates from the photo's EXIF metadata. Fails if the photo carries no GPS metadata — use upload_photo_with_coordinates instead in that case.")]
-    public async Task<SaveEntityResponseDto> UploadPhotoAsync(
-        [Description("Base64-encoded raw bytes of the image file.")] string fileContentBase64,
-        [Description("Original file name, including extension, e.g. 'beach.jpg'.")] string fileName,
+    [McpServerTool(Name = "search_pointofinterest")]
+    [Description("Searches for points of interest by formatted address, returning all matching records.")]
+    public async Task<List<PointOfInterestDto>> SearchPointOfInterestAsync(
+        [Description("Search term to find in the formatted address field.")] string term,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(fileContentBase64)) throw new McpException($"'{nameof(fileContentBase64)}' is required.");
-        if (string.IsNullOrWhiteSpace(fileName)) throw new McpException($"'{nameof(fileName)}' is required.");
+        if (string.IsNullOrWhiteSpace(term)) throw new McpException($"'{nameof(term)}' is required.");
 
-        IFormFile file = ToFormFile(fileContentBase64, fileName);
-
-        try
-        {
-            int id = await _service.SaveFileAsPointOfInsterestAsync(file, cancellationToken);
-            return new SaveEntityResponseDto { Id = id };
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new McpException(ex.Message, ex);
-        }
+        var response = await _service.SearchAsync(term, cancellationToken);
+        return ToDto(response);
     }
 
-    [McpServerTool(Name = "upload_photo_with_coordinates")]
-    [Description("Uploads a photo as a new point of interest using explicit latitude/longitude, for photos that carry no GPS metadata.")]
-    public async Task<SaveEntityResponseDto> UploadPhotoWithCoordinatesAsync(
-        [Description("Base64-encoded raw bytes of the image file.")] string fileContentBase64,
-        [Description("Original file name, including extension, e.g. 'beach.jpg'.")] string fileName,
-        [Description("Latitude, -90 to 90.")] double latitude,
-        [Description("Longitude, -180 to 180.")] double longitude,
-        [Description("Optional human-readable address to store alongside the coordinates.")] string formattedAddress,
-        CancellationToken cancellationToken)
+    private static List<PointOfInterestDto> ToDto(List<mytravels.contract.Responses.GetPointOfInterestResponse> target)
     {
-        if (string.IsNullOrWhiteSpace(fileContentBase64)) throw new McpException($"'{nameof(fileContentBase64)}' is required.");
-        if (string.IsNullOrWhiteSpace(fileName)) throw new McpException($"'{nameof(fileName)}' is required.");
-
-        SaveCoordinatesDto coordinates = new() 
+        IEnumerable<IGrouping<int, mytravels.contract.Responses.GetPointOfInterestResponse>> groupedPointOfInterestResponses = target.GroupBy(x => x.PointOfInterestId);
+        List<PointOfInterestDto> dtos = new();
+        foreach (var group in groupedPointOfInterestResponses)
         {
-            Latitude = latitude,
-            Longitude = longitude,
-            FormattedAddress = formattedAddress
-        };
-
-        List<ValidationResult> validationResults = new();
-        if (!Validator.TryValidateObject(coordinates, new ValidationContext(coordinates), validationResults, validateAllProperties: true))
-        {
-            string errors = string.Join("; ", validationResults.Select(r => r.ErrorMessage));
-            throw new McpException($"Invalid coordinates: {errors}");
+            var first = group.First();
+            PointOfInterestDto dto = new PointOfInterestDto
+            {
+                Id = first.PointOfInterestId,
+                DateCreated = first.DateCreated,
+                DateTaken = first.DateTaken,
+                FormattedAddress = first.FormattedAddress,
+                Latitude = first.Latitude,
+                Longitude = first.Longitude,
+                PointOfInterestKey = first.PointOfInterestKey,
+                Tags = group
+                            .Where(x => x.TagId is not null)
+                            .Select(x => new TagDto
+                            {
+                                Id = x.TagId ?? 0,
+                                Name = x.TagName
+                            })
+                            .ToList()
+            };
+            dtos.Add(dto);
         }
-
-        IFormFile file = ToFormFile(fileContentBase64, fileName);
-        int id = await _service.SaveFileAsPointOfInsterestAsync(file, coordinates, cancellationToken);
-        return new SaveEntityResponseDto { Id = id };
-    }
-
-    private static IFormFile ToFormFile(string base64Content, string fileName)
-    {
-        byte[] bytes;
-        try
-        {
-            bytes = Convert.FromBase64String(base64Content);
-        }
-        catch (FormatException ex)
-        {
-            throw new McpException($"'{nameof(base64Content)}' is not valid base64.", ex);
-        }
-
-        var stream = new MemoryStream(bytes);
-        return new FormFile(stream, 0, stream.Length, "image", fileName)
-        {
-            Headers = new HeaderDictionary(),
-            ContentType = "application/octet-stream"
-        };
+        return dtos;
     }
 }

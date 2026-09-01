@@ -8,6 +8,7 @@ public interface IPointOfInterestService
 {
     Task<List<GetPointOfInterestResponse>> GetAsync(CancellationToken cancellationToken);
     Task<List<GetPointOfInterestResponse>> GetAsync(string tagName, CancellationToken cancellationToken);
+    Task<List<GetPointOfInterestResponse>> SearchAsync(string searchTerm, CancellationToken cancellationToken);
     Task<int> SaveFileAsPointOfInsterestAsync(IFormFile file, CancellationToken cancellationToken);
     Task<int> SaveFileAsPointOfInsterestAsync(IFormFile file, SaveCoordinatesDto coordinates, CancellationToken cancellationToken);
     Task<int> UpdatePointOfInterestAsync(IFormFile file, string pointOfInterestKey, CancellationToken cancellationToken);

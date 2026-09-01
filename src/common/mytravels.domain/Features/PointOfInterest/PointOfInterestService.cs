@@ -41,6 +41,9 @@ namespace mytravels.domain.Features.PointOfInterest
         public async Task<List<GetPointOfInterestResponse>> GetAsync(string tagName, CancellationToken cancellationToken)
             => await _context.GetPointsOfInterestByTagAsync(tagName, cancellationToken);
 
+        public async Task<List<GetPointOfInterestResponse>> SearchAsync(string searchTerm, CancellationToken cancellationToken)
+            => await _context.SearchPointsOfInterestByFormattedAddressAsync(searchTerm, cancellationToken);
+
         public async Task<int> SaveFileAsPointOfInsterestAsync(IFormFile file, CancellationToken cancellationToken)
         {
             string objectName = await _objectStorageService.SaveObjectAsync(file, BucketNames.NewUploadedImagesContainer, cancellationToken);
