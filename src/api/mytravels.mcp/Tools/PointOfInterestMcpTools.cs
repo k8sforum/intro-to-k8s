@@ -54,14 +54,14 @@ public class PointOfInterestMcpTools
         if (string.IsNullOrWhiteSpace(fileContentBase64)) throw new McpException($"'{nameof(fileContentBase64)}' is required.");
         if (string.IsNullOrWhiteSpace(fileName)) throw new McpException($"'{nameof(fileName)}' is required.");
 
-        var coordinates = new SaveCoordinatesDto
+        SaveCoordinatesDto coordinates = new() 
         {
             Latitude = latitude,
             Longitude = longitude,
             FormattedAddress = formattedAddress
         };
 
-        var validationResults = new List<ValidationResult>();
+        List<ValidationResult> validationResults = new();
         if (!Validator.TryValidateObject(coordinates, new ValidationContext(coordinates), validationResults, validateAllProperties: true))
         {
             string errors = string.Join("; ", validationResults.Select(r => r.ErrorMessage));

@@ -55,6 +55,7 @@ builder.Services.AddMapsService(builder.Configuration);
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+builder.Services.AddTransient<IImageDescriptionService, AnthropicImageDescriptionService>();
 builder.Services.AddDbContext<ICoreDbContext, CoreDbContext>(
 options =>
 {

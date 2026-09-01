@@ -2,6 +2,7 @@
 
 **Repository:** `k8sforum/intro-to-k8s`
 **Generated:** 2026-08-19, reverse-engineered from source (`devops/` excluded per instruction — none exists in this repo).
+**Revised:** 2026-09-01 — added Anthropic image description integration, cAdvisor file descriptor limits fix.
 
 This document specifies two things that are inseparable in this repo:
 
@@ -14,18 +15,18 @@ Throughout, **Observed:** marks behavior read directly from code/config; **Infer
 
 ## 1. Overview
 
-**MyTravels** lets a user upload a geotagged photo (or pick a location manually) to create a "Point of Interest" pin on a map. GPS coordinates are read from the photo's EXIF data on upload; if absent, the user searches for and picks a place instead. A background worker asynchronously (a) resizes the uploaded image into a thumbnail and (b) resolves a human-readable address for the coordinates via a maps geocoding API. The frontend is a single-page map view (Leaflet) that polls for updates while async resolution completes.
+**MyTravels** lets a user upload a geotagged photo (or pick a location manually) to create a "Point of Interest" pin on a map. GPS coordinates are read from the photo's EXIF data on upload; if absent, the user searches for and picks a place instead. A background worker asynchronously (a) resizes the uploaded image into a thumbnail and (b) resolves a human-readable address for the coordinates via a maps geocoding API. The frontend is a single-page map view (Leaflet) that polls for updates while async resolution completes. Users can also request AI-generated descriptions and scene tags for a photo via Claude Haiku (Anthropic).
 
 **Top-level components:**
 
 | Component | Role | Source |
 |---|---|---|
-| `mytravels.api` | REST API — CRUD for POIs, image upload, place search | `src/api/mytravels.api/` |
+| `mytravels.api` | REST API — CRUD for POIs, image upload, place search, image description | `src/api/mytravels.api/` |
 | `mytravels.mcp` | Model Context Protocol tool server — exposes photo upload and place search as MCP tools for LLM clients | `src/api/mytravels.mcp/` |
 | `mytravels.messaging` | Background worker — image resize, address resolution, retry sweep | `src/messaging/mytravels.messaging/` |
 | `mytravels.migration` | One-shot EF Core migration bundle runner | `src/common/mytravels.migration/` |
-| `web` | React SPA — map UI, upload flow | `src/web/` |
-| `mytravels.common` / `mytravels.contract` / `mytravels.domain` / `mytravels.storage` | Shared libraries (DTOs, entities, EF Core context, geo/maps services, object storage) | `src/common/` |
+| `web` | React SPA — map UI, upload flow, image description UI | `src/web/` |
+| `mytravels.common` / `mytravels.contract` / `mytravels.domain` / `mytravels.storage` | Shared libraries (DTOs, entities, EF Core context, geo/maps services, object storage, Anthropic integration) | `src/common/` |
 
 An **observability stack** (OTel Collector → Prometheus/Tempo → Grafana, plus postgres-exporter and cAdvisor) runs alongside the app in stages 1, 3, and 4. It is infrastructure rather than a MyTravels component, so it is specified separately in §4 and §14 rather than given a row above.
 
@@ -38,13 +39,14 @@ An **observability stack** (OTel Collector → Prometheus/Tempo → Grafana, plu
                            │ REST             └──────┬───────┘
                            │ (baked-in URL)          │ MCP over streamable HTTP
                            ▼                         ▼
-                    ┌──────────────┐        ┌──────────────┐
-                    │ api (5101)   │        │  mcp (5103)  │
-                    └──────┬───────┘        └──────┬───────┘
-                           │                       │
-                           └───────┬───────────────┘
-                                   │ both use IPointOfInterestService / IMapsService
-                                   ▼
+                    ┌──────────────┐        ┌──────────────┐         ┌──────────────┐
+                    │ api (5101)   │        │  mcp (5103)  │         │ Anthropic    │
+                    └──────┬───────┤        └──────┬───────┤         │ (image desc) │
+                           │       │               │       │         └──────────────┘
+                           │       └───────────────┴───────┤                  ▲
+                           │         describe image        │──────────────────┘
+                           │ both use IPointOfInterestService / IMapsService
+                           ▼
                     ┌──────────────┐        ┌───────────────┐
                     │  RabbitMQ    │◄───────│  PostgreSQL   │
                     │ (5672/15672) │        │  (5432)       │
@@ -198,6 +200,7 @@ Excluded from the tree above (per instructions/format norms): `node_modules/`, `
 | RabbitMQ | 3-management (Docker tag) / RabbitMQ.Client 7.1.2 (.NET SDK) | `1-dockerize/docker-compose.yml`, `src/common/mytravels.common/mytravels.common.csproj` |
 | MinIO | `quay.io/minio/minio` (latest tag, unpinned) / Minio SDK 6.0.5 | `1-dockerize/docker-compose.yml`, `src/common/mytravels.storage/mytravels.storage.csproj` |
 | Azure.Storage.Blobs | 12.24.0 (present but unused — see Finding F-1) | `src/common/mytravels.storage/mytravels.storage.csproj` |
+| Anthropic (.NET SDK) | 12.44.0 | `src/common/mytravels.common/mytravels.common.csproj` — used by `AnthropicImageDescriptionService` for Claude Haiku image description |
 | Magick.NET-Q16-AnyCPU | 14.10.0 | `src/messaging/mytravels.messaging/mytravels.messaging.csproj` |
 | Flurl.Http | 4.0.2 | `src/common/mytravels.common/mytravels.common.csproj` |
 | Polly | 8.5.2 | `src/common/mytravels.common/mytravels.common.csproj` |
@@ -242,7 +245,7 @@ Excluded from the tree above (per instructions/format norms): `node_modules/`, `
 | `mytravels.mcp` | MCP tool surface for LLM clients | Tool schema/descriptions, base64→`IFormFile` marshalling, tool-level argument validation | `PointOfInterestMcpTools`, `PlaceMcpTools` | common, contract, domain, storage |
 | `mytravels.messaging` | Async processing | Image resize, address resolution, retry sweep | `ResizeImage`, `AppendFormattedAddress`, `AppendFormattedAddressSweeper` (all `IHostedService`/`BackgroundService`) | common, contract, domain, storage |
 | `mytravels.migration` | Schema management | Produces `efbundle` — a self-contained EF Core migration-apply executable; not itself a migration runner at execution time (see Finding F-3) | `CoreDbContextFactory` (design-time only) | domain |
-| `mytravels.common` | Cross-cutting services | Geocoding (Google/OSM), RabbitMQ publish/subscribe base classes, cron scheduling base class | `GoogleMapsService`, `OpenStreetMapsService`, `ImageMetadataService`, `MessagePublisher`, `MessageSubscriberBase<T>`, `CronJobBase` | contract |
+| `mytravels.common` | Cross-cutting services | Geocoding (Google/OSM), RabbitMQ publish/subscribe base classes, cron scheduling base class, AI image description | `GoogleMapsService`, `OpenStreetMapsService`, `ImageMetadataService`, `AnthropicImageDescriptionService`, `MessagePublisher`, `MessageSubscriberBase<T>`, `CronJobBase` | contract |
 | `mytravels.contract` | Shared data shapes | Entities, DTOs, interfaces, exceptions, constants | `PointOfInterest`, `Tag`, `*Dto`, `ICoreDbContext`, `IObjectStorageService`, `IMapsService` | none (leaf) |
 | `mytravels.domain` | Persistence | EF Core DbContext, migrations, stored-proc invocation, POI business logic | `CoreDbContext`, `PointOfInterestService` | contract |
 | `mytravels.storage` | Object storage abstraction | Blob/object read-write | `MinIOStorageService` (active), `AzureStorageService` (dead code, unregistered) | contract |
@@ -259,6 +262,7 @@ Excluded from the tree above (per instructions/format norms): `node_modules/`, `
 | GET | `/api/pointofinterest` | — | `List<PointOfInterestDto>` | 200 | none |
 | GET | `/api/pointofinterest/filter?filterString=` | query `filterString` | `List<PointOfInterestDto>` | 200 | none |
 | GET | `/api/pointofinterest/{id:int}?resizedImage=bool` | route `id`; query `resizedImage` is accepted but never used (Finding F-2) | `string` (base64 image) | 200 | none |
+| POST | `/api/pointofinterest/{id:int}/describe` | route `id` | `ImageDescriptionDto { description, tags[] }` | 200; 404 if POI not found; 503 if Anthropic not configured; 429 if rate-limited; 422 if image refused; 502 on API errors | none |
 | PUT | `/api/pointofinterest` | multipart: `image` (file), query `pointOfInterestKey` | `SaveEntityResponseDto` | 200; 403 if image/key missing | none |
 | POST | `/api/pointofinterest/image` | multipart: `image` (file) | `SaveEntityResponseDto` | 200; 403 if image missing | none |
 | POST | `/api/pointofinterest/image/coordinates` | multipart: `image` (file) + `coordinates` (`SaveCoordinatesDto`: Latitude/Longitude `[Required][Range]`, FormattedAddress) | `SaveEntityResponseDto` | 200; 403 if image missing; 400 if `ModelState` invalid | none |
@@ -338,6 +342,19 @@ Every 30 minutes, `AppendFormattedAddressSweeper` scans **all** `PointOfInterest
 
 `SaveEntityResponseDto`/`SavePointOfInterestDto` support attaching free-text tags to a POI via `UpdatePointOfInterestTagsAsync`, which serializes the tag list to JSON and calls stored procedure `spUpdatePointOfInterestTags`. Tag names are unique (`Tags.Name` has a unique index).
 
+### 7.5 AI Image Description (on-demand)
+
+1. User clicks "Describe" button in `PoiDialog` (frontend).
+2. Frontend calls `POST /api/pointofinterest/{id}/describe`.
+3. `PointOfInterestService.DescribeImageAsync(id)` retrieves the POI and its original image from MinIO.
+4. `AnthropicImageDescriptionService.DescribeAsync(base64Image)` is called:
+   - Calls Claude Haiku (Anthropic) with the base64 image using structured output (JSON schema).
+   - Haiku returns `{ description, tags[] }` — one-sentence description (max ~20 words) + 3–6 lowercase scene tags.
+5. Frontend displays the description and tags in `PoiDialog`.
+   - No database write — this is purely a display feature, not persistent metadata.
+   - If Anthropic is unconfigured (key unset/placeholder), the endpoint returns 503.
+   - If rate-limited (429) or Anthropic API errors (5xx), those status codes propagate to client.
+
 ---
 
 ## 8. Data Models, Schemas, Validation
@@ -412,6 +429,7 @@ Navigation: `PointOfInterestTagAssociations` (1:N), `PointOfInterestAuditLogs` (
 | `ConnectionStrings:CoreDbContext` | `Host=localhost;...;Username=user123;Password=password123` | yes | `InvalidOperationException` at DI registration |
 | `RabbitMQ:Uri` | `amqp://user123:password123@localhost:5672` | yes | connection factory throws on first use |
 | `MinIO:Endpoint` / `AccessKey` / `SecretKey` | `localhost:9000` / `user123` / `password123` | yes for any storage call | `MinioClient` build fails / calls throw |
+| `AnthropicApiKey` | `<YOUR_ANTHROPIC_API_KEY>` (placeholder) | no — placeholder disables image description feature | `POST /api/pointofinterest/{id}/describe` returns 503 if unset |
 | `GoogleApiKey` | `<YOUR_GOOGLE_API_KEY>` (placeholder) | no — placeholder triggers automatic fallback to OpenStreetMap | geocoding silently switches provider, not an error |
 | `GoogleMapsUrl` | `https://maps.googleapis.com` | only if Google provider active | |
 | `GooglePlacesUrl` | `https://places.googleapis.com` | **dead config — never read** | n/a |
@@ -524,6 +542,7 @@ Stage 4's `.env.example` is structurally distinct from stages 0–3 (drops most 
 
 | Integration | Endpoint | Auth | Failure mode |
 |---|---|---|---|
+| Anthropic Claude Haiku (image description) | `api.anthropic.com` | API key (`AnthropicApiKey`, passed to SDK) | 429 (rate limit) → `ApiException(429, ...)`; 5xx or other API error → `ApiException(502, ...)`; no retries configured; refusal → `ApiException(422, ...)`; unset/placeholder key → `ApiException(503, "service not configured")` |
 | Google Maps Geocoding API | `GoogleMapsUrl` config (`https://maps.googleapis.com`) | API key (`GoogleApiKey` query/header) | Polly: 2 retries, exp. backoff; `InvalidOperationException` thrown on non-OK or missing `formatted_address` after retries exhausted |
 | OpenStreetMap Nominatim (fallback geocoder, used when `GoogleApiKey` is unset/placeholder) | `OpenStreetMapsUrl` config, default `https://nominatim.openstreetmap.org` | none (public API), `User-Agent: mytravels/1.0` default | same Polly retry pattern |
 | OpenStreetMap tile server (frontend only) | `https://tile.openstreetmap.org/{z}/{x}/{y}.png` | none | no fallback/rate-limit handling if OSM throttles |
@@ -592,6 +611,7 @@ Stage 4's `.env.example` is structurally distinct from stages 0–3 (drops most 
 - **Orphan `rabbitmq-config-pvc`** created but never mounted by the RabbitMQ Deployment in stage 3 (fixed in stage 4 per commit `4ced81d`, but the stage-3 manifest was never updated to match). `3-kubernetes/manifests/rabbitmq/3-pvc.yaml` vs. `4-deployment.yaml`.
 - **`3-kubernetes/manifests/messaging/1-secret.yaml` provisions `ContentSafetyEndpoint`/`ContentSafetyKey`** for an Azure Content Safety integration that no code in `src/messaging` references at all — a secret kept for a feature that isn't (or is no longer) implemented (F-15). Compounding this: that Secret is committed (F-18), so the repo carries a live-format Azure credential for an integration it does not even use.
 - **`mytravels.migration.csproj` targets `net10.0` but its EF Core/Hosting/Npgsql packages and pinned `dotnet-ef` CLI tool are all on the `9.0.x` line** — consistent with F-9 but worth flagging separately since it directly affects the migration-bundle build. `src/common/mytravels.migration/mytravels.migration.csproj`, `src/.config/dotnet-tools.json`.
+- **cAdvisor v0.49.1 inotify file descriptor limit [RESOLVED]** — cAdvisor requires kernel file descriptor limits (`fs.file-max` and `fs.nr_open`) set to at least 2097152 to initialize inotify for filesystem monitoring. This was fixed by adding init containers to the cAdvisor DaemonSet in stages 3–4 that run `sysctl` to raise these limits before cAdvisor starts. `3-kubernetes/manifests/observability/14-cadvisor-daemonset.yaml`, `4-argocd/manifests/observability/cadvisor-daemonset.yaml`.
 
 ### Dead code / ambiguous logic / undocumented behaviour
 
