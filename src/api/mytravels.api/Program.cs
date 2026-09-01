@@ -82,6 +82,7 @@ builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
 builder.Services.AddTransient<IObjectStorageService, MinIOStorageService>();
 builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddMapsService(builder.Configuration);
+builder.Services.AddTransient<IImageDescriptionService, AnthropicImageDescriptionService>();
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 

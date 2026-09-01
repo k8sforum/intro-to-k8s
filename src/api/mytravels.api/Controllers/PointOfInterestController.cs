@@ -49,6 +49,14 @@ namespace mytravels.api.Controllers
             return Ok(base64);
         }
 
+        [HttpPost("{id:int}/describe")]
+        [ProducesResponseType(typeof(ImageDescriptionDto), 200)]
+        public async Task<IActionResult> DescribeImageAsync([FromRoute] int id, CancellationToken cancellationToken)
+        {
+            ImageDescriptionDto dto = await _service.DescribeImageAsync(id, cancellationToken);
+            return Ok(dto);
+        }
+
         [HttpPut]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(SaveEntityResponseDto), 200)]

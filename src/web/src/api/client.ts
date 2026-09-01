@@ -1,4 +1,4 @@
-import type { Place, PointOfInterest, SaveEntityResponse } from './types';
+import type { ImageDescription, Place, PointOfInterest, SaveEntityResponse } from './types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5101';
 
@@ -63,6 +63,17 @@ export function uploadPointOfInterestImageAtPlace(
     longitude: String(place.longitude),
     formattedAddress: place.formattedAddress,
   });
+}
+
+export async function describePointOfInterestImage(
+  id: number,
+  signal?: AbortSignal,
+): Promise<ImageDescription> {
+  const response = await fetch(`${BASE_URL}/api/PointOfInterest/${id}/describe`, {
+    method: 'POST',
+    signal,
+  });
+  return unwrap<ImageDescription>(response);
 }
 
 export function searchPlaces(query: string, signal?: AbortSignal): Promise<Place[]> {

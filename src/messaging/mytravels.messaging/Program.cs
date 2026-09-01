@@ -59,6 +59,7 @@ builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
 builder.Services.AddMapsService(builder.Configuration);
 builder.Services.AddTransient<IObjectStorageService, MinIOStorageService>();
+builder.Services.AddTransient<IImageDescriptionService, AnthropicImageDescriptionService>();
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 
 builder.Services.AddHostedService<AppendFormattedAddress>();

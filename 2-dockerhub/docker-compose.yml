@@ -102,6 +102,7 @@ services:
     image: tshepontlhokoa/mytravels-api:v1.0.8
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
+      AnthropicApiKey: ${ANTHROPIC_API_KEY}
       GoogleApiKey: ${GOOGLE_API_KEY}
       GoogleMapsUrl: ${GOOGLE_MAPS_URL}
       GooglePlacesUrl: ${GOOGLE_PLACES_URL}
