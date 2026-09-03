@@ -12,6 +12,7 @@ export interface PointOfInterest {
   dateCreated: string;
   dateTaken: string | null;
   formattedAddress: string;
+  description: string | null;
   tags: Tag[];
 }
 
@@ -23,11 +24,6 @@ export interface Place {
 
 export interface SaveEntityResponse {
   id: number;
-}
-
-export interface ImageDescription {
-  description: string;
-  tags: string[];
 }
 
 export function hasCoordinates(poi: PointOfInterest): boolean {

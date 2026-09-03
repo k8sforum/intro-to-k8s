@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { ImageDescription, PointOfInterest } from "../api/types";
-import { describePointOfInterestImage, getPointOfInterestImage } from "../api/client";
+import type { PointOfInterest } from "../api/types";
+import { getPointOfInterestImage } from "../api/client";
 import { Spinner } from "./Spinner";
 import { PostmarkGlyph } from "./icons";
 
@@ -28,12 +28,6 @@ type ImageState =
   | { status: "loaded"; src: string }
   | { status: "error" };
 
-type DescribeState =
-  | { status: "idle" }
-  | { status: "describing" }
-  | { status: "described"; result: ImageDescription }
-  | { status: "error"; message: string };
-
 function ImagePlaceholderIcon() {
   return (
     <svg
@@ -53,12 +47,10 @@ function ImagePlaceholderIcon() {
 
 export function PoiDialog({ poi, onClose }: PoiDialogProps) {
   const [image, setImage] = useState<ImageState>({ status: "loading" });
-  const [describe, setDescribe] = useState<DescribeState>({ status: "idle" });
 
   useEffect(() => {
     const controller = new AbortController();
     setImage({ status: "loading" });
-    setDescribe({ status: "idle" });
 
     getPointOfInterestImage(poi.id, true, controller.signal)
       .then((base64) =>
@@ -70,16 +62,6 @@ export function PoiDialog({ poi, onClose }: PoiDialogProps) {
 
     return () => controller.abort();
   }, [poi.id]);
-
-  async function handleDescribe() {
-    setDescribe({ status: "describing" });
-    try {
-      const result = await describePointOfInterestImage(poi.id);
-      setDescribe({ status: "described", result });
-    } catch {
-      setDescribe({ status: "error", message: "Could not describe this photo. Please try again." });
-    }
-  }
 
   return (
     <div
@@ -110,41 +92,23 @@ export function PoiDialog({ poi, onClose }: PoiDialogProps) {
         </div>
 
         <div className="space-y-4 px-5 pt-1 pb-5">
-          {describe.status !== "described" && (
-            <button
-              type="button"
-              disabled={describe.status === "describing"}
-              onClick={handleDescribe}
-              className="inline-flex items-center gap-2 rounded-md border border-brass/40 bg-ink px-3 py-1.5 font-sans text-xs font-medium text-bone transition hover:bg-ink-2 disabled:cursor-not-allowed disabled:opacity-60 dark:border-brass/30 dark:bg-harbor-2 dark:hover:bg-harbor"
-            >
-              {describe.status === "describing" ? (
-                <>
-                  <Spinner className="h-3.5 w-3.5" />
-                  Describing…
-                </>
-              ) : (
-                "Describe"
-              )}
-            </button>
-          )}
-          {describe.status === "error" && (
-            <p className="rounded-md border border-postmark/40 bg-postmark/10 px-3 py-2 font-sans text-xs text-postmark dark:border-postmark-light/40 dark:bg-postmark-light/10 dark:text-postmark-light">
-              {describe.message}
-            </p>
-          )}
-          {describe.status === "described" && (
+          {(poi.description || poi.tags.length > 0) && (
             <div className="space-y-2 border-t border-brass/20 pt-3">
-              <p className="font-sans text-sm text-ink dark:text-bone">{describe.result.description}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {describe.result.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-brass/40 bg-brass/10 px-2.5 py-0.5 font-mono text-[10px] tracking-wide text-ink uppercase dark:border-brass/30 dark:bg-brass/10 dark:text-bone"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
+              {poi.description && (
+                <p className="font-sans text-sm text-ink dark:text-bone">{poi.description}</p>
+              )}
+              {poi.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {poi.tags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="rounded-full border border-brass/40 bg-brass/10 px-2.5 py-0.5 font-mono text-[10px] tracking-wide text-ink uppercase dark:border-brass/30 dark:bg-brass/10 dark:text-bone"
+                    >
+                      {tag.name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
