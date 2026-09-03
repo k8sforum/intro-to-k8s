@@ -19,6 +19,7 @@ namespace mytravels.api.Extensions
                     DateCreated = first.DateCreated,
                     DateTaken = first.DateTaken,
                     FormattedAddress = first.FormattedAddress,
+                    Description = first.Description,
                     Latitude = first.Latitude,
                     Longitude = first.Longitude,
                     PointOfInterestKey = first.PointOfInterestKey,

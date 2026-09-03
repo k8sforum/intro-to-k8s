@@ -30,4 +30,5 @@ public class PointOfInterest
     public Guid? UpdatedBy { get; set; }
     [StringLength(500)]
     public string Reason { get; set; }
+    public string Description { get; set; }
 }

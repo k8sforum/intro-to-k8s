@@ -12,5 +12,6 @@ public class PointOfInterestDto
     public DateTime? DateTaken { get; set; }
     [StringLength(300)]
     public string FormattedAddress { get; set; }
+    public string Description { get; set; }
     public List<TagDto> Tags { get; set; } = new();
 }

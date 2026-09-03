@@ -57,6 +57,7 @@ namespace mytravels.domain
                     DateCreated = p.DateCreated,
                     DateTaken = p.DateTaken,
                     FormattedAddress = p.FormattedAddress,
+                    Description = p.Description,
                     ImageResized = p.ImageResized,
                     PointOfInterestKey = p.PointOfInterestKey,
                     TagId = null,

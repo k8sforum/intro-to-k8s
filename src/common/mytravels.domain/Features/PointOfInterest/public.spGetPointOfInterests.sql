@@ -10,6 +10,7 @@ RETURNS TABLE (
     "DateCreated" TIMESTAMP WITH TIME ZONE,  -- ✅ fixed type
     "DateTaken" TIMESTAMP WITH TIME ZONE,
     "FormattedAddress" VARCHAR(300),
+    "Description" TEXT,
     "ImageResized" BOOLEAN,
     "TagId" INTEGER,
     "TagName" VARCHAR(50),
@@ -28,6 +29,7 @@ BEGIN
         T."DateCreated",
         T."DateTaken",
         T."FormattedAddress",
+        T."Description",
         T."ImageResized",
         T."TagId",
         T."TagName",
@@ -43,6 +45,7 @@ BEGIN
             poi."DateCreated",
             poi."DateTaken",
             poi."FormattedAddress",
+            poi."Description",
             poi."ImageResized",
             t."Id" AS "TagId",
             t."Name" AS "TagName",

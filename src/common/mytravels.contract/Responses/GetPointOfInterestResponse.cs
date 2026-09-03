@@ -15,6 +15,7 @@ public class GetPointOfInterestResponse
     public DateTime DateCreated { get; set; }
     public DateTime? DateTaken { get; set; }
     public string FormattedAddress { get; set; }
+    public string Description { get; set; }
     public bool ImageResized { get; set; }
     public int? TagId { get; set; }
     public string TagName { get; set; }
