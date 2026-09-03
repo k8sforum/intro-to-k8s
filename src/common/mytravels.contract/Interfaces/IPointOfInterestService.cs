@@ -13,5 +13,4 @@ public interface IPointOfInterestService
     Task<int> SaveFileAsPointOfInsterestAsync(IFormFile file, SaveCoordinatesDto coordinates, CancellationToken cancellationToken);
     Task<int> UpdatePointOfInterestAsync(IFormFile file, string pointOfInterestKey, CancellationToken cancellationToken);
     Task<string> GetImageAsync(int id, CancellationToken cancellationToken);
-    Task<ImageDescriptionDto> DescribeImageAsync(int id, CancellationToken cancellationToken);
 }

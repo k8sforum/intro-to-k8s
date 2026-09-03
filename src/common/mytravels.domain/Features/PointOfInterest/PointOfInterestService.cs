@@ -96,19 +96,6 @@ namespace mytravels.domain.Features.PointOfInterest
             return await _objectStorageService.GetBase64Async(BucketNames.ResizedImagesContainer, point.GeneratedBlobName, cancellationToken);
         }
 
-        public async Task<ImageDescriptionDto> DescribeImageAsync(int id, CancellationToken cancellationToken)
-        {
-            contract.Entities.PointOfInterest point = await _context.PointOfInterests
-                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-                ?? throw new DataNotFoundException($"Point of interest with id '{id}' was not found");
-
-            if (string.IsNullOrWhiteSpace(point.GeneratedBlobName))
-                throw new ApiException(400, "This point of interest has no image to describe yet.");
-
-            string base64 = await _objectStorageService.GetBase64Async(BucketNames.NewUploadedImagesContainer, point.GeneratedBlobName, cancellationToken);
-            return await _imageDescriptionService.DescribeAsync(base64, cancellationToken);
-        }
-
         private async Task<int> CreatePointOfInterestAsync(IFormFile file, string objectName, SaveCoordinatesDto coordinates, DateTime? dateTaken, CancellationToken cancellationToken)
         {
             CreatePointOfInterestDto dto = new()
@@ -126,6 +113,7 @@ namespace mytravels.domain.Features.PointOfInterest
 
             await _publisher.PublishAsync(ExchangeNames.AppendFormattedAddress, new PointOfInterestMessage { CorrelationId = Guid.NewGuid(), PointOfInterestId = id }, cancellationToken);
             await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { PointOfInterestId = point.Id }, cancellationToken);
+            await _publisher.PublishAsync(ExchangeNames.AppendImageTags, new PointOfInterestMessage { PointOfInterestId = point.Id }, cancellationToken);
 
             return id;
         }
