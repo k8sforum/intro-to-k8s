@@ -53,11 +53,6 @@ spec:
                 secretKeyRef:
                   name: api-secret
                   key: MinIO__SecretKey
-            - name: AnthropicApiKey
-              valueFrom:
-                secretKeyRef:
-                  name: api-secret
-                  key: AnthropicApiKey
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://otel-collector:4317
             - name: OTEL_SERVICE_NAME

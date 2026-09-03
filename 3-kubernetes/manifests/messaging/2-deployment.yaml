@@ -53,6 +53,11 @@ spec:
                 secretKeyRef:
                   name: messaging-secret
                   key: MinIO__SecretKey
+            - name: AnthropicApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: AnthropicApiKey
             - name: GoogleApiKey
               valueFrom:
                 secretKeyRef:
