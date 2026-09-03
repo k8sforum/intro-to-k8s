@@ -87,7 +87,7 @@ namespace mytravels.domain
 
             string p_pointOfInterestTagType = JsonSerializer.Serialize(tags);
             int rowsAffected = await this.Database.ExecuteSqlInterpolatedAsync(
-                $"SELECT * FROM public.spUpdatePointOfInterestTags({p_pointOfInterestTagType})", cancellationToken);
+                $"SELECT * FROM public.spUpdatePointOfInterestTags({p_pointOfInterestTagType}::json)", cancellationToken);
             return rowsAffected;
         }
 
