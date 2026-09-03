@@ -34,7 +34,7 @@ namespace mytravels.common.Services
             if (!_configured)
                 throw new ApiException(503, "The AI photo description service is not configured (AnthropicApiKey is unset).");
 
-            var schema = new Dictionary<string, JsonElement>
+            Dictionary<string, JsonElement> schema = new()
             {
                 ["type"] = JsonSerializer.SerializeToElement("object"),
                 ["properties"] = JsonSerializer.SerializeToElement(new
