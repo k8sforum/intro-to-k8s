@@ -110,7 +110,6 @@ services:
       dockerfile: api/mytravels.api/Dockerfile
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
-      AnthropicApiKey: ${ANTHROPIC_API_KEY}
       GoogleApiKey: ${GOOGLE_API_KEY}
       GoogleMapsUrl: ${GOOGLE_MAPS_URL}
       GooglePlacesUrl: ${GOOGLE_PLACES_URL}
@@ -141,6 +140,7 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
       ASPNETCORE_URLS: http://+:5102
       RabbitMQ__Uri: ${RABBIT_MQ_URI}
+      AnthropicApiKey: ${ANTHROPIC_API_KEY}
       MinIO__Endpoint: ${MINIO_ENDPOINT}
       MinIO__AccessKey: ${MINIO_ROOT_USER}
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
