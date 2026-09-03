@@ -65,6 +65,7 @@ builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>()
 builder.Services.AddHostedService<AppendFormattedAddress>();
 builder.Services.AddHostedService<AppendFormattedAddressSweeper>();
 builder.Services.AddHostedService<ResizeImage>();
+builder.Services.AddHostedService<AppendImageTags>();
 
 var app = builder.Build();
 
