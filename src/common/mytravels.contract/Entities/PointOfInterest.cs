@@ -31,4 +31,5 @@ public class PointOfInterest
     [StringLength(500)]
     public string Reason { get; set; }
     public string Description { get; set; }
+    public Guid? CorrelationId { get; set; }
 }
