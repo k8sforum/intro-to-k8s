@@ -18,7 +18,7 @@ public class AppendFormattedAddress : MessageSubscriberBase<PointOfInterestMessa
             ILogger<AppendFormattedAddress> logger,
             IConfiguration configuration,
             IServiceScopeFactory serviceScopeFactory)
-        : base(logger, configuration, ExchangeNames.AppendFormattedAddress, ExchangeNames.AppendFormattedAddress)
+        : base(logger, configuration, ExchangeNames.AppendFormattedAddress, ExchangeNames.AppendFormattedAddress, ExchangeNames.AppendFormattedAddressFailed)
     {
         _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
     }

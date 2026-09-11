@@ -1,0 +1,53 @@
+diff --git a/src/common/mytravels.contract/Constants/ExchangeNames.cs b/src/common/mytravels.contract/Constants/ExchangeNames.cs
+index 4f99205..e947e2a 100644
+--- a/src/common/mytravels.contract/Constants/ExchangeNames.cs
++++ b/src/common/mytravels.contract/Constants/ExchangeNames.cs
+@@ -1,8 +1,11 @@
+ ﻿namespace mytravels.contract.Constants;
+ 
+ public static class ExchangeNames
+ {
+     public const string AppendFormattedAddress = "append-formatted-address";
+     public const string AppendImageTags = "append-image-tags";
+     public const string ResizeImage = "resize-image";
++    public const string ResizeImageFailed = "resize-image-failed";
++    public const string AppendFormattedAddressFailed = "append-formatted-address-failed";
++    public const string AppendImageTagsFailed = "append-image-tags-failed";
+ }
+diff --git a/src/common/mytravels.contract/Entities/PointOfInterest.cs b/src/common/mytravels.contract/Entities/PointOfInterest.cs
+index a35b852..881973c 100644
+--- a/src/common/mytravels.contract/Entities/PointOfInterest.cs
++++ b/src/common/mytravels.contract/Entities/PointOfInterest.cs
+@@ -24,11 +24,12 @@ public class PointOfInterest
+     [StringLength(300)]
+     public string FormattedAddress { get; set; }
+     public bool ImageResized { get; set; }
+     public virtual HashSet<PointOfInterestTagAssociation> PointOfInterestTagAssociations { get; set; }
+     public virtual HashSet<PointOfInterestAuditLog> PointOfInterestAuditLogs { get; set; }
+     public DateTime? DateUpdated { get; set; }
+     public Guid? UpdatedBy { get; set; }
+     [StringLength(500)]
+     public string Reason { get; set; }
+     public string Description { get; set; }
++    public Guid? CorrelationId { get; set; }
+ }
+\ No newline at end of file
+diff --git a/src/common/mytravels.contract/Messages/FailedMessage.cs b/src/common/mytravels.contract/Messages/FailedMessage.cs
+new file mode 100644
+index 0000000..c86e1a1
+--- /dev/null
++++ b/src/common/mytravels.contract/Messages/FailedMessage.cs
+@@ -0,0 +1,13 @@
++using mytravels.contract.Interfaces;
++
++namespace mytravels.contract.Messages
++{
++    public class FailedMessage : IMessage
++    {
++        public Guid CorrelationId { get; set; }
++        public int PointOfInterestId { get; set; }
++        public string OriginalExchange { get; set; }
++        public string ErrorMessage { get; set; }
++        public DateTime FailedAt { get; set; }
++    }
++}
