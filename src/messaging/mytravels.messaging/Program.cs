@@ -28,7 +28,8 @@ builder.Services.AddOpenTelemetry()
        .WithTracing(tracing => tracing
            .AddAspNetCoreInstrumentation()
            .AddHttpClientInstrumentation()
-           .AddSource("Npgsql"))
+           .AddSource("Npgsql")
+           .AddSource("MyTravels.RabbitMQ"))
        .UseOtlpExporter();
 
 builder.Services.AddDbContext<ICoreDbContext, CoreDbContext>(
@@ -62,10 +63,14 @@ builder.Services.AddTransient<IObjectStorageService, MinIOStorageService>();
 builder.Services.AddTransient<IImageDescriptionService, AnthropicImageDescriptionService>();
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 
+// Register message subscribers (hosted services)
 builder.Services.AddHostedService<AppendFormattedAddress>();
 builder.Services.AddHostedService<AppendFormattedAddressSweeper>();
 builder.Services.AddHostedService<ResizeImage>();
 builder.Services.AddHostedService<AppendImageTags>();
+
+// Declare failed exchanges (fanout, non-durable, auto-delete)
+builder.Services.AddHostedService<FailedExchangeDeclarer>();
 
 var app = builder.Build();
 

@@ -59,3 +59,39 @@ All 16 tasks validated. Pre-flight scan complete, no conflicts found. Proceeding
 
 **Task 3: complete (commits 4f0cd86..31040c0, publisher confirms deferred per ruling)**
 
+
+### Task 4: Update MessageSubscriberBase (Fix Round 1)
+
+**BASE commit:** 31040c0
+
+**Review finding (initial):** x-retry-count header not incremented; infinite retry loop
+
+**Fix applied:** 
+- x-retry-count incremented via BasicProperties (line 141)
+- Message republished to same exchange with updated header (lines 156-163)
+- Structured logging with {PointOfInterestId} and {CorrelationId} on all error paths
+
+**Fix review:** ✅ Previous finding ADDRESSED (counter now increments, loop breaks at 3). No new breakage.
+
+**Task 4: complete (fix round 1, commits 31040c0..deeb006)**
+
+### Task 5: Update CronJobBase
+
+**BASE commit:** 419e014
+
+**Spec:** ✅ — HandleCronException private method extracted; first DoWorkAsync() wrapped in try/catch; same handler for first run and loop.
+
+**Quality:** Approved — Exception pattern consistent, DRY applied, no new issues.
+
+**Task 5: complete (commits 419e014..deeb006, review clean)**
+
+### Task 6: Update Map Services
+
+**BASE commit:** 419e014
+
+**Spec:** ✅ — ILogger<T> injected into both GoogleMapsService and OpenStreetMapsService; onRetry callbacks added to retry policies; logging format exact.
+
+**Quality:** Approved — Injection pattern exemplary, callback closure safe, exception message safe, consistent across both services.
+
+**Task 6: complete (commits 419e014..deeb006, review clean)**
+

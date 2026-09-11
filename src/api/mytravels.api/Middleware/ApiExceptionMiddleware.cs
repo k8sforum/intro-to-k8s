@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Net;
 using mytravels.contract.CustomException;
 using mytravels.contract.Dtos;
@@ -58,7 +59,7 @@ namespace mytravels.api.Middleware
         {
             ApiErrorDto error = new()
             {
-                Id = Guid.NewGuid().ToString("N"),
+                Id = Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString("N"),
                 HttpStatusCode = httpStatuscode,
                 Message = exception.Message,
                 Title = "An error occurred in the API.  Please use the id and contact our support team if the error persists.",
@@ -76,7 +77,7 @@ namespace mytravels.api.Middleware
         {
             ApiErrorDto error = new()
             {
-                Id = Guid.NewGuid().ToString("N"),
+                Id = Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString("N"),
                 HttpStatusCode = httpStatuscode,
                 Message = exception.Message,
                 Title = exception.Message,

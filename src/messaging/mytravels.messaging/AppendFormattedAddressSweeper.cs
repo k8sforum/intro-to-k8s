@@ -35,11 +35,21 @@ public class AppendFormattedAddressSweeper : CronJobBase
 
             foreach (PointOfInterest point in points)
             {
-                point.FormattedAddress = await mapsService.GetAddressAsync(point.Latitude, point.Longitude, default);
-                var entry = context.Entry(point);
-                entry.State = EntityState.Unchanged;
-                entry.Property(nameof(point.FormattedAddress)).IsModified = true;
-                await context.SaveChangesAsync(default);
+                try
+                {
+                    point.FormattedAddress = await mapsService.GetAddressAsync(point.Latitude, point.Longitude, default);
+                    var entry = context.Entry(point);
+                    entry.State = EntityState.Unchanged;
+                    entry.Property(nameof(point.FormattedAddress)).IsModified = true;
+                    await context.SaveChangesAsync(default);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Sweeper failed to geocode POI {PointOfInterestId}, correlation {CorrelationId}",
+                        point.Id,
+                        point.CorrelationId);
+                    continue;
+                }
             }
         }
         catch (Exception ex)

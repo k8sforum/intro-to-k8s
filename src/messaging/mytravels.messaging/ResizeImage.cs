@@ -65,6 +65,13 @@ public class ResizeImage : MessageSubscriberBase<PointOfInterestMessage>
             await context.SaveChangesAsync(CancellationToken.None);
 
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing ResizeImage message for POI {PointOfInterestId}, correlation {CorrelationId}",
+                obj.PointOfInterestId,
+                obj.CorrelationId);
+            throw;
+        }
         finally
         {
             semaphore.Release();

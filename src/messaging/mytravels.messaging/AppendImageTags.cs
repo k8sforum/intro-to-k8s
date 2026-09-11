@@ -68,7 +68,9 @@ public class AppendImageTags : MessageSubscriberBase<PointOfInterestMessage>
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing AppendImageTags message");
+            _logger.LogError(ex, "Error processing AppendImageTags message for POI {PointOfInterestId}, correlation {CorrelationId}",
+                obj.PointOfInterestId,
+                obj.CorrelationId);
             throw;
         }
         finally

@@ -81,7 +81,16 @@ namespace mytravels.domain.Features.PointOfInterest
                                                    .FirstOrDefault() ?? throw new EntityNotFoundException(nameof(point));
 
             await _context.AddImageToPointOfInterestAsync(objectName, point, cancellationToken);
-            await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { PointOfInterestId = point.Id }, CancellationToken.None);
+
+            // Reuse existing CorrelationId or mint a new one
+            if (point.CorrelationId == null 
+             || point.CorrelationId == Guid.Empty)
+            {
+                point.CorrelationId = Guid.NewGuid();
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { CorrelationId = point.CorrelationId ?? Guid.NewGuid(), PointOfInterestId = point.Id }, CancellationToken.None);
             return point.Id;
         }
 
@@ -109,9 +118,13 @@ namespace mytravels.domain.Features.PointOfInterest
             };
 
             contract.Entities.PointOfInterest point = dto.ToEntity();
+
+            // Mint and set CorrelationId before persisting
+            Guid correlationId = Guid.NewGuid();
+            point.CorrelationId = correlationId;
+
             int id = await _context.CreatePointOfInterestAsync(point, cancellationToken);
 
-            Guid correlationId = Guid.NewGuid();
             await _publisher.PublishAsync(ExchangeNames.AppendFormattedAddress, new PointOfInterestMessage { CorrelationId = correlationId, PointOfInterestId = id }, cancellationToken);
             await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { CorrelationId = correlationId, PointOfInterestId = point.Id }, cancellationToken);
             await _publisher.PublishAsync(ExchangeNames.AppendImageTags, new PointOfInterestMessage { CorrelationId = correlationId, PointOfInterestId = point.Id }, cancellationToken);

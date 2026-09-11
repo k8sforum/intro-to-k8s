@@ -51,7 +51,9 @@ public class AppendFormattedAddress : MessageSubscriberBase<PointOfInterestMessa
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing AppendFormattedAddress message");
+            _logger.LogError(ex, "Error processing AppendFormattedAddress message for POI {PointOfInterestId}, correlation {CorrelationId}",
+                obj.PointOfInterestId,
+                obj.CorrelationId);
             throw;
         }
         finally

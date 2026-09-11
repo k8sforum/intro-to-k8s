@@ -29,7 +29,8 @@ builder.Services.AddOpenTelemetry()
        .WithTracing(tracing => tracing
            .AddAspNetCoreInstrumentation()
            .AddHttpClientInstrumentation()
-           .AddSource("Npgsql"))
+           .AddSource("Npgsql")
+           .AddSource("MyTravels.RabbitMQ"))
        .UseOtlpExporter();
 
 builder.Configuration

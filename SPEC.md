@@ -22,7 +22,7 @@ Throughout, **Observed:** marks behavior read directly from code/config; **Infer
 | Component | Role | Source |
 |---|---|---|
 | `mytravels.api` | REST API — CRUD for POIs, image upload, place search, image description | `src/api/mytravels.api/` |
-| `mytravels.mcp` | Model Context Protocol tool server — exposes photo upload and place search as MCP tools for LLM clients | `src/api/mytravels.mcp/` |
+| `mytravels.mcp` | Model Context Protocol tool server — exposes place and POI search as MCP tools for LLM clients | `src/api/mytravels.mcp/` |
 | `mytravels.messaging` | Background worker — image resize, address resolution, retry sweep | `src/messaging/mytravels.messaging/` |
 | `mytravels.migration` | One-shot EF Core migration bundle runner | `src/common/mytravels.migration/` |
 | `web` | React SPA — map UI, upload flow, image description UI | `src/web/` |
@@ -96,11 +96,11 @@ mytravels.migration ───────────────► mytravels.d
 web (React, separate npm project, no dependency on any C# project)
 ```
 
-**Observed:** `mytravels.mcp` has exactly the same `ProjectReference` set as `mytravels.api` (common, contract, domain, storage) and registers the same DI graph in `Program.cs` — `IPointOfInterestService`, `IMapsService`, `IObjectStorageService`, `IMessagePublisher`, `ICoreDbContext`. It is a **second front end onto the same domain layer**, not a client of the REST API: `PointOfInterestMcpTools` calls `IPointOfInterestService.SaveFileAsPointOfInsterestAsync` directly, synthesising an `IFormFile` from base64 input via a private `ToFormFile` helper.
+**Observed:** `mytravels.mcp` has exactly the same `ProjectReference` set as `mytravels.api` (common, contract, domain, storage) and registers the same DI graph in `Program.cs` — `IPointOfInterestService`, `IMapsService`, `IObjectStorageService`, `IMessagePublisher`, `ICoreDbContext`. It is a **second front end onto the same domain layer**, not a client of the REST API: `PlaceMcpTools` calls `IMapsService.SearchPlaceAsync` directly, and `PointOfInterestMcpTools` calls `IPointOfInterestService.GetPointsOfInterestAsync` for POI search.
 
 Consequence: a behaviour change in POI creation or geocoding lands on both entry points at once, but their **input validation is maintained separately** — the controller relies on `[ApiController]`/`ModelState` to validate `SaveCoordinatesDto`, while the MCP tool hand-rolls the equivalent check with `Validator.TryValidateObject`. The two are currently consistent; nothing structurally keeps them that way (Finding F-16).
 
-The two surfaces are also **not feature-equivalent**: the REST API exposes list, filter, fetch-image, and update-image operations that have no MCP counterpart. The MCP server is write-plus-search only (`upload_photo`, `upload_photo_with_coordinates`, `search_place`) — an MCP client can create points of interest but cannot read any back.
+The two surfaces are also **not feature-equivalent**: the REST API exposes CRUD operations (list, fetch, update, delete, upload) that have no MCP counterpart. The MCP server is read-only search: `search_pointofinterest` (search saved POIs by formatted address) and `search_place` (place lookup) — an MCP client can only query existing data, not create or modify anything.
 
 **Message flow** (Observed, `src/common/mytravels.contract/Constants/ExchangeNames.cs`, `MessageSubscriberBase.cs`, consumer files):
 
@@ -278,11 +278,10 @@ Mounted via `app.MapMcp()` after `AddMcpServer().WithHttpTransport().WithTools<P
 
 | Tool | Arguments | Returns | Validation / errors |
 |---|---|---|---|
-| `upload_photo` | `fileContentBase64`, `fileName` | `SaveEntityResponseDto { Id }` | `McpException` if either argument is blank or the base64 is malformed; wraps `InvalidOperationException` (e.g. photo carries no EXIF GPS) into `McpException`. Its tool description explicitly tells the caller to fall back to `upload_photo_with_coordinates` in that case. |
-| `upload_photo_with_coordinates` | `fileContentBase64`, `fileName`, `latitude`, `longitude`, `formattedAddress` | `SaveEntityResponseDto { Id }` | Builds a `SaveCoordinatesDto` and runs `Validator.TryValidateObject(..., validateAllProperties: true)`, surfacing all `[Range]`/`[Required]` failures as one `McpException`. **No try/catch around the service call** — unlike `upload_photo`, a domain exception here escapes as a raw protocol error rather than an `McpException` (Finding F-17). |
-| `search_place` | `query`, `limit` | `List<PlaceDto>` | `McpException` if `query` is blank; `limit` is coerced to a default of 5 when omitted or non-positive. |
+| `search_pointofinterest` | `query` | `List<PointOfInterestDto>` | `McpException` if `query` is blank. Searches saved POIs by formatted address. |
+| `search_place` | `query`, `limit` | `List<PlaceDto>` | `McpException` if `query` is blank; `limit` is coerced to a default of 5 when omitted or non-positive. Searches for places by name or address. |
 
-Both upload tools funnel through the private `ToFormFile` helper, which wraps the decoded bytes in a `FormFile` with field name `"image"` and a hardcoded `ContentType` of `application/octet-stream`. **Observed:** this is harmless — no code in the solution reads `IFormFile.ContentType`, and `MinIOStorageService` hardcodes the same value on upload (`MinIOStorageService.cs:82`), so the MCP and REST paths store byte-identical objects. The whole base64→`IFormFile` round-trip exists only because the domain layer's entry point (`SaveFileAsPointOfInsterestAsync`) is typed against ASP.NET's `IFormFile` rather than a transport-neutral stream — the one place the domain layer leaks an HTTP-specific type into a non-HTTP caller.
+**Note:** Photo upload via MCP is not implemented; POI creation and upload are REST-only, driven from the `api` service (`POST /api/pointofinterest/image` and `POST /api/pointofinterest/image/coordinates`). The MCP server is read-only.
 
 ### 6.3 `mytravels.messaging` — HTTP surface
 
