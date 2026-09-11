@@ -16,7 +16,15 @@ namespace mytravels.common.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await DoWorkAsync();
+            try
+            {
+                await DoWorkAsync();
+            }
+            catch (Exception ex)
+            {
+                HandleCronException(ex);
+            }
+
             while (await _timer.WaitForNextTickAsync(stoppingToken) && !stoppingToken.IsCancellationRequested)
             {
                 try
@@ -25,10 +33,16 @@ namespace mytravels.common.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error occurred executing timed work");
+                    HandleCronException(ex);
                 }
             }
         }
+
         protected abstract Task DoWorkAsync();
+
+        private void HandleCronException(Exception ex)
+        {
+            _logger.LogError(ex, "Cron job {JobName} failed", GetType().Name);
+        }
     }
 }

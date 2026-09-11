@@ -1,6 +1,7 @@
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Polly;
 using Polly.Retry;
@@ -14,16 +15,30 @@ namespace mytravels.common.Services
     public class GoogleMapsService : IMapsService
     {
         private readonly IConfiguration _configuration;
+        private readonly ILogger<GoogleMapsService> _logger;
         private readonly int _maxRetryAttempts = 2;
         private readonly AsyncRetryPolicy _policy;
 
-        public GoogleMapsService(IConfiguration configuration)
+        public GoogleMapsService(ILogger<GoogleMapsService> logger, IConfiguration configuration)
         {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _policy = Policy
                .Handle<FlurlHttpTimeoutException>()
                .Or<FlurlHttpException>()
-               .WaitAndRetryAsync(_maxRetryAttempts, i => TimeSpan.FromSeconds(Math.Pow(2, i)));
+               .WaitAndRetryAsync(
+                   retryCount: _maxRetryAttempts,
+                   sleepDurationProvider: i => TimeSpan.FromSeconds(Math.Pow(2, i)),
+                   onRetry: (exception, timespan, retryCount, context) =>
+                   {
+                       var exceptionMessage = exception?.Message ?? "timeout";
+                       _logger.LogWarning(
+                           "Geocoding retry attempt {AttemptNumber} after {DelayMs}ms due to {Exception}",
+                           retryCount,
+                           timespan.TotalMilliseconds,
+                           exceptionMessage
+                       );
+                   });
         }
 
         public async Task<string> GetAddressAsync(double latitude, double longitude, CancellationToken cancellationToken)

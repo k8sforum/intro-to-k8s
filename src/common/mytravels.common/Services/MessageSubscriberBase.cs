@@ -135,9 +135,37 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
                 // Check retry threshold
                 if (retryCount < 3)
                 {
-                    // Increment retry count header and requeue
-                    await channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: true, cancellationToken);
-                    _logger.LogWarning("Message nacked and requeued (attempt {RetryCount}/3) for {Exchange}", retryCount + 1, ea.Exchange);
+                    // Increment retry count header and republish to same exchange
+                    var properties = new BasicProperties();
+                    properties.Headers ??= new Dictionary<string, object>();
+                    properties.Headers["x-retry-count"] = retryCount + 1;
+
+                    // Copy other headers from original
+                    if (ea.BasicProperties?.Headers != null)
+                    {
+                        foreach (var kvp in ea.BasicProperties.Headers)
+                        {
+                            if (kvp.Key != "x-retry-count")
+                            {
+                                properties.Headers[kvp.Key] = kvp.Value;
+                            }
+                        }
+                    }
+
+                    // Republish message with incremented retry count
+                    await channel.BasicPublishAsync(
+                        exchange: ea.Exchange,
+                        routingKey: "",
+                        mandatory: false,
+                        basicProperties: properties,
+                        body: ea.Body,
+                        cancellationToken: cancellationToken
+                    );
+
+                    // Acknowledge original message
+                    await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken);
+                    _logger.LogWarning("Message republished for retry (attempt {RetryCount}/3) for {Exchange}, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
+                        retryCount + 1, ea.Exchange, pointOfInterestId, correlationId);
                 }
                 else
                 {
@@ -165,8 +193,8 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
 
                     // Acknowledge original message so it stops retrying
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken);
-                    _logger.LogError("Message dead-lettered to {FailedExchange} after 3 attempts, CorrelationId {CorrelationId}",
-                        _failedExchangeName, failedMsg.CorrelationId);
+                    _logger.LogError("Message dead-lettered to {FailedExchange} after 3 attempts, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
+                        _failedExchangeName, pointOfInterestId, correlationId);
                 }
             }
         }
