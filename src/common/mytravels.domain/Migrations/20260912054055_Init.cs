@@ -13,6 +13,25 @@ namespace mytravels.domain.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "MessageAuditLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    CorrelationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ExchangeName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    EventType = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    PointOfInterestId = table.Column<int>(type: "integer", nullable: true),
+                    RetryCount = table.Column<int>(type: "integer", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MessageAuditLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PointOfInterests",
                 columns: table => new
                 {
@@ -30,7 +49,9 @@ namespace mytravels.domain.Migrations
                     ImageResized = table.Column<bool>(type: "boolean", nullable: false),
                     DateUpdated = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    Reason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
+                    Reason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    CorrelationId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -49,30 +70,6 @@ namespace mytravels.domain.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tags", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PointOfInterestAuditLogs",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    QueueName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    Payload = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    Sucessful = table.Column<bool>(type: "boolean", nullable: false),
-                    ErrorMessage = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    PointOfInterestId = table.Column<int>(type: "integer", nullable: false),
-                    DateCreated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PointOfInterestAuditLogs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PointOfInterestAuditLogs_PointOfInterests_PointOfInterestId",
-                        column: x => x.PointOfInterestId,
-                        principalTable: "PointOfInterests",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -103,9 +100,9 @@ namespace mytravels.domain.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_PointOfInterestAuditLogs_PointOfInterestId",
-                table: "PointOfInterestAuditLogs",
-                column: "PointOfInterestId");
+                name: "IX_MessageAuditLogs_CorrelationId",
+                table: "MessageAuditLogs",
+                column: "CorrelationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PointOfInterestTagAssociations_PointOfInterestId",
@@ -128,7 +125,7 @@ namespace mytravels.domain.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "PointOfInterestAuditLogs");
+                name: "MessageAuditLogs");
 
             migrationBuilder.DropTable(
                 name: "PointOfInterestTagAssociations");

@@ -12,8 +12,8 @@ using mytravels.domain;
 namespace mytravels.domain.Migrations
 {
     [DbContext(typeof(CoreDbContext))]
-    [Migration("20260911164158_AddPointOfInterestCorrelationId")]
-    partial class AddPointOfInterestCorrelationId
+    [Migration("20260912054055_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,45 @@ namespace mytravels.domain.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("mytravels.contract.Entities.MessageAuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("CorrelationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("EventType")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("ExchangeName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("PointOfInterestId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CorrelationId");
+
+                    b.ToTable("MessageAuditLogs");
+                });
 
             modelBuilder.Entity("mytravels.contract.Entities.PointOfInterest", b =>
                 {
@@ -87,42 +126,6 @@ namespace mytravels.domain.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PointOfInterests");
-                });
-
-            modelBuilder.Entity("mytravels.contract.Entities.PointOfInterestAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DateCreated")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ErrorMessage")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Payload")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("PointOfInterestId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("QueueName")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<bool>("Sucessful")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PointOfInterestId");
-
-                    b.ToTable("PointOfInterestAuditLogs");
                 });
 
             modelBuilder.Entity("mytravels.contract.Entities.PointOfInterestTagAssociation", b =>
@@ -232,17 +235,6 @@ namespace mytravels.domain.Migrations
                         });
                 });
 
-            modelBuilder.Entity("mytravels.contract.Entities.PointOfInterestAuditLog", b =>
-                {
-                    b.HasOne("mytravels.contract.Entities.PointOfInterest", "PointOfInterest")
-                        .WithMany("PointOfInterestAuditLogs")
-                        .HasForeignKey("PointOfInterestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PointOfInterest");
-                });
-
             modelBuilder.Entity("mytravels.contract.Entities.PointOfInterestTagAssociation", b =>
                 {
                     b.HasOne("mytravels.contract.Entities.PointOfInterest", "PointOfInterest")
@@ -264,8 +256,6 @@ namespace mytravels.domain.Migrations
 
             modelBuilder.Entity("mytravels.contract.Entities.PointOfInterest", b =>
                 {
-                    b.Navigation("PointOfInterestAuditLogs");
-
                     b.Navigation("PointOfInterestTagAssociations");
                 });
 #pragma warning restore 612, 618
