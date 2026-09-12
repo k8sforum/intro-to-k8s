@@ -13,5 +13,6 @@ public class PointOfInterestDto
     [StringLength(300)]
     public string FormattedAddress { get; set; }
     public string Description { get; set; }
+    public Guid? CorrelationId { get; set; }
     public List<TagDto> Tags { get; set; } = new();
 }

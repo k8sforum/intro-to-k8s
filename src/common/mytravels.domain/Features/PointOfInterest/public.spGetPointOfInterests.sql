@@ -14,7 +14,8 @@ RETURNS TABLE (
     "ImageResized" BOOLEAN,
     "TagId" INTEGER,
     "TagName" VARCHAR(50),
-    "PointOfInterestKey" VARCHAR(40)
+    "PointOfInterestKey" VARCHAR(40),
+    "CorrelationId" UUID
 ) AS $$
 BEGIN
     -- The newest version of each point is picked BEFORE the tag join. Ranking after
@@ -35,6 +36,7 @@ BEGIN
             poi."Description",
             poi."ImageResized",
             poi."PointOfInterestKey",
+            poi."CorrelationId",
             ROW_NUMBER() OVER (
                 PARTITION BY poi."PointOfInterestKey"
                 ORDER BY poi."DateCreated" DESC
@@ -58,7 +60,8 @@ BEGIN
         p."ImageResized",
         t."Id" AS "TagId",
         t."Name" AS "TagName",
-        p."PointOfInterestKey"
+        p."PointOfInterestKey",
+        p."CorrelationId"
     FROM latest p
     LEFT JOIN public."PointOfInterestTagAssociations" ita
         ON ita."PointOfInterestId" = p."Id"

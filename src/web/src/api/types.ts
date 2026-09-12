@@ -13,6 +13,7 @@ export interface PointOfInterest {
   dateTaken: string | null;
   formattedAddress: string;
   description: string | null;
+  correlationId: string | null;
   tags: Tag[];
 }
 

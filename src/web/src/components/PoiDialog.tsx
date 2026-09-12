@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import type { PointOfInterest } from "../api/types";
 import { getPointOfInterestImage } from "../api/client";
 import { Spinner } from "./Spinner";
-import { PostmarkGlyph } from "./icons";
+import { PostmarkGlyph, TraceGlyph } from "./icons";
 
 interface PoiDialogProps {
   poi: PointOfInterest;
@@ -137,6 +138,31 @@ export function PoiDialog({ poi, onClose }: PoiDialogProps) {
               <p className="font-sans text-sm text-ink dark:text-bone">
                 {formatDate(poi.dateTaken ?? poi.dateCreated)}
               </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 border-t border-brass/20 pt-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-dashed border-brass/60 text-brass dark:border-brass/50">
+              <TraceGlyph className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-mono text-[10px] tracking-[0.16em] text-brass uppercase">
+                Trace
+              </p>
+              {poi.correlationId ? (
+                <Link
+                  to={`/traceability?correlationId=${poi.correlationId}`}
+                  className="font-sans text-sm text-ink underline decoration-brass/40 underline-offset-2 transition hover:text-postmark dark:text-bone dark:hover:text-postmark-light"
+                >
+                  View message trace
+                </Link>
+              ) : (
+                <span title="No trace data recorded for this point">
+                  <span className="font-sans text-sm text-ink/40 dark:text-bone/40">
+                    No trace data
+                  </span>
+                </span>
+              )}
             </div>
           </div>
         </div>

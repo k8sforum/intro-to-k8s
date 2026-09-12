@@ -15,3 +15,21 @@ export function PostmarkGlyph({ className = 'h-4 w-4' }: PostmarkGlyphProps) {
     </svg>
   );
 }
+
+/** A short connected path of stops, used to link to a point's message trace. */
+export function TraceGlyph({ className = 'h-4 w-4' }: PostmarkGlyphProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+      <path
+        d="M4 18c3-1 3-5 6-6s3-5 6-6 4 3 4 3"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <circle cx="4" cy="18" r="1.5" fill="currentColor" />
+      <circle cx="10" cy="12" r="1.5" fill="currentColor" />
+      <circle cx="16" cy="6" r="1.5" fill="currentColor" />
+      <circle cx="20" cy="9" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}

@@ -14,7 +14,8 @@ RETURNS TABLE (
     "ImageResized" BOOLEAN,
     "TagId" INTEGER,
     "TagName" VARCHAR(50),
-    "PointOfInterestKey" VARCHAR(40)
+    "PointOfInterestKey" VARCHAR(40),
+    "CorrelationId" UUID
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -33,7 +34,8 @@ BEGIN
         poi."ImageResized",
         t."Id" AS "TagId",
         t."Name" AS "TagName",
-        poi."PointOfInterestKey"
+        poi."PointOfInterestKey",
+        poi."CorrelationId"
     FROM public."PointOfInterests" poi
     LEFT JOIN public."PointOfInterestTagAssociations" ita 
         ON ita."PointOfInterestId" = poi."Id"

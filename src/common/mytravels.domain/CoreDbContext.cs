@@ -60,6 +60,7 @@ namespace mytravels.domain
                     Description = p.Description,
                     ImageResized = p.ImageResized,
                     PointOfInterestKey = p.PointOfInterestKey,
+                    CorrelationId = p.CorrelationId,
                     TagId = null,
                     TagName = null
                 })

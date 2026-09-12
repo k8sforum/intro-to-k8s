@@ -23,6 +23,7 @@ namespace mytravels.api.Extensions
                     Latitude = first.Latitude,
                     Longitude = first.Longitude,
                     PointOfInterestKey = first.PointOfInterestKey,
+                    CorrelationId = first.CorrelationId,
                     Tags = group.ToList()
                                 .Where(x => x.TagId is not null)
                                 .Select(x => new TagDto

@@ -14,7 +14,8 @@ RETURNS TABLE (
     "ImageResized" BOOLEAN,
     "TagId" INTEGER,
     "TagName" VARCHAR(50),
-    "PointOfInterestKey" VARCHAR(40)
+    "PointOfInterestKey" VARCHAR(40),
+    "CorrelationId" UUID
     -- ✅ "ROW_NUM" removed — not part of output
 ) AS $$
 BEGIN
@@ -36,6 +37,7 @@ BEGIN
             poi."Description",
             poi."ImageResized",
             poi."PointOfInterestKey",
+            poi."CorrelationId",
             ROW_NUMBER() OVER (
                 PARTITION BY poi."PointOfInterestKey"
                 ORDER BY poi."DateCreated" DESC
@@ -74,7 +76,8 @@ BEGIN
         m."ImageResized",
         t."Id" AS "TagId",
         t."Name" AS "TagName",
-        m."PointOfInterestKey"
+        m."PointOfInterestKey",
+        m."CorrelationId"
     FROM matched m
     LEFT JOIN public."PointOfInterestTagAssociations" ita
         ON ita."PointOfInterestId" = m."Id"

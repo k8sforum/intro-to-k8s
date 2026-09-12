@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getCorrelationEvents, getCorrelationSummaries } from '../api/client';
 import type { CorrelationSummary, MessageAuditEvent } from '../api/types';
 import { Spinner } from './Spinner';
@@ -52,7 +53,97 @@ interface EventsState {
   events: MessageAuditEvent[];
 }
 
+function EventsTimeline({ events }: { events: MessageAuditEvent[] }) {
+  return (
+    <ol className="space-y-2">
+      {events.map((event, index) => (
+        <li
+          key={`${event.exchangeName}-${event.createdAt}-${index}`}
+          className="flex flex-wrap items-center gap-2 font-sans text-xs text-ink dark:text-bone"
+        >
+          <span className="font-mono text-[10px] text-ink/50 dark:text-bone/50">
+            {formatTimestamp(event.createdAt)}
+          </span>
+          <EventTypeBadge eventType={event.eventType} />
+          <span className="text-ink/80 dark:text-bone/80">{event.exchangeName}</span>
+          {event.retryCount > 0 && (
+            <span className="font-mono text-[10px] text-brass">retry {event.retryCount}</span>
+          )}
+          {event.errorMessage && (
+            <span className="text-postmark dark:text-postmark-light">{event.errorMessage}</span>
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function SingleCorrelationView({ correlationId }: { correlationId: string }) {
+  const [state, setState] = useState<EventsState>({ status: 'loading', events: [] });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setState({ status: 'loading', events: [] });
+    getCorrelationEvents(correlationId, controller.signal)
+      .then((events) => setState({ status: 'loaded', events }))
+      .catch((err) => {
+        if (err.name !== 'AbortError') setState({ status: 'error', events: [] });
+      });
+    return () => controller.abort();
+  }, [correlationId]);
+
+  return (
+    <div className="h-full w-full overflow-y-auto pt-20 pb-10 sm:pt-24">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6">
+        <Link
+          to="/traceability"
+          className="mb-3 inline-block font-mono text-[10px] tracking-wide text-brass uppercase transition hover:text-postmark dark:hover:text-postmark-light"
+        >
+          &larr; All correlations
+        </Link>
+        <h2 className="mb-1 font-display text-lg font-medium text-ink dark:text-bone">
+          Message Trace
+        </h2>
+        <p className="mb-4 font-mono text-xs text-ink/60 dark:text-bone/60">{correlationId}</p>
+
+        {state.status === 'loading' && (
+          <div className="flex items-center gap-2 text-brass">
+            <Spinner className="h-4 w-4" />
+            <span className="font-mono text-xs uppercase tracking-wide">Loading</span>
+          </div>
+        )}
+        {state.status === 'error' && (
+          <p className="font-sans text-sm text-postmark dark:text-postmark-light">
+            Could not load events for this point of interest.
+          </p>
+        )}
+        {state.status === 'loaded' && state.events.length === 0 && (
+          <p className="font-sans text-sm text-ink/70 dark:text-bone/70">
+            No message activity recorded for this point of interest.
+          </p>
+        )}
+        {state.status === 'loaded' && state.events.length > 0 && (
+          <div className="rounded-md border border-brass/30 bg-paper px-4 py-3 shadow-sm dark:border-brass/25 dark:bg-harbor-2">
+            <EventsTimeline events={state.events} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function TraceabilityPage() {
+  const [searchParams] = useSearchParams();
+  const correlationId = searchParams.get('correlationId');
+
+  if (correlationId) {
+    return <SingleCorrelationView correlationId={correlationId} />;
+  }
+
+  return <AllCorrelationsView />;
+}
+
+function AllCorrelationsView() {
   const [summaries, setSummaries] = useState<CorrelationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -150,32 +241,7 @@ export function TraceabilityPage() {
                         Could not load events.
                       </p>
                     )}
-                    {eventsState?.status === 'loaded' && (
-                      <ol className="space-y-2">
-                        {eventsState.events.map((event, index) => (
-                          <li
-                            key={`${event.exchangeName}-${event.createdAt}-${index}`}
-                            className="flex flex-wrap items-center gap-2 font-sans text-xs text-ink dark:text-bone"
-                          >
-                            <span className="font-mono text-[10px] text-ink/50 dark:text-bone/50">
-                              {formatTimestamp(event.createdAt)}
-                            </span>
-                            <EventTypeBadge eventType={event.eventType} />
-                            <span className="text-ink/80 dark:text-bone/80">{event.exchangeName}</span>
-                            {event.retryCount > 0 && (
-                              <span className="font-mono text-[10px] text-brass">
-                                retry {event.retryCount}
-                              </span>
-                            )}
-                            {event.errorMessage && (
-                              <span className="text-postmark dark:text-postmark-light">
-                                {event.errorMessage}
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ol>
-                    )}
+                    {eventsState?.status === 'loaded' && <EventsTimeline events={eventsState.events} />}
                   </div>
                 )}
               </div>

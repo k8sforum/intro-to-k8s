@@ -20,4 +20,5 @@ public class GetPointOfInterestResponse
     public int? TagId { get; set; }
     public string TagName { get; set; }
     public string PointOfInterestKey { get; set; }
+    public Guid? CorrelationId { get; set; }
 }
