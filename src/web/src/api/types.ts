@@ -29,3 +29,21 @@ export interface SaveEntityResponse {
 export function hasCoordinates(poi: PointOfInterest): boolean {
   return poi.latitude !== 0 || poi.longitude !== 0;
 }
+
+export interface CorrelationSummary {
+  correlationId: string;
+  startedAt: string;
+  lastEventAt: string;
+  eventCount: number;
+  hasFailure: boolean;
+}
+
+export interface MessageAuditEvent {
+  correlationId: string;
+  exchangeName: string;
+  eventType: string;
+  pointOfInterestId: number | null;
+  retryCount: number;
+  errorMessage: string | null;
+  createdAt: string;
+}

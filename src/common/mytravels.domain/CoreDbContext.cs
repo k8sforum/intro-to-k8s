@@ -21,7 +21,7 @@ namespace mytravels.domain
         public DbSet<PointOfInterestTagAssociation> PointOfInterestTagAssociations { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<GetPointOfInterestResponse> GetPointOfInterestResponses { get; set; }
-        public DbSet<PointOfInterestAuditLog> PointOfInterestAuditLogs { get; set; }
+        public DbSet<MessageAuditLog> MessageAuditLogs { get; set; }
         public void DetachObject(object entity) => Entry(entity).State = EntityState.Detached;
         public void DeleteObject(object entity) => Entry(entity).State = EntityState.Deleted;
         public void AddObject(object entity) => Entry(entity).State = EntityState.Added;
@@ -66,6 +66,42 @@ namespace mytravels.domain
                 .ToListAsync(cancellationToken);
 
             return results;
+        }
+
+        public async Task<List<CorrelationSummaryDto>> GetCorrelationSummariesAsync(int page, int pageSize, CancellationToken cancellationToken)
+        {
+            return await this.MessageAuditLogs
+                .GroupBy(x => x.CorrelationId)
+                .Select(g => new CorrelationSummaryDto
+                {
+                    CorrelationId = g.Key,
+                    StartedAt = g.Min(x => x.CreatedAt),
+                    LastEventAt = g.Max(x => x.CreatedAt),
+                    EventCount = g.Count(),
+                    HasFailure = g.Any(x => x.EventType == MessageAuditEventTypes.Failed)
+                })
+                .OrderByDescending(x => x.LastEventAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<MessageAuditLogDto>> GetEventsByCorrelationIdAsync(Guid correlationId, CancellationToken cancellationToken)
+        {
+            return await this.MessageAuditLogs
+                .Where(x => x.CorrelationId == correlationId)
+                .OrderBy(x => x.CreatedAt)
+                .Select(x => new MessageAuditLogDto
+                {
+                    CorrelationId = x.CorrelationId,
+                    ExchangeName = x.ExchangeName,
+                    EventType = x.EventType,
+                    PointOfInterestId = x.PointOfInterestId,
+                    RetryCount = x.RetryCount,
+                    ErrorMessage = x.ErrorMessage,
+                    CreatedAt = x.CreatedAt
+                })
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<int> UpdatePointOfInterestTagsAsync(List<SavePointOfInterestDto> dtos, CancellationToken cancellationToken)
@@ -137,6 +173,9 @@ namespace mytravels.domain
             modelBuilder.Entity<Tag>()
                 .HasIndex(e => e.Name)
                 .IsUnique();
+
+            modelBuilder.Entity<MessageAuditLog>()
+                .HasIndex(e => e.CorrelationId);
         }
 
         private Task<List<T>> ExecuteProcInterpolatedAsync<T>(FormattableString query) where T : class

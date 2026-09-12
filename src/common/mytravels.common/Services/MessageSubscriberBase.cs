@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -6,6 +7,8 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Diagnostics;
 using System.Text;
+using mytravels.contract.Constants;
+using mytravels.contract.Entities;
 using mytravels.contract.Interfaces;
 namespace mytravels.common.Services;
 
@@ -18,15 +21,17 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
     private readonly string _exchangeName;
     private readonly string _queueName;
     private readonly string _failedExchangeName;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     protected readonly ConnectionFactory _factory;
 
-    protected MessageSubscriberBase(ILogger<MessageSubscriberBase<T>> logger, IConfiguration configuration, string exchangeName, string queueName, string failedExchangeName)
+    protected MessageSubscriberBase(ILogger<MessageSubscriberBase<T>> logger, IConfiguration configuration, string exchangeName, string queueName, string failedExchangeName, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _exchangeName = exchangeName ?? throw new ArgumentNullException(nameof(exchangeName));
         _queueName = queueName ?? throw new ArgumentNullException(nameof(queueName));
         _failedExchangeName = failedExchangeName ?? throw new ArgumentNullException(nameof(failedExchangeName));
+        _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
 
         string uri = _configuration.GetValue<string>("RabbitMQ:Uri")
                       ?? throw new InvalidOperationException("RabbitMQ URI not configured.");
@@ -123,11 +128,17 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
 
                 // Success: acknowledge
                 await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken);
+
+                var successCorrelationId = typeof(T).GetProperty("CorrelationId")?.GetValue(message) as Guid?;
+                var successPointOfInterestId = typeof(T).GetProperty("PointOfInterestId")?.GetValue(message) as int?;
+                await LogAuditEventAsync(successCorrelationId, successPointOfInterestId, ea.Exchange, MessageAuditEventTypes.ConsumeSucceeded, retryCount, null, cancellationToken);
             }
             catch (Exception ex)
             {
-                var correlationId = message != null ? typeof(T).GetProperty("CorrelationId")?.GetValue(message) : null;
-                var pointOfInterestId = message != null ? typeof(T).GetProperty("PointOfInterestId")?.GetValue(message) : null;
+                var correlationIdValue = message != null ? typeof(T).GetProperty("CorrelationId")?.GetValue(message) : null;
+                var pointOfInterestIdValue = message != null ? typeof(T).GetProperty("PointOfInterestId")?.GetValue(message) : null;
+                var correlationId = correlationIdValue as Guid?;
+                var pointOfInterestId = pointOfInterestIdValue as int?;
 
                 _logger.LogError(ex, "Error processing message from {Exchange}, retry count {RetryCount}, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
                     ea.Exchange, retryCount, pointOfInterestId, correlationId);
@@ -166,6 +177,7 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken);
                     _logger.LogWarning("Message republished for retry (attempt {RetryCount}/3) for {Exchange}, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
                         retryCount + 1, ea.Exchange, pointOfInterestId, correlationId);
+                    await LogAuditEventAsync(correlationId, pointOfInterestId, ea.Exchange, MessageAuditEventTypes.Retried, retryCount + 1, ex.Message, cancellationToken);
                 }
                 else
                 {
@@ -195,8 +207,34 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken);
                     _logger.LogError("Message dead-lettered to {FailedExchange} after 3 attempts, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
                         _failedExchangeName, pointOfInterestId, correlationId);
+                    await LogAuditEventAsync(correlationId, pointOfInterestId, ea.Exchange, MessageAuditEventTypes.Failed, retryCount, ex.Message, cancellationToken);
                 }
             }
+        }
+    }
+
+    private async Task LogAuditEventAsync(Guid? correlationId, int? pointOfInterestId, string exchange, string eventType, int retryCount, string errorMessage, CancellationToken cancellationToken)
+    {
+        if (!correlationId.HasValue || correlationId == Guid.Empty) return;
+
+        try
+        {
+            using IServiceScope scope = _serviceScopeFactory.CreateScope();
+            IMessageAuditLogger auditLogger = scope.ServiceProvider.GetRequiredService<IMessageAuditLogger>();
+            await auditLogger.LogAsync(new MessageAuditLog
+            {
+                CorrelationId = correlationId.Value,
+                ExchangeName = exchange,
+                EventType = eventType,
+                PointOfInterestId = pointOfInterestId,
+                RetryCount = retryCount,
+                ErrorMessage = errorMessage,
+                CreatedAt = DateTime.UtcNow
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to write audit log for {Exchange}, event {EventType}, correlation {CorrelationId}", exchange, eventType, correlationId);
         }
     }
 

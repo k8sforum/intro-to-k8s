@@ -25,7 +25,6 @@ public class PointOfInterest
     public string FormattedAddress { get; set; }
     public bool ImageResized { get; set; }
     public virtual HashSet<PointOfInterestTagAssociation> PointOfInterestTagAssociations { get; set; }
-    public virtual HashSet<PointOfInterestAuditLog> PointOfInterestAuditLogs { get; set; }
     public DateTime? DateUpdated { get; set; }
     public Guid? UpdatedBy { get; set; }
     [StringLength(500)]

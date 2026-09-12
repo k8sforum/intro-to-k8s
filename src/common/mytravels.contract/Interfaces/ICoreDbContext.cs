@@ -14,7 +14,7 @@ public interface ICoreDbContext
     DbSet<PointOfInterest> PointOfInterests { get; set; }
     DbSet<PointOfInterestTagAssociation> PointOfInterestTagAssociations { get; set; }
     DbSet<Tag> Tags { get; set; }
-    DbSet<PointOfInterestAuditLog> PointOfInterestAuditLogs { get; set; }
+    DbSet<MessageAuditLog> MessageAuditLogs { get; set; }
     EntityEntry Entry(object entity);
     DbSet<TEntity> Set<TEntity>() where TEntity : class;
     Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken);
@@ -34,4 +34,6 @@ public interface ICoreDbContext
     Task<List<GetPointOfInterestResponse>> GetPointsOfInterestByKeyAsync(string pointOfInterestKey, CancellationToken cancellationToken);
     Task<List<GetPointOfInterestResponse>> GetAllPointsOfInterestAsync(CancellationToken cancellationToken);
     Task<List<GetPointOfInterestResponse>> SearchPointsOfInterestByFormattedAddressAsync(string searchTerm, CancellationToken cancellationToken);
+    Task<List<CorrelationSummaryDto>> GetCorrelationSummariesAsync(int page, int pageSize, CancellationToken cancellationToken);
+    Task<List<MessageAuditLogDto>> GetEventsByCorrelationIdAsync(Guid correlationId, CancellationToken cancellationToken);
 }

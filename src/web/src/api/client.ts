@@ -1,4 +1,10 @@
-import type { Place, PointOfInterest, SaveEntityResponse } from './types';
+import type {
+  CorrelationSummary,
+  MessageAuditEvent,
+  Place,
+  PointOfInterest,
+  SaveEntityResponse,
+} from './types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5101';
 
@@ -69,4 +75,23 @@ export function searchPlaces(query: string, signal?: AbortSignal): Promise<Place
   return fetch(`${BASE_URL}/api/Place?query=${encodeURIComponent(query)}`, {
     signal,
   }).then((r) => unwrap<Place[]>(r));
+}
+
+export function getCorrelationSummaries(
+  page = 1,
+  pageSize = 25,
+  signal?: AbortSignal,
+): Promise<CorrelationSummary[]> {
+  return fetch(`${BASE_URL}/api/Traceability?page=${page}&pageSize=${pageSize}`, { signal }).then(
+    (r) => unwrap<CorrelationSummary[]>(r),
+  );
+}
+
+export function getCorrelationEvents(
+  correlationId: string,
+  signal?: AbortSignal,
+): Promise<MessageAuditEvent[]> {
+  return fetch(`${BASE_URL}/api/Traceability/${correlationId}`, { signal }).then((r) =>
+    unwrap<MessageAuditEvent[]>(r),
+  );
 }

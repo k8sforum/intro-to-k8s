@@ -19,7 +19,7 @@ public class ResizeImage : MessageSubscriberBase<PointOfInterestMessage>
             ILogger<ResizeImage> logger,
             IConfiguration configuration,
             IServiceScopeFactory serviceScopeFactory)
-        : base(logger, configuration, ExchangeNames.ResizeImage, ExchangeNames.ResizeImage, ExchangeNames.ResizeImageFailed)
+        : base(logger, configuration, ExchangeNames.ResizeImage, ExchangeNames.ResizeImage, ExchangeNames.ResizeImageFailed, serviceScopeFactory)
     {
         _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
     }

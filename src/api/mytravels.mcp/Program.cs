@@ -12,6 +12,7 @@ using mytravels.common.Services;
 using mytravels.contract.Interfaces;
 using mytravels.domain;
 using mytravels.domain.Features.PointOfInterest;
+using mytravels.domain.Features.Traceability;
 using mytravels.mcp.Tools;
 using mytravels.storage;
 
@@ -49,6 +50,7 @@ builder.Services.AddSingleton<IConnectionFactory>(sp =>
 });
 
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
+builder.Services.AddTransient<IMessageAuditLogger, MessageAuditLogger>();
 builder.Services.AddTransient<IObjectStorageService, MinIOStorageService>();
 builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddMapsService(builder.Configuration);

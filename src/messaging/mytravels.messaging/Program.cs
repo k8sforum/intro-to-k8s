@@ -12,6 +12,7 @@ using mytravels.common.Services;
 using mytravels.contract.Interfaces;
 using mytravels.domain;
 using mytravels.domain.Features.PointOfInterest;
+using mytravels.domain.Features.Traceability;
 using mytravels.functions;
 using mytravels.storage;
 
@@ -58,6 +59,7 @@ builder.Services.Configure<MinIOConfig>(builder.Configuration.GetSection("MinIO"
 
 builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
+builder.Services.AddTransient<IMessageAuditLogger, MessageAuditLogger>();
 builder.Services.AddMapsService(builder.Configuration);
 builder.Services.AddTransient<IObjectStorageService, MinIOStorageService>();
 builder.Services.AddTransient<IImageDescriptionService, AnthropicImageDescriptionService>();

@@ -4,6 +4,8 @@ using System.Text;
 using System.Diagnostics;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using mytravels.contract.Constants;
+using mytravels.contract.Entities;
 using mytravels.contract.Interfaces;
 
 namespace mytravels.common.Services;
@@ -12,12 +14,14 @@ public class MessagePublisher : IMessagePublisher
 {
     private readonly IConnectionFactory _factory;
     private readonly ILogger<MessagePublisher> _logger;
+    private readonly IMessageAuditLogger _auditLogger;
     private static readonly ActivitySource _activitySource = new("MyTravels.RabbitMQ");
 
-    public MessagePublisher(IConnectionFactory factory, ILogger<MessagePublisher> logger)
+    public MessagePublisher(IConnectionFactory factory, ILogger<MessagePublisher> logger, IMessageAuditLogger auditLogger)
     {
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _auditLogger = auditLogger ?? throw new ArgumentNullException(nameof(auditLogger));
     }
 
     public async Task PublishAsync<T>(string exchange, T message, CancellationToken cancellationToken)
@@ -42,12 +46,33 @@ public class MessagePublisher : IMessagePublisher
 
             // AMQP correlation: use message's CorrelationId
             var correlationIdProperty = message.GetType().GetProperty("CorrelationId");
+            Guid? messageCorrelationId = null;
             if (correlationIdProperty != null)
             {
-                var messageCorrelationId = correlationIdProperty.GetValue(message) as Guid?;
+                messageCorrelationId = correlationIdProperty.GetValue(message) as Guid?;
                 if (messageCorrelationId.HasValue && messageCorrelationId != Guid.Empty)
                 {
                     properties.CorrelationId = messageCorrelationId.ToString();
+                }
+            }
+
+            if (messageCorrelationId.HasValue && messageCorrelationId != Guid.Empty)
+            {
+                var pointOfInterestId = message.GetType().GetProperty("PointOfInterestId")?.GetValue(message) as int?;
+                try
+                {
+                    await _auditLogger.LogAsync(new MessageAuditLog
+                    {
+                        CorrelationId = messageCorrelationId.Value,
+                        ExchangeName = exchange,
+                        EventType = MessageAuditEventTypes.Published,
+                        PointOfInterestId = pointOfInterestId,
+                        CreatedAt = DateTime.UtcNow
+                    }, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to write audit log for publish to {Exchange}, correlation {CorrelationId}", exchange, messageCorrelationId);
                 }
             }
 
