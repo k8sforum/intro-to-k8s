@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: solr
+  namespace: mytravels-default
+  labels:
+    app: solr
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  type: ClusterIP
+  selector:
+    app: solr
+  ports:
+    - name: http
+      port: 8983
+      targetPort: 8983
+      protocol: TCP

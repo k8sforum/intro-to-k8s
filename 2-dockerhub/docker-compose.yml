@@ -37,6 +37,23 @@ services:
       interval: 5s
       timeout: 10s
       retries: 5
+#Search - https://hub.docker.com/_/solr
+  # solr-precreate creates the collection on first boot from the default configset;
+  # the field definitions the app queries are applied at runtime by the
+  # SolrSchemaInitializer hosted service in messaging.
+  solr:
+    image: solr:9.10.1
+    container_name: mytravels-solr
+    ports:
+      - "8983:8983"    # HTTP API and Admin UI
+    command: ["solr-precreate", "mytravels-pois"]
+    volumes:
+      - solr-data:/var/solr
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8983/solr/mytravels-pois/admin/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 #DBs
   # https://github.com/felipewom/docker-compose-postgres
   postgres:
@@ -87,7 +104,7 @@ services:
       
 # Migrations
   migrate-core-db:
-    image: tshepontlhokoa/mytravels-migrations:v1.0.7
+    image: tshepontlhokoa/mytravels-migrations:v1.0.8
     command: ["--connection", "${CORE_DB_CONTEXT}"]
     restart: "no"
     environment:
@@ -99,7 +116,7 @@ services:
   # ASP.NET CORE API
   api:
     container_name: mytravels-api
-    image: tshepontlhokoa/mytravels-api:v1.0.10
+    image: tshepontlhokoa/mytravels-api:v1.0.11
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       GoogleApiKey: ${GOOGLE_API_KEY}
@@ -111,11 +128,15 @@ services:
       MinIO__Endpoint: ${MINIO_ENDPOINT}
       MinIO__AccessKey: ${MINIO_ROOT_USER}
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
+      Solr__Url: ${SOLR_URL}
+      Solr__Collection: ${SOLR_COLLECTION}
       DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5101:5101
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      solr:
         condition: service_healthy
       migrate-core-db:
         condition: service_completed_successfully
@@ -123,7 +144,7 @@ services:
   # MESSAGING APP
   messaging:
     container_name: mytravels-messaging
-    image: tshepontlhokoa/mytravels-messaging:v1.0.13
+    image: tshepontlhokoa/mytravels-messaging:v1.0.14
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
@@ -137,11 +158,15 @@ services:
       GoogleApiKey: ${GOOGLE_API_KEY}
       GoogleMapsUrl: ${GOOGLE_MAPS_URL}
       GooglePlacesUrl: ${GOOGLE_PLACES_URL}
+      Solr__Url: ${SOLR_URL}
+      Solr__Collection: ${SOLR_COLLECTION}
       DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5102:5102
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      solr:
         condition: service_healthy
       migrate-core-db:
         condition: service_completed_successfully
@@ -149,7 +174,7 @@ services:
   # MCP SERVER
   mcp:
     container_name: mytravels-mcp
-    image: tshepontlhokoa/mytravels-mcp:v1.0.1
+    image: tshepontlhokoa/mytravels-mcp:v1.0.2
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       GoogleApiKey: ${GOOGLE_API_KEY}
@@ -161,11 +186,15 @@ services:
       MinIO__Endpoint: ${MINIO_ENDPOINT}
       MinIO__AccessKey: ${MINIO_ROOT_USER}
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
+      Solr__Url: ${SOLR_URL}
+      Solr__Collection: ${SOLR_COLLECTION}
       DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5103:5103
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      solr:
         condition: service_healthy
       migrate-core-db:
         condition: service_completed_successfully
@@ -227,4 +256,6 @@ volumes:
   minio-config:
     driver: local
   web-docroot:
+    driver: local
+  solr-data:
     driver: local

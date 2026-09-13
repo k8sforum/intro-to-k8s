@@ -34,6 +34,7 @@ public class AppendImageTags : MessageSubscriberBase<PointOfInterestMessage>
             ICoreDbContext context = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             IObjectStorageService objectStorageService = scope.ServiceProvider.GetRequiredService<IObjectStorageService>();
             IImageDescriptionService imageDescriptionService = scope.ServiceProvider.GetRequiredService<IImageDescriptionService>();
+            IMessagePublisher publisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
 
             PointOfInterest point = await context.PointOfInterests.FirstOrDefaultAsync(x => x.Id == obj.PointOfInterestId, cancellationToken);
 
@@ -65,6 +66,10 @@ public class AppendImageTags : MessageSubscriberBase<PointOfInterestMessage>
                     },
                     cancellationToken);
             }
+
+            // Description and tags are two of the three fields SOLR ranks on, so reindex now that they exist.
+            // The inbound CorrelationId is reused so the reindex shows up on the same trace as the upload.
+            await publisher.PublishAsync(ExchangeNames.IndexSolr, new PointOfInterestMessage { CorrelationId = obj.CorrelationId, PointOfInterestId = point.Id }, cancellationToken);
         }
         catch (Exception ex)
         {

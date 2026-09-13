@@ -18,6 +18,7 @@ namespace mytravels.domain.Features.PointOfInterest
         private readonly IMessagePublisher _publisher;
         private readonly IGeoService _geoService;
         private readonly IImageDescriptionService _imageDescriptionService;
+        private readonly ISolrSearchService _solrSearchService;
 
         public PointOfInterestService
         (
@@ -25,7 +26,8 @@ namespace mytravels.domain.Features.PointOfInterest
             ICoreDbContext context,
             IMessagePublisher publisher,
             IGeoService geoService,
-            IImageDescriptionService imageDescriptionService
+            IImageDescriptionService imageDescriptionService,
+            ISolrSearchService solrSearchService
         )
         {
             _objectStorageService = service ?? throw new ArgumentNullException(nameof(service));
@@ -33,16 +35,27 @@ namespace mytravels.domain.Features.PointOfInterest
             _publisher = publisher ?? throw new ArgumentNullException(nameof(publisher));
             _geoService = geoService ?? throw new ArgumentNullException(nameof(geoService));
             _imageDescriptionService = imageDescriptionService ?? throw new ArgumentNullException(nameof(imageDescriptionService));
+            _solrSearchService = solrSearchService ?? throw new ArgumentNullException(nameof(solrSearchService));
         }
 
         public async Task<List<GetPointOfInterestResponse>> GetAsync(CancellationToken cancellationToken)
             => await _context.GetAllPointsOfInterestAsync(cancellationToken);
 
         public async Task<List<GetPointOfInterestResponse>> GetAsync(string tagName, CancellationToken cancellationToken)
-            => await _context.GetPointsOfInterestByTagAsync(tagName, cancellationToken);
+            => await _solrSearchService.SearchAsync(new SolrSearchQuery { Tag = tagName }, cancellationToken);
 
         public async Task<List<GetPointOfInterestResponse>> SearchAsync(string searchTerm, CancellationToken cancellationToken)
-            => await _context.SearchPointsOfInterestByFormattedAddressAsync(searchTerm, cancellationToken);
+            => await _solrSearchService.SearchAsync(new SolrSearchQuery { Term = searchTerm }, cancellationToken);
+
+        public async Task<List<GetPointOfInterestResponse>> SearchAsync(SolrSearchQuery query, CancellationToken cancellationToken)
+            => await _solrSearchService.SearchAsync(query, cancellationToken);
+
+        public async Task<Guid> RequestReindexAsync(bool purgeFirst, CancellationToken cancellationToken)
+        {
+            Guid correlationId = Guid.NewGuid();
+            await _publisher.PublishAsync(ExchangeNames.ReindexSolr, new SolrReindexMessage { CorrelationId = correlationId, PurgeFirst = purgeFirst }, cancellationToken);
+            return correlationId;
+        }
 
         public async Task<int> SaveFileAsPointOfInsterestAsync(IFormFile file, CancellationToken cancellationToken)
         {
@@ -126,8 +139,15 @@ namespace mytravels.domain.Features.PointOfInterest
             int id = await _context.CreatePointOfInterestAsync(point, cancellationToken);
 
             await _publisher.PublishAsync(ExchangeNames.AppendFormattedAddress, new PointOfInterestMessage { CorrelationId = correlationId, PointOfInterestId = id }, cancellationToken);
+
+            // append-image-tags is chained from ResizeImage rather than published here, so the description and
+            // tags are generated exactly once per image and the index-solr message that carries them is only
+            // published after the description service has succeeded.
             await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { CorrelationId = correlationId, PointOfInterestId = point.Id }, cancellationToken);
-            await _publisher.PublishAsync(ExchangeNames.AppendImageTags, new PointOfInterestMessage { CorrelationId = correlationId, PointOfInterestId = point.Id }, cancellationToken);
+
+            // Index immediately so the point is findable by date and coordinates straight away. The address,
+            // description and tags all arrive asynchronously, so each enrichment subscriber republishes here.
+            await _publisher.PublishAsync(ExchangeNames.IndexSolr, new PointOfInterestMessage { CorrelationId = correlationId, PointOfInterestId = point.Id }, cancellationToken);
 
             return id;
         }

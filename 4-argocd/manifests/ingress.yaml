@@ -7,6 +7,7 @@
 #   grafana              — http://grafana.mytravels.local
 #   prometheus           — http://prometheus.mytravels.local
 #   otel-collector       — http://otel.mytravels.local (OTLP/HTTP, for browser RUM traces)
+#   solr                 — http://solr.mytravels.local (Admin UI and HTTP API)
 #   postgres             — TCP via the 'postgres' Traefik entrypoint (see note below)
 #
 # postgres note: HTTP Ingress does not support raw TCP. The IngressRouteTCP below
@@ -75,6 +76,16 @@ spec:
                 name: otel-collector
                 port:
                   number: 4318
+    - host: solr.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: solr
+                port:
+                  number: 8983
 ---
 
 apiVersion: networking.k8s.io/v1

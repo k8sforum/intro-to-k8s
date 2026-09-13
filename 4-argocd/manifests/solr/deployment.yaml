@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: solr
+  namespace: mytravels-default
+  labels:
+    app: solr
+  annotations:
+    # Wave 0 with the other backing services, so it is Healthy before api,
+    # messaging and mcp come up in wave 2.
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: solr
+  template:
+    metadata:
+      labels:
+        app: solr
+    spec:
+      containers:
+        - name: solr
+          image: solr:9.10.1
+          # solr-precreate creates the collection on first boot from the default
+          # configset. The fields the app queries are added at runtime by the
+          # SolrSchemaInitializer hosted service in messaging, so there is one
+          # schema definition in C# instead of a configset copied into every stage.
+          args: ["solr-precreate", "mytravels-pois"]
+          ports:
+            - name: http
+              containerPort: 8983
+              protocol: TCP
+          env:
+            # SOLR sizes its heap from the container by default; pinning it keeps
+            # the JVM inside the memory limit below on a small k3d cluster.
+            - name: SOLR_JAVA_MEM
+              value: "-Xms256m -Xmx512m"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          volumeMounts:
+            - name: solr-data
+              mountPath: /var/solr
+          # Liveness asks whether SOLR itself is up; readiness asks the stronger
+          # question of whether the collection exists and can answer a query.
+          livenessProbe:
+            httpGet:
+              path: /solr/admin/info/system
+              port: 8983
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /solr/mytravels-pois/admin/ping
+              port: 8983
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+      volumes:
+        - name: solr-data
+          persistentVolumeClaim:
+            claimName: solr-data-pvc

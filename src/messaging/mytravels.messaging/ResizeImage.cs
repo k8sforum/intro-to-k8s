@@ -34,7 +34,7 @@ public class ResizeImage : MessageSubscriberBase<PointOfInterestMessage>
             using IServiceScope scope = _serviceScopeFactory.CreateScope();
             ICoreDbContext context = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             IObjectStorageService objectStorageService = scope.ServiceProvider.GetRequiredService<IObjectStorageService>();
-
+            IMessagePublisher publisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
 
             PointOfInterest point = await context.PointOfInterests.FirstOrDefaultAsync(x => x.Id == obj.PointOfInterestId, cancellationToken);
 
@@ -43,27 +43,33 @@ public class ResizeImage : MessageSubscriberBase<PointOfInterestMessage>
                 throw new ArgumentException($"Could not find point with id: {obj.PointOfInterestId}");
             }
 
-            if (point.ImageResized)
+            // Only the resize itself is skipped for an already-resized row; the chain below still has to run,
+            // or a redelivered message would leave the point without a description, tags or a SOLR document.
+            if (!point.ImageResized)
             {
-                return;
+                Stream stream = await objectStorageService.GetStreamAsync(BucketNames.NewUploadedImagesContainer, point.GeneratedBlobName, CancellationToken.None);
+                using var image = new MagickImage(stream);
+                uint newWidth = (uint)(image.Width * 0.1);
+                uint newHeight = (uint)(image.Height * 0.1);
+
+                image.Resize(newWidth, newHeight);
+                using var resizedStream = new MemoryStream();
+                await image.WriteAsync(resizedStream, MagickFormat.Jpeg);
+                resizedStream.Position = 0;
+                await objectStorageService.SaveObjectAsync(BucketNames.ResizedImagesContainer, point.GeneratedBlobName, resizedStream, CancellationToken.None);
+                point.ImageResized = true;
+                var entry = context.Entry(point);
+                entry.State = EntityState.Unchanged;
+                entry.Property(nameof(point.ImageResized)).IsModified = true;
+                await context.SaveChangesAsync(CancellationToken.None);
             }
 
-            Stream stream = await objectStorageService.GetStreamAsync(BucketNames.NewUploadedImagesContainer, point.GeneratedBlobName, CancellationToken.None);
-            using var image = new MagickImage(stream);
-            uint newWidth = (uint)(image.Width * 0.1);
-            uint newHeight = (uint)(image.Height * 0.1);
-
-            image.Resize(newWidth, newHeight);
-            using var resizedStream = new MemoryStream();
-            await image.WriteAsync(resizedStream, MagickFormat.Jpeg);
-            resizedStream.Position = 0;
-            await objectStorageService.SaveObjectAsync(BucketNames.ResizedImagesContainer, point.GeneratedBlobName, resizedStream, CancellationToken.None);
-            point.ImageResized = true;
-            var entry = context.Entry(point);
-            entry.State = EntityState.Unchanged;
-            entry.Property(nameof(point.ImageResized)).IsModified = true;
-            await context.SaveChangesAsync(CancellationToken.None);
-
+            // The description and tags are generated in AppendImageTags, which publishes index-solr only once
+            // it has persisted them — so chaining here rather than indexing directly is what keeps them out of
+            // the indexed document until they exist. Replacing a photo publishes only resize-image, so this is
+            // also what re-describes and reindexes the replacement row. The inbound CorrelationId is reused so
+            // the whole chain shows up on the same trace.
+            await publisher.PublishAsync(ExchangeNames.AppendImageTags, new PointOfInterestMessage { CorrelationId = obj.CorrelationId, PointOfInterestId = point.Id }, cancellationToken);
         }
         catch (Exception ex)
         {

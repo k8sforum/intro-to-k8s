@@ -9,6 +9,7 @@ using System.Reflection;
 using mytravels.common.Config;
 using mytravels.common.Extensions;
 using mytravels.common.Services;
+using mytravels.contract.Config;
 using mytravels.contract.Interfaces;
 using mytravels.domain;
 using mytravels.domain.Features.PointOfInterest;
@@ -56,7 +57,11 @@ builder.Services.AddSingleton<IConnectionFactory>(sp =>
 });
 
 builder.Services.Configure<MinIOConfig>(builder.Configuration.GetSection("MinIO"));
+builder.Services.Configure<SolrConfig>(builder.Configuration.GetSection("Solr"));
 
+builder.Services.AddTransient<SolrClient>();
+builder.Services.AddTransient<ISolrSearchService, SolrSearchService>();
+builder.Services.AddTransient<ISolrIndexService, SolrIndexService>();
 builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
 builder.Services.AddTransient<IMessageAuditLogger, MessageAuditLogger>();
@@ -70,9 +75,14 @@ builder.Services.AddHostedService<AppendFormattedAddress>();
 builder.Services.AddHostedService<AppendFormattedAddressSweeper>();
 builder.Services.AddHostedService<ResizeImage>();
 builder.Services.AddHostedService<AppendImageTags>();
+builder.Services.AddHostedService<IndexSolr>();
+builder.Services.AddHostedService<ReindexSolr>();
 
 // Declare failed exchanges (fanout, non-durable, auto-delete)
 builder.Services.AddHostedService<FailedExchangeDeclarer>();
+
+// Create the SOLR fields the app queries, retrying until SOLR is reachable
+builder.Services.AddHostedService<SolrSchemaInitializer>();
 
 var app = builder.Build();
 

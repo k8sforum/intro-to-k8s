@@ -32,42 +32,11 @@ namespace mytravels.domain
         public async Task<List<PointOfInterest>> GetPointsOfInterestAsync(CancellationToken cancellationToken)
             => await this.PointOfInterests.ToListAsync(cancellationToken);
 
-        public async Task<List<GetPointOfInterestResponse>> GetPointsOfInterestByTagAsync(string tagName, CancellationToken cancellationToken)
-            => await ExecuteProcInterpolatedAsync<GetPointOfInterestResponse>($"SELECT * FROM public.spGetPointOfInterestByTagName({tagName})");
-
         public async Task<List<GetPointOfInterestResponse>> GetPointsOfInterestByKeyAsync(string pointOfInterestKey, CancellationToken cancellationToken)
             => await ExecuteProcInterpolatedAsync<GetPointOfInterestResponse>($"SELECT * FROM public.spGetPointOfInterestById({pointOfInterestKey})");
 
         public async Task<List<GetPointOfInterestResponse>> GetAllPointsOfInterestAsync(CancellationToken cancellationToken)
             => await ExecuteProcRawAsync<GetPointOfInterestResponse>("SELECT * FROM public.spGetPointOfInterest()");
-
-        public async Task<List<GetPointOfInterestResponse>> SearchPointsOfInterestByFormattedAddressAsync(string searchTerm, CancellationToken cancellationToken)
-        {
-            var results = await this.PointOfInterests
-                .Where(p => EF.Functions.ILike(p.FormattedAddress, $"%{searchTerm}%"))
-                .Select(p => new GetPointOfInterestResponse
-                {
-                    RowId = p.Id,
-                    PointOfInterestId = p.Id,
-                    Container = p.Container,
-                    OriginalFileName = p.OriginalFileName,
-                    GeneratedBlobName = p.GeneratedBlobName,
-                    Latitude = p.Latitude,
-                    Longitude = p.Longitude,
-                    DateCreated = p.DateCreated,
-                    DateTaken = p.DateTaken,
-                    FormattedAddress = p.FormattedAddress,
-                    Description = p.Description,
-                    ImageResized = p.ImageResized,
-                    PointOfInterestKey = p.PointOfInterestKey,
-                    CorrelationId = p.CorrelationId,
-                    TagId = null,
-                    TagName = null
-                })
-                .ToListAsync(cancellationToken);
-
-            return results;
-        }
 
         public async Task<List<CorrelationSummaryDto>> GetCorrelationSummariesAsync(int page, int pageSize, CancellationToken cancellationToken)
         {
@@ -142,6 +111,11 @@ namespace mytravels.domain
             point.DateCreated = DateTime.UtcNow;
             point.GeneratedBlobName = blobName;
             point.OriginalFileName = blobName;
+
+            // The entity is re-inserted rather than built fresh, so flags from the superseded row would
+            // otherwise carry over. ImageResized must start false or ResizeImage skips the new blob and
+            // nothing is ever written to resized-images under this GeneratedBlobName.
+            point.ImageResized = false;
             this.AddObject(point);
             await this.SaveChangesAsync(cancellationToken);
         }

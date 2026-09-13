@@ -32,6 +32,7 @@ public class AppendFormattedAddress : MessageSubscriberBase<PointOfInterestMessa
             using IServiceScope scope = _serviceScopeFactory.CreateScope();
             ICoreDbContext context = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             IMapsService mapsService = scope.ServiceProvider.GetRequiredService<IMapsService>();
+            IMessagePublisher publisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
 
             PointOfInterest point = await context.PointOfInterests.FirstOrDefaultAsync(x => x.Id == obj.PointOfInterestId, cancellationToken);
 
@@ -48,6 +49,10 @@ public class AppendFormattedAddress : MessageSubscriberBase<PointOfInterestMessa
                 entry.Property(nameof(point.FormattedAddress)).IsModified = true;
                 await context.SaveChangesAsync(default);
             }
+
+            // The address is one of the fields SOLR ranks on, so reindex now that it exists. The inbound
+            // CorrelationId is reused so the reindex shows up on the same trace as the upload.
+            await publisher.PublishAsync(ExchangeNames.IndexSolr, new PointOfInterestMessage { CorrelationId = obj.CorrelationId, PointOfInterestId = point.Id }, cancellationToken);
         }
         catch (Exception ex)
         {

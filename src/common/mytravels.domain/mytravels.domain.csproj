@@ -12,9 +12,6 @@
 <Content Include="Features\PointOfInterest\public.spGetPointOfInterestById.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Features\PointOfInterest\public.spGetPointOfInterestByTagName.sql">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="Features\PointOfInterest\public.spGetPointOfInterests.sql">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

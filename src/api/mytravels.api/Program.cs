@@ -11,6 +11,7 @@ using mytravels.api.Middleware;
 using mytravels.common.Config;
 using mytravels.common.Extensions;
 using mytravels.common.Services;
+using mytravels.contract.Config;
 using mytravels.contract.Interfaces;
 using mytravels.domain;
 using mytravels.domain.Features.PointOfInterest;
@@ -87,6 +88,9 @@ builder.Services.AddTransient<IObjectStorageService, MinIOStorageService>();
 builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddMapsService(builder.Configuration);
 builder.Services.AddTransient<IImageDescriptionService, AnthropicImageDescriptionService>();
+builder.Services.AddTransient<SolrClient>();
+builder.Services.AddTransient<ISolrSearchService, SolrSearchService>();
+builder.Services.AddTransient<ISolrIndexService, SolrIndexService>();
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
@@ -103,6 +107,7 @@ options =>
 });
 
 builder.Services.Configure<MinIOConfig>(builder.Configuration.GetSection("MinIO"));
+builder.Services.Configure<SolrConfig>(builder.Configuration.GetSection("Solr"));
 
 var app = builder.Build();
 

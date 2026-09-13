@@ -19,14 +19,28 @@ public class PointOfInterestMcpTools
     }
 
     [McpServerTool(Name = "search_pointofinterest")]
-    [Description("Searches for points of interest by formatted address, returning all matching records.")]
+    [Description("Searches saved points of interest across their formatted address, tags and AI-generated description, ranked by relevance. Optionally narrow the results to an exact tag and to a capture-date range.")]
     public async Task<List<PointOfInterestDto>> SearchPointOfInterestAsync(
-        [Description("Search term to find in the formatted address field.")] string term,
+        [Description("Free-text search term, matched against the formatted address, the tags and the description.")] string term,
+        [Description("Optional exact tag name to filter by, for example 'beach'.")] string tag,
+        [Description("Optional inclusive start of the capture-date range, as an ISO-8601 date such as 2025-06-01.")] DateTime? from,
+        [Description("Optional inclusive end of the capture-date range, as an ISO-8601 date such as 2025-08-31.")] DateTime? to,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(term)) throw new McpException($"'{nameof(term)}' is required.");
+        if (string.IsNullOrWhiteSpace(term) && string.IsNullOrWhiteSpace(tag) && from is null && to is null)
+        {
+            throw new McpException($"At least one of '{nameof(term)}', '{nameof(tag)}', '{nameof(from)}' or '{nameof(to)}' is required.");
+        }
 
-        var response = await _service.SearchAsync(term, cancellationToken);
+        SolrSearchQuery query = new()
+        {
+            Term = term,
+            Tag = tag,
+            From = from,
+            To = to
+        };
+
+        var response = await _service.SearchAsync(query, cancellationToken);
         return ToDto(response);
     }
 
@@ -43,6 +57,7 @@ public class PointOfInterestMcpTools
                 DateCreated = first.DateCreated,
                 DateTaken = first.DateTaken,
                 FormattedAddress = first.FormattedAddress,
+                Description = first.Description,
                 Latitude = first.Latitude,
                 Longitude = first.Longitude,
                 PointOfInterestKey = first.PointOfInterestKey,

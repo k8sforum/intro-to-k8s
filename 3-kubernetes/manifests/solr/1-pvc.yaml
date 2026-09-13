@@ -1,0 +1,18 @@
+# SOLR runs as uid 8983, not root, so this uses the dynamically provisioned
+# local-path class the other stateful services here use (postgres, prometheus,
+# tempo, grafana) rather than minio's manually pinned hostPath PV. k3d's
+# local-path provisioner creates the directory world-writable, which a non-root
+# container can write to; a hostPath PV would come up root-owned and SOLR would
+# fail to create its core.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: solr-data-pvc
+  namespace: mytravels-default
+spec:
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

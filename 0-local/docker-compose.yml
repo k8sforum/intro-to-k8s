@@ -37,6 +37,22 @@ services:
       interval: 5s
       timeout: 10s
       retries: 5
+#Search - https://hub.docker.com/_/solr
+  # The app runs from source in this stage, so it reaches SOLR on localhost:8983
+  # using the Solr section of each project's appsettings.json.
+  solr:
+    image: solr:9.10.1
+    container_name: mytravels-solr
+    ports:
+      - "8983:8983"    # HTTP API and Admin UI
+    command: ["solr-precreate", "mytravels-pois"]
+    volumes:
+      - solr-data:/var/solr
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8983/solr/mytravels-pois/admin/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 #DBs
   # https://github.com/felipewom/docker-compose-postgres
   postgres:
@@ -87,7 +103,7 @@ services:
       
 # Migrations
   migrate-core-db:
-    image: tshepontlhokoa/mytravels-migrations:v1.0.7
+    image: tshepontlhokoa/mytravels-migrations:v1.0.8
     command: ["--connection", "${CORE_DB_CONTEXT}"]
     restart: "no"
     environment:
@@ -106,4 +122,6 @@ volumes:
   minio-data:
     driver: local
   minio-config:
+    driver: local
+  solr-data:
     driver: local

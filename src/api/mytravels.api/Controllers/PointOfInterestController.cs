@@ -13,6 +13,8 @@ namespace mytravels.api.Controllers
     [ExcludeFromCodeCoverage]
     public class PointOfInterestController : ControllerBase
     {
+        private const int DefaultRows = 100;
+
         private readonly IPointOfInterestService _service;
 
         public PointOfInterestController
@@ -41,13 +43,46 @@ namespace mytravels.api.Controllers
             return Ok(dtos);
         }
 
+        /// <summary>
+        /// Searches points of interest through SOLR across the formatted address, tags and AI-generated
+        /// description, optionally narrowed to a tag and a capture-date range.
+        /// </summary>
         [HttpGet("search")]
         [ProducesResponseType(typeof(List<PointOfInterestDto>), 200)]
-        public async Task<IActionResult> SearchAsync([FromQuery] string term, CancellationToken cancellationToken)
+        public async Task<IActionResult> SearchAsync(
+            [FromQuery] string term,
+            [FromQuery] string tag,
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to,
+            [FromQuery] int rows,
+            [FromQuery] int start,
+            CancellationToken cancellationToken)
         {
-            List<GetPointOfInterestResponse> response = await _service.SearchAsync(term, cancellationToken);
+            SolrSearchQuery query = new()
+            {
+                Term = term,
+                Tag = tag,
+                From = from,
+                To = to,
+                Rows = rows <= 0 ? DefaultRows : rows,
+                Start = start < 0 ? 0 : start
+            };
+
+            List<GetPointOfInterestResponse> response = await _service.SearchAsync(query, cancellationToken);
             List<PointOfInterestDto> dtos = response.ToDto();
             return Ok(dtos);
+        }
+
+        /// <summary>
+        /// Queues a full rebuild of the SOLR index from PostgreSQL. The rebuild runs in the messaging worker;
+        /// the returned correlation id can be followed through the traceability endpoints.
+        /// </summary>
+        [HttpPost("reindex")]
+        [ProducesResponseType(typeof(SolrReindexResponseDto), 202)]
+        public async Task<IActionResult> ReindexAsync([FromQuery] bool? purgeFirst, CancellationToken cancellationToken)
+        {
+            Guid correlationId = await _service.RequestReindexAsync(purgeFirst ?? true, cancellationToken);
+            return Accepted(new SolrReindexResponseDto { CorrelationId = correlationId });
         }
 
         [HttpGet("{id:int}")]

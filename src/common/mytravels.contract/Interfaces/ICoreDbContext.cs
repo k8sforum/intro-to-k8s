@@ -30,10 +30,8 @@ public interface ICoreDbContext
     Task<int> CreatePointOfInterestAsync(PointOfInterest point, CancellationToken cancellationToken);
     Task AddImageToPointOfInterestAsync(string blobName, PointOfInterest point, CancellationToken cancellationToken);
     Task UpdateAddressAsync(UpdateAddressDto dto, CancellationToken cancellationToken);
-    Task<List<GetPointOfInterestResponse>> GetPointsOfInterestByTagAsync(string tagName, CancellationToken cancellationToken);
     Task<List<GetPointOfInterestResponse>> GetPointsOfInterestByKeyAsync(string pointOfInterestKey, CancellationToken cancellationToken);
     Task<List<GetPointOfInterestResponse>> GetAllPointsOfInterestAsync(CancellationToken cancellationToken);
-    Task<List<GetPointOfInterestResponse>> SearchPointsOfInterestByFormattedAddressAsync(string searchTerm, CancellationToken cancellationToken);
     Task<List<CorrelationSummaryDto>> GetCorrelationSummariesAsync(int page, int pageSize, CancellationToken cancellationToken);
     Task<List<MessageAuditLogDto>> GetEventsByCorrelationIdAsync(Guid correlationId, CancellationToken cancellationToken);
 }

@@ -42,6 +42,23 @@ services:
       interval: 5s
       timeout: 10s
       retries: 5
+#Search - https://hub.docker.com/_/solr
+  # solr-precreate creates the collection on first boot from the default configset;
+  # the field definitions the app queries are applied at runtime by the
+  # SolrSchemaInitializer hosted service in messaging.
+  solr:
+    image: solr:9.10.1
+    container_name: mytravels-solr
+    ports:
+      - "8983:8983"    # HTTP API and Admin UI
+    command: ["solr-precreate", "mytravels-pois"]
+    volumes:
+      - solr-data:/var/solr
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8983/solr/mytravels-pois/admin/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 #DBs
   # https://github.com/felipewom/docker-compose-postgres
   postgres:
@@ -90,7 +107,7 @@ services:
       EOSQL   
 # Migrations
   migrate-core-db:
-    image: mytravels-migrations:v1.0.7
+    image: mytravels-migrations:v1.0.8
     build:
       context: ../src
       dockerfile: common/mytravels.migration/Dockerfile
@@ -104,7 +121,7 @@ services:
   # ASP.NET CORE API
   api:
     container_name: mytravels-api
-    image: mytravels-api:v1.0.10
+    image: mytravels-api:v1.0.11
     build:
       context: ../src
       dockerfile: api/mytravels.api/Dockerfile
@@ -121,18 +138,22 @@ services:
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_SERVICE_NAME: mytravels-api
+      Solr__Url: ${SOLR_URL}
+      Solr__Collection: ${SOLR_COLLECTION}
       DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5101:5101
     depends_on:
       rabbitmq:
         condition: service_healthy
+      solr:
+        condition: service_healthy
       migrate-core-db:
         condition: service_completed_successfully
   # MESSAGING APP
   messaging:
     container_name: mytravels-messaging
-    image: mytravels-messaging:v1.0.13
+    image: mytravels-messaging:v1.0.14
     build:
       context: ../src
       dockerfile: messaging/mytravels.messaging/Dockerfile
@@ -151,18 +172,22 @@ services:
       GooglePlacesUrl: ${GOOGLE_PLACES_URL}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_SERVICE_NAME: mytravels-messaging
+      Solr__Url: ${SOLR_URL}
+      Solr__Collection: ${SOLR_COLLECTION}
       DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5102:5102
     depends_on:
       rabbitmq:
         condition: service_healthy
+      solr:
+        condition: service_healthy
       migrate-core-db:
         condition: service_completed_successfully
   # MCP SERVER
   mcp:
     container_name: mytravels-mcp
-    image: mytravels-mcp:v1.0.1
+    image: mytravels-mcp:v1.0.2
     build:
       context: ../src
       dockerfile: api/mytravels.mcp/Dockerfile
@@ -179,11 +204,15 @@ services:
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_SERVICE_NAME: mytravels-mcp
+      Solr__Url: ${SOLR_URL}
+      Solr__Collection: ${SOLR_COLLECTION}
       DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5103:5103
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      solr:
         condition: service_healthy
       migrate-core-db:
         condition: service_completed_successfully
@@ -298,4 +327,6 @@ volumes:
   tempo-data:
     driver: local
   grafana-data:
+    driver: local
+  solr-data:
     driver: local

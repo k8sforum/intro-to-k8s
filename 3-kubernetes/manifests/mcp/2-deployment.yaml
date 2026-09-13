@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: mcp
-          image: tshepontlhokoa/mytravels-mcp:v1.0.1
+          image: tshepontlhokoa/mytravels-mcp:v1.0.2
           ports:
             - name: http
               containerPort: 5103
@@ -33,6 +33,10 @@ spec:
               value: https://places.googleapis.com
             - name: MinIO__Endpoint
               value: minio:9000
+            - name: Solr__Url
+              value: http://solr:8983
+            - name: Solr__Collection
+              value: mytravels-pois
             - name: ConnectionStrings__CoreDbContext
               valueFrom:
                 secretKeyRef:

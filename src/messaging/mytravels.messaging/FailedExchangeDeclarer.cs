@@ -48,6 +48,22 @@ public class FailedExchangeDeclarer : IHostedService
             cancellationToken: cancellationToken);
         _logger.LogInformation("Failed exchange '{FailedExchange}' declared.", ExchangeNames.AppendImageTagsFailed);
 
+        await channel.ExchangeDeclareAsync(
+            exchange: ExchangeNames.IndexSolrFailed,
+            type: ExchangeType.Fanout,
+            durable: false,
+            autoDelete: true,
+            cancellationToken: cancellationToken);
+        _logger.LogInformation("Failed exchange '{FailedExchange}' declared.", ExchangeNames.IndexSolrFailed);
+
+        await channel.ExchangeDeclareAsync(
+            exchange: ExchangeNames.ReindexSolrFailed,
+            type: ExchangeType.Fanout,
+            durable: false,
+            autoDelete: true,
+            cancellationToken: cancellationToken);
+        _logger.LogInformation("Failed exchange '{FailedExchange}' declared.", ExchangeNames.ReindexSolrFailed);
+
         await channel.CloseAsync(cancellationToken);
         await connection.CloseAsync(cancellationToken);
 
