@@ -63,20 +63,12 @@ spec:
                 secretKeyRef:
                   name: messaging-secret
                   key: GoogleApiKey
-            - name: ContentSafetyEndpoint
-              valueFrom:
-                secretKeyRef:
-                  name: messaging-secret
-                  key: ContentSafetyEndpoint
-            - name: ContentSafetyKey
-              valueFrom:
-                secretKeyRef:
-                  name: messaging-secret
-                  key: ContentSafetyKey
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://otel-collector:4317
             - name: OTEL_SERVICE_NAME
               value: mytravels-messaging
+            - name: DOTNET_hostBuilder__reloadConfigOnChange
+              value: "false"
           resources:
             requests:
               cpu: 100m

@@ -111,6 +111,7 @@ services:
       MinIO__Endpoint: ${MINIO_ENDPOINT}
       MinIO__AccessKey: ${MINIO_ROOT_USER}
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
+      DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5101:5101
     depends_on:
@@ -135,6 +136,7 @@ services:
       GoogleApiKey: ${GOOGLE_API_KEY}
       GoogleMapsUrl: ${GOOGLE_MAPS_URL}
       GooglePlacesUrl: ${GOOGLE_PLACES_URL}
+      DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5102:5102
     depends_on:
@@ -158,6 +160,7 @@ services:
       MinIO__Endpoint: ${MINIO_ENDPOINT}
       MinIO__AccessKey: ${MINIO_ROOT_USER}
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
+      DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5103:5103
     depends_on:

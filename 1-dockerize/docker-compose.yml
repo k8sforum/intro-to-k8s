@@ -121,6 +121,7 @@ services:
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_SERVICE_NAME: mytravels-api
+      DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5101:5101
     depends_on:
@@ -149,6 +150,7 @@ services:
       GooglePlacesUrl: ${GOOGLE_PLACES_URL}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_SERVICE_NAME: mytravels-messaging
+      DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5102:5102
     depends_on:
@@ -176,6 +178,7 @@ services:
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_SERVICE_NAME: mytravels-mcp
+      DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5103:5103
     depends_on:
