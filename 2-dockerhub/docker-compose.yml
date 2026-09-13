@@ -170,14 +170,50 @@ services:
       migrate-core-db:
         condition: service_completed_successfully
 
+  # The web image is built with sentinel placeholders (__API_BASE_URL__,
+  # __OTLP_TRACES_ENDPOINT__ — see 2-dockerhub/docker-compose.build.yml) rather
+  # than literal URLs, so it needs the same substitution step the k8s manifests
+  # run as an init container (3-kubernetes/manifests/web/2-deployment.yaml):
+  # copy the built site into a shared volume, sed the real URLs into it, then
+  # have nginx serve that copy instead of the image's own (unsubstituted) docroot.
+  render-web-config:
+    container_name: mytravels-web-render-config
+    image: tshepontlhokoa/mytravels-web:v1.0.7
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -eu
+        cp -a /usr/share/nginx/html/. /docroot/
+        find /docroot/assets -name '*.js' -exec sed -i \
+          -e "s|__API_BASE_URL__|${VITE_API_BASE_URL}|g" \
+          -e "s|__OTLP_TRACES_ENDPOINT__|${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}|g" \
+          {} +
+        if grep -rq '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__' /docroot/assets; then
+          echo "ERROR: unsubstituted placeholders remain in the bundle" >&2
+          grep -rlo '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__' /docroot/assets >&2
+          exit 1
+        fi
+        echo "substituted VITE_API_BASE_URL=${VITE_API_BASE_URL}"
+        echo "substituted VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}"
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
+    volumes:
+      - web-docroot:/docroot
+
   # WEB UI
   web:
     container_name: mytravels-web
-    image: tshepontlhokoa/mytravels-web:v1.0.5
+    image: tshepontlhokoa/mytravels-web:v1.0.7
     ports:
       - 5100:80
+    volumes:
+      - web-docroot:/usr/share/nginx/html
     depends_on:
-      - api
+      api:
+        condition: service_started
+      render-web-config:
+        condition: service_completed_successfully
 
 volumes:
   pgdata:
@@ -189,4 +225,6 @@ volumes:
   minio-data:
     driver: local
   minio-config:
+    driver: local
+  web-docroot:
     driver: local
