@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: messaging
-          image: tshepontlhokoa/mytravels-messaging:v1.0.12
+          image: tshepontlhokoa/mytravels-messaging:v1.0.13
           ports:
             - name: http
               containerPort: 5102
@@ -58,6 +58,11 @@ spec:
                 secretKeyRef:
                   name: messaging-secret
                   key: AnthropicApiKey
+            - name: AnthropicModel
+              valueFrom:
+                configMapKeyRef:
+                  name: messaging-config
+                  key: AnthropicModel
             - name: GoogleApiKey
               valueFrom:
                 secretKeyRef:

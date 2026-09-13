@@ -123,13 +123,14 @@ services:
   # MESSAGING APP
   messaging:
     container_name: mytravels-messaging
-    image: tshepontlhokoa/mytravels-messaging:v1.0.12
+    image: tshepontlhokoa/mytravels-messaging:v1.0.13
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
       ASPNETCORE_URLS: http://+:5102
       RabbitMQ__Uri: ${RABBIT_MQ_URI}
       AnthropicApiKey: ${ANTHROPIC_API_KEY}
+      AnthropicModel: ${ANTHROPIC_MODEL}
       MinIO__Endpoint: ${MINIO_ENDPOINT}
       MinIO__AccessKey: ${MINIO_ROOT_USER}
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}

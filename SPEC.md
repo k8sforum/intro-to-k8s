@@ -429,6 +429,7 @@ Navigation: `PointOfInterestTagAssociations` (1:N).
 | `RabbitMQ:Uri` | `amqp://user123:password123@localhost:5672` | yes | connection factory throws on first use |
 | `MinIO:Endpoint` / `AccessKey` / `SecretKey` | `localhost:9000` / `user123` / `password123` | yes for any storage call | `MinioClient` build fails / calls throw |
 | `AnthropicApiKey` | `<YOUR_ANTHROPIC_API_KEY>` (placeholder) | no — placeholder disables image description feature | `POST /api/pointofinterest/{id}/describe` returns 503 if unset |
+| `AnthropicModel` | `claude-haiku-4-5` (code fallback, no appsettings.json entry) | no — falls back to the default model when unset | n/a |
 | `GoogleApiKey` | `<YOUR_GOOGLE_API_KEY>` (placeholder) | no — placeholder triggers automatic fallback to OpenStreetMap | geocoding silently switches provider, not an error |
 | `GoogleMapsUrl` | `https://maps.googleapis.com` | only if Google provider active | |
 | `GooglePlacesUrl` | `https://places.googleapis.com` | **dead config — never read** | n/a |

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: messaging-config
+  namespace: mytravels-default
+  labels:
+    app: messaging
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+data:
+  AnthropicModel: claude-haiku-4-5

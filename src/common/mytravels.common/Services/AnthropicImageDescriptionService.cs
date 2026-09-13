@@ -11,7 +11,7 @@ namespace mytravels.common.Services
 {
     public class AnthropicImageDescriptionService : IImageDescriptionService
     {
-        private const string Model = "claude-haiku-4-5";
+        private const string DefaultModel = "claude-haiku-4-5";
         private const string UnsetAnthropicApiKey = "<YOUR_ANTHROPIC_API_KEY>";
         private const string SystemPrompt =
             "You are a terse travel-photo captioning assistant. Given a photo, respond only with the requested JSON.";
@@ -20,6 +20,7 @@ namespace mytravels.common.Services
 
         private readonly AnthropicClient _client;
         private readonly bool _configured;
+        private readonly string _model;
 
         public AnthropicImageDescriptionService(IConfiguration configuration)
         {
@@ -27,6 +28,8 @@ namespace mytravels.common.Services
             string apiKey = configuration.GetValue<string>("AnthropicApiKey");
             _configured = !string.IsNullOrEmpty(apiKey) && apiKey != UnsetAnthropicApiKey;
             _client = new AnthropicClient { ApiKey = apiKey };
+            string model = configuration.GetValue<string>("AnthropicModel");
+            _model = string.IsNullOrEmpty(model) ? DefaultModel : model;
         }
 
         public async Task<ImageDescriptionDto> DescribeAsync(string base64Image, CancellationToken cancellationToken)
@@ -48,7 +51,7 @@ namespace mytravels.common.Services
 
             MessageCreateParams parameters = new()
             {
-                Model = Model,
+                Model = _model,
                 MaxTokens = 512,
                 System = SystemPrompt,
                 Messages =
