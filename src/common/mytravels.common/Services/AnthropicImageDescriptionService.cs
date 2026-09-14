@@ -14,9 +14,17 @@ namespace mytravels.common.Services
         private const string DefaultModel = "claude-haiku-4-5";
         private const string UnsetAnthropicApiKey = "<YOUR_ANTHROPIC_API_KEY>";
         private const string SystemPrompt =
-            "You are a terse travel-photo captioning assistant. Given a photo, respond only with the requested JSON.";
+            "You are a careful, factual travel-photo captioning assistant. Describe only what is directly " +
+            "visible in the photo. Never guess or infer information that isn't visually evident - including " +
+            "country, city, region, or other place names - unless it is confirmed by legible text within the " +
+            "image itself (e.g. a sign, plaque, or license plate). When you are not highly confident about a " +
+            "detail, omit it rather than guess. Respond only with the requested JSON.";
         private const string UserPrompt =
-            "Describe this photo in one short sentence (max ~20 words), then give 3-6 single-word lowercase scene tags (e.g. \"nature\", \"road\", \"ocean\", \"car\").";
+            "Describe this photo in one short, factual sentence (max ~20 words), covering only what is " +
+            "visibly present. Then give 3-6 single-word lowercase scene tags for concrete visible elements " +
+            "(e.g. \"nature\", \"road\", \"ocean\", \"car\"). Include a tag only if you are highly confident " +
+            "it applies - prefer fewer, certain tags over more, speculative ones. Do not include a tag naming " +
+            "a country, region, or place unless legible text in the photo confirms it.";
 
         private readonly AnthropicClient _client;
         private readonly bool _configured;
