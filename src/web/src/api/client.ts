@@ -20,8 +20,30 @@ async function unwrap<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+/**
+ * Lists points of interest. Served from the SOLR index, so a freshly uploaded point only appears
+ * once the messaging worker has indexed it, and the list is capped at `rows` by the API.
+ */
 export function getPointsOfInterest(signal?: AbortSignal): Promise<PointOfInterest[]> {
   return fetch(`${BASE_URL}/api/PointOfInterest`, { signal }).then((r) =>
+    unwrap<PointOfInterest[]>(r),
+  );
+}
+
+/** Free-text search over each point's formatted address, tags and AI-generated description. */
+export function searchPointsOfInterest(
+  term: string,
+  signal?: AbortSignal,
+  rows = 100,
+  start = 0,
+): Promise<PointOfInterest[]> {
+  const params = new URLSearchParams({
+    term,
+    rows: String(rows),
+    start: String(start),
+  });
+
+  return fetch(`${BASE_URL}/api/PointOfInterest/search?${params}`, { signal }).then((r) =>
     unwrap<PointOfInterest[]>(r),
   );
 }

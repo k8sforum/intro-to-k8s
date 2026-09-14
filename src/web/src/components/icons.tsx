@@ -16,6 +16,24 @@ export function PostmarkGlyph({ className = 'h-4 w-4' }: PostmarkGlyphProps) {
   );
 }
 
+/** A magnifier, used for the map's search control. */
+export function SearchGlyph({ className = 'h-4 w-4' }: PostmarkGlyphProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
+      <line
+        x1="15.5"
+        y1="15.5"
+        x2="20"
+        y2="20"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 /** A short connected path of stops, used to link to a point's message trace. */
 export function TraceGlyph({ className = 'h-4 w-4' }: PostmarkGlyphProps) {
   return (

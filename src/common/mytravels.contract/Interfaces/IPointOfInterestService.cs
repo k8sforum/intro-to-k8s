@@ -6,7 +6,12 @@ namespace mytravels.contract.Interfaces;
 
 public interface IPointOfInterestService
 {
-    Task<List<GetPointOfInterestResponse>> GetAsync(CancellationToken cancellationToken);
+    /// <summary>
+    /// Lists points of interest from SOLR with a single capped <c>*:*</c> query. Only <see cref="SolrSearchQuery.Rows"/>
+    /// and <see cref="SolrSearchQuery.Start"/> are read; the term is ignored. A point is absent until the messaging
+    /// worker has consumed its <c>index-solr</c> message, and a library larger than <c>Rows</c> is truncated.
+    /// </summary>
+    Task<List<GetPointOfInterestResponse>> GetAsync(SolrSearchQuery query, CancellationToken cancellationToken);
     Task<List<GetPointOfInterestResponse>> SearchAsync(SolrSearchQuery query, CancellationToken cancellationToken);
 
     /// <summary>

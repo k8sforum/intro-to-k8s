@@ -167,8 +167,8 @@ Base path: `/api/pointofinterest`
 
 | Method | Route | Description |
 |---|---|---|
-| `GET` | `/api/pointofinterest` | List all POIs |
-| `GET` | `/api/pointofinterest/filter?filterString=` | Filter POIs by tag or address |
+| `GET` | `/api/pointofinterest?rows=&start=` | List POIs from the SOLR index (capped at `rows`, default 100) |
+| `GET` | `/api/pointofinterest/search?term=&rows=&start=` | Search POIs across address, tags and description |
 | `GET` | `/api/pointofinterest/pointOfInterestKey/{key}` | Get a specific POI by key |
 | `GET` | `/api/pointofinterest/{id}?resizedImage=bool` | Get a POI image as base64 |
 | `POST` | `/api/pointofinterest` | Save/update tags on one or more POIs |

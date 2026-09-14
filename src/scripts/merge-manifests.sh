@@ -14,7 +14,7 @@ images=(
     "tshepontlhokoa/mytravels-api:v1.0.12"
     "tshepontlhokoa/mytravels-messaging:v1.0.15"
     "tshepontlhokoa/mytravels-mcp:v1.0.2"
-    "tshepontlhokoa/mytravels-web:v1.0.7"
+    "tshepontlhokoa/mytravels-web:v1.0.8"
 )
 
 for image in "${images[@]}"; do

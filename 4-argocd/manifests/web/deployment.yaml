@@ -42,7 +42,7 @@ spec:
         # Same image as the runtime container, so the copy is guaranteed to match
         # what nginx would otherwise have served.
         - name: render-config
-          image: tshepontlhokoa/mytravels-web:v1.0.7
+          image: tshepontlhokoa/mytravels-web:v1.0.8
           command:
             - sh
             - -c
@@ -77,7 +77,7 @@ spec:
               memory: 64Mi
       containers:
         - name: web
-          image: tshepontlhokoa/mytravels-web:v1.0.7
+          image: tshepontlhokoa/mytravels-web:v1.0.8
           ports:
             - name: http
               containerPort: 80

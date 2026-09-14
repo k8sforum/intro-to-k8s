@@ -13,7 +13,7 @@ services:
       dockerfile: common/mytravels.migration/Dockerfile
 
   api:
-    image: tshepontlhokoa/mytravels-api:v1.0.11-${ARCH}
+    image: tshepontlhokoa/mytravels-api:v1.0.12-${ARCH}
     build:
       context: ../src
       dockerfile: api/mytravels.api/Dockerfile
@@ -44,7 +44,7 @@ services:
   # substitution step — the browser would call the literal `__API_BASE_URL__`. The
   # Compose stages (1-dockerize, 2-dockerhub) pin earlier tags built with real URLs.
   web:
-    image: tshepontlhokoa/mytravels-web:v1.0.7-${ARCH}
+    image: tshepontlhokoa/mytravels-web:v1.0.8-${ARCH}
     build:
       context: ../src
       dockerfile: web/Dockerfile

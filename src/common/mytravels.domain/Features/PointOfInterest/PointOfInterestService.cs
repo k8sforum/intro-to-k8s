@@ -38,8 +38,23 @@ namespace mytravels.domain.Features.PointOfInterest
             _solrSearchService = solrSearchService ?? throw new ArgumentNullException(nameof(solrSearchService));
         }
 
-        public async Task<List<GetPointOfInterestResponse>> GetAsync(CancellationToken cancellationToken)
-            => await _context.GetAllPointsOfInterestAsync(cancellationToken);
+        /// <summary>
+        /// Serves the POI list from SOLR rather than PostgreSQL, so the map and search read the same index.
+        /// A blank term makes SolrSearchService issue q=*:*; PostgreSQL is only read by the reindex rebuild now.
+        /// </summary>
+        public async Task<List<GetPointOfInterestResponse>> GetAsync(SolrSearchQuery query, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+
+            SolrSearchQuery listQuery = new()
+            {
+                Term = null,
+                Rows = query.Rows,
+                Start = query.Start
+            };
+
+            return await _solrSearchService.SearchAsync(listQuery, cancellationToken);
+        }
 
         public async Task<List<GetPointOfInterestResponse>> SearchAsync(SolrSearchQuery query, CancellationToken cancellationToken)
             => await _solrSearchService.SearchAsync(query, cancellationToken);

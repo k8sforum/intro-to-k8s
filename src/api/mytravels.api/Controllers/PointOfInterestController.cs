@@ -25,21 +25,24 @@ namespace mytravels.api.Controllers
             _service = service ?? throw new ArgumentNullException(nameof(service));
         }
 
+        /// <summary>
+        /// Lists points of interest from SOLR. A point only appears once the messaging worker has consumed its
+        /// index-solr message, and the list is capped at <paramref name="rows"/> with no paging loop behind it.
+        /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(List<PointOfInterestDto>), 200)]
-        public async Task<IActionResult> GetMetadatasAsync(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetMetadatasAsync(
+            [FromQuery] int rows,
+            [FromQuery] int start,
+            CancellationToken cancellationToken)
         {
-            List<GetPointOfInterestResponse> response = await _service.GetAsync(cancellationToken);
-            List<PointOfInterestDto> dtos = response.ToDto();
-            return Ok(dtos);
-        }
+            SolrSearchQuery query = new()
+            {
+                Rows = rows <= 0 ? DefaultRows : rows,
+                Start = start < 0 ? 0 : start
+            };
 
-        [HttpGet("filter")]
-        [ProducesResponseType(typeof(List<PointOfInterestDto>), 200)]
-        public async Task<IActionResult> GetMetadatasAsync([FromQuery] string filterString, CancellationToken cancellationToken)
-        {
-            SolrSearchQuery query = new() { Term = filterString };
-            List<GetPointOfInterestResponse> response = await _service.SearchAsync(query, cancellationToken);
+            List<GetPointOfInterestResponse> response = await _service.GetAsync(query, cancellationToken);
             List<PointOfInterestDto> dtos = response.ToDto();
             return Ok(dtos);
         }
