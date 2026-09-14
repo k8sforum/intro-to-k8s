@@ -1,0 +1,43 @@
+# Scoped narrowly to what seed-job.yaml's kubectl-apply container needs: upsert
+# exactly one Secret (flagsmith-keys), in this namespace only.
+#
+# Wave 5: one wave after deployment.yaml/task-processor-deployment.yaml
+# (wave 4), ahead of api/messaging/web (wave 6). Plain resources (not hooks —
+# no immutable-field issue), but kept in the same wave as seed-job.yaml since
+# a ServiceAccount write is an instant etcd write that will always land well
+# before the Job controller gets around to admitting a Pod that references it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flagsmith-seed
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: flagsmith-seed
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: flagsmith-seed
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+subjects:
+  - kind: ServiceAccount
+    name: flagsmith-seed
+    namespace: mytravels-default
+roleRef:
+  kind: Role
+  name: flagsmith-seed
+  apiGroup: rbac.authorization.k8s.io

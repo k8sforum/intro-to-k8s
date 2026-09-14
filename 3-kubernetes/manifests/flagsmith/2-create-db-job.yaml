@@ -1,0 +1,50 @@
+# Creates the FeatureDb database on the existing mytravels-postgres instance —
+# Flagsmith's own storage, kept separate from CoreDb but on the same server.
+# Idempotent: safe to re-run (checks pg_database before CREATE DATABASE), same
+# guard as 1-dockerize/docker-compose.yml's flagsmith-create-db service.
+#
+# Unlike that Compose service, this Job also waits on pg_isready itself rather
+# than relying on depends_on/service_healthy, since Kubernetes Jobs have no
+# built-in "wait for another resource to be healthy" primitive — see the
+# runbook's two-phase apply note for how this Job is sequenced against
+# 3-migrate-job.yaml and 3b-bootstrap-job.yaml.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: flagsmith-create-db
+  namespace: mytravels-default
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: flagsmith-create-db
+          image: postgres:17.6-alpine
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              until pg_isready -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                echo "Waiting for postgres..."; sleep 2
+              done
+              PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+                -tc "SELECT 1 FROM pg_database WHERE datname = 'FeatureDb'" | grep -q 1 || \
+              PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+                -c 'CREATE DATABASE "FeatureDb"'
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB

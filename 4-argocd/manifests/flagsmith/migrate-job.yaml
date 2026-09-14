@@ -1,0 +1,45 @@
+# Runs Flagsmith's Django migrations against FeatureDb. Sync hook for the same
+# immutable-pod-template reason as create-db-job.yaml.
+#
+# Wave 2: one wave after flagsmith-create-db (wave 1) — the database has to
+# exist before migrations can run against it. Shares its numeric wave with mcp
+# (unrelated, no dependency either way — safe to coexist).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: flagsmith-migrate
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: flagsmith-migrate
+          image: docker.flagsmith.com/flagsmith/flagsmith:2.261.0
+          args: ["migrate"]
+          envFrom:
+            - configMapRef:
+                name: flagsmith-config
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/FeatureDb"
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flagsmith-secret
+                  key: DJANGO_SECRET_KEY

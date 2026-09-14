@@ -1,4 +1,5 @@
 import { Link, Route, Routes, useLocation } from 'react-router-dom';
+import { useBooleanFlagValue } from '@openfeature/react-sdk';
 import { MapPage } from './components/MapPage';
 import { TraceabilityPage } from './components/TraceabilityPage';
 import { PostmarkGlyph } from './components/icons';
@@ -6,6 +7,7 @@ import { PostmarkGlyph } from './components/icons';
 function Header() {
   const location = useLocation();
   const onTraceability = location.pathname.startsWith('/traceability');
+  const messageTracingEnabled = useBooleanFlagValue('enable-message-tracing', true);
 
   return (
     <header className="absolute top-4 right-4 z-[500] sm:top-5 sm:right-5">
@@ -19,12 +21,14 @@ function Header() {
             Field Log
           </span>
         </h1>
-        <Link
-          to={onTraceability ? '/' : '/traceability'}
-          className="ml-1 rounded border border-brass/40 px-2 py-1 font-mono text-[10px] tracking-wide text-brass uppercase transition hover:border-postmark hover:text-postmark dark:hover:text-postmark-light"
-        >
-          {onTraceability ? 'Map' : 'Traceability'}
-        </Link>
+        {messageTracingEnabled && (
+          <Link
+            to={onTraceability ? '/' : '/traceability'}
+            className="ml-1 rounded border border-brass/40 px-2 py-1 font-mono text-[10px] tracking-wide text-brass uppercase transition hover:border-postmark hover:text-postmark dark:hover:text-postmark-light"
+          >
+            {onTraceability ? 'Map' : 'Traceability'}
+          </Link>
+        )}
       </div>
     </header>
   );

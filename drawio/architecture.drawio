@@ -240,6 +240,30 @@
             </Array>
           </mxGeometry>
         </mxCell>
+        <mxCell id="flagsmith-box" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=3;dashed=1;strokeColor=#808080;" value="" vertex="1">
+          <mxGeometry height="110" width="185" x="1622.5" y="1150" as="geometry" />
+        </mxCell>
+        <mxCell id="flagsmith-label" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" value="Flagsmith" vertex="1">
+          <mxGeometry height="30" width="185" x="1622.5" y="1156" as="geometry" />
+        </mxCell>
+        <mxCell id="flagsmith-server" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#36393d;strokeWidth=3;" value="&lt;b&gt;Flagsmith&lt;/b&gt;&lt;div&gt;:8000&lt;/div&gt;" vertex="1">
+          <mxGeometry height="50" width="150" x="1640" y="1193" as="geometry" />
+        </mxCell>
+        <mxCell id="flagsmith-note" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontStyle=2" value="FeatureDb (shared PostgreSQL)" vertex="1">
+          <mxGeometry height="20" width="185" x="1622.5" y="1240" as="geometry" />
+        </mxCell>
+        <mxCell id="flagsmith-e-postgres" edge="1" parent="1" source="flagsmith-server" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=1 2;strokeColor=#808080;strokeWidth=2;" target="q0HhcgHjfF6fuH3oCPwb-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="flagsmith-e-api" edge="1" parent="1" source="q0HhcgHjfF6fuH3oCPwb-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=1 2;strokeColor=#808080;strokeWidth=2;fontSize=10;" target="flagsmith-server" value="evaluates a flag">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="flagsmith-e-messaging" edge="1" parent="1" source="aitags-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=1 2;strokeColor=#808080;strokeWidth=2;fontSize=10;" target="flagsmith-server" value="evaluates a flag">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="flagsmith-e-web" edge="1" parent="1" source="c8WQB_h-BnMbYDuo1l8i-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=1 2;strokeColor=#808080;strokeWidth=2;fontSize=10;" target="flagsmith-server" value="evaluates a flag">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
 </root>
     </mxGraphModel>
   </diagram>

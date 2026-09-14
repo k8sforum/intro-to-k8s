@@ -4,9 +4,13 @@
 # there is no env var nginx could read to change them. To make them configurable
 # per cluster anyway, the image is built with sentinel placeholders
 # (VITE_API_BASE_URL=__API_BASE_URL__,
-#  VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=__OTLP_TRACES_ENDPOINT__ — see
+#  VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=__OTLP_TRACES_ENDPOINT__,
+#  VITE_FLAGSMITH_ENVIRONMENT_ID=__FLAGSMITH_ENVIRONMENT_ID__ — see
 # 2-dockerhub/docker-compose.build.yml) and the init container below rewrites them
 # from the web-config ConfigMap into a copy of the site before nginx serves it.
+# The Flagsmith environment ID is Flagsmith-generated rather than hand-configured,
+# so it comes from the flagsmith-keys Secret (produced by
+# manifests/flagsmith/6-seed-job.yaml) instead of the web-config ConfigMap.
 #
 # The image layer itself stays read-only: the init container copies the site into
 # an emptyDir, patches the copy, and nginx mounts the emptyDir over its docroot.
@@ -34,7 +38,7 @@ spec:
         # Same image as the runtime container, so the copy is guaranteed to match
         # what nginx would otherwise have served.
         - name: render-config
-          image: tshepontlhokoa/mytravels-web:v1.0.8
+          image: tshepontlhokoa/mytravels-web:v1.0.9
           command:
             - sh
             - -c
@@ -44,19 +48,23 @@ spec:
               find /docroot/assets -name '*.js' -exec sed -i \
                 -e "s|__API_BASE_URL__|${VITE_API_BASE_URL}|g" \
                 -e "s|__OTLP_TRACES_ENDPOINT__|${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}|g" \
+                -e "s|__FLAGSMITH_ENVIRONMENT_ID__|${VITE_FLAGSMITH_ENVIRONMENT_ID}|g" \
                 {} +
               # Fail the pod rather than serve a bundle that would call the
               # literal string "__API_BASE_URL__" from the browser.
-              if grep -rq '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__' /docroot/assets; then
+              if grep -rq '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__\|__FLAGSMITH_ENVIRONMENT_ID__' /docroot/assets; then
                 echo "ERROR: unsubstituted placeholders remain in the bundle" >&2
-                grep -rlo '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__' /docroot/assets >&2
+                grep -rlo '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__\|__FLAGSMITH_ENVIRONMENT_ID__' /docroot/assets >&2
                 exit 1
               fi
               echo "substituted VITE_API_BASE_URL=${VITE_API_BASE_URL}"
               echo "substituted VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}"
+              echo "substituted VITE_FLAGSMITH_ENVIRONMENT_ID=${VITE_FLAGSMITH_ENVIRONMENT_ID}"
           envFrom:
             - configMapRef:
                 name: web-config
+            - secretRef:
+                name: flagsmith-keys
           volumeMounts:
             - name: docroot
               mountPath: /docroot
@@ -69,7 +77,7 @@ spec:
               memory: 64Mi
       containers:
         - name: web
-          image: tshepontlhokoa/mytravels-web:v1.0.8
+          image: tshepontlhokoa/mytravels-web:v1.0.9
           ports:
             - name: http
               containerPort: 80

@@ -20,7 +20,7 @@ metadata:
   labels:
     app: web
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "6"
 data:
   VITE_API_BASE_URL: http://api.mytravels.local:8080
   VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel.mytravels.local:8080/v1/traces

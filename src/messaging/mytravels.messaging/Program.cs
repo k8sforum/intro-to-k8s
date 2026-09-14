@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Flagsmith;
+using Microsoft.EntityFrameworkCore;
+using OpenFeature.Contrib.Providers.Flagsmith;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
@@ -83,6 +85,18 @@ builder.Services.AddHostedService<FailedExchangeDeclarer>();
 
 // Create the SOLR fields the app queries, retrying until SOLR is reachable
 builder.Services.AddHostedService<SolrSchemaInitializer>();
+
+var flagsmithProvider = new FlagsmithProvider(
+    new FlagsmithProviderConfiguration(),
+    new FlagsmithConfiguration
+    {
+        ApiUri = new Uri(builder.Configuration["Flagsmith:ApiUri"]!),
+        EnvironmentKey = builder.Configuration["Flagsmith:ServerSideEnvironmentKey"],
+        EnableAnalytics = false,
+        Retries = 1,
+    });
+await OpenFeature.Api.Instance.SetProviderAsync(flagsmithProvider);
+builder.Services.AddSingleton(OpenFeature.Api.Instance.GetClient("mytravels-messaging"));
 
 var app = builder.Build();
 

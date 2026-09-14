@@ -1,0 +1,74 @@
+# The flagsmith `serve` container — REST API + admin console UI (same image
+# serves both). Stateless: all state lives in FeatureDb on the shared postgres
+# instance, so no PVC.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flagsmith
+  namespace: mytravels-default
+  labels:
+    app: flagsmith
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flagsmith
+  template:
+    metadata:
+      labels:
+        app: flagsmith
+    spec:
+      containers:
+        - name: flagsmith
+          image: docker.flagsmith.com/flagsmith/flagsmith:2.261.0
+          args: ["serve"]
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: flagsmith-config
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/FeatureDb"
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flagsmith-secret
+                  key: DJANGO_SECRET_KEY
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          # The image is Wolfi-based with no curl/wget; `flagsmith healthcheck
+          # http` is the image's own built-in check (GET /health/liveness on
+          # 8000 internally) — verified working by hand, unlike a guessed
+          # httpGet path.
+          livenessProbe:
+            exec:
+              command: ["flagsmith", "healthcheck", "http"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command: ["flagsmith", "healthcheck", "http"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5

@@ -11,10 +11,10 @@ set -euo pipefail
 
 images=(
     "tshepontlhokoa/mytravels-migrations:v1.0.8"
-    "tshepontlhokoa/mytravels-api:v1.0.12"
-    "tshepontlhokoa/mytravels-messaging:v1.0.15"
+    "tshepontlhokoa/mytravels-api:v1.0.13"
+    "tshepontlhokoa/mytravels-messaging:v1.0.16"
     "tshepontlhokoa/mytravels-mcp:v1.0.2"
-    "tshepontlhokoa/mytravels-web:v1.0.8"
+    "tshepontlhokoa/mytravels-web:v1.0.9"
 )
 
 for image in "${images[@]}"; do

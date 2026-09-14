@@ -1,0 +1,56 @@
+# Creates the FeatureDb database on the existing mytravels-postgres instance.
+# Idempotent (checks pg_database before CREATE DATABASE), same guard as
+# 1-dockerize/docker-compose.yml's flagsmith-create-db service and lesson 3's
+# 2-create-db-job.yaml.
+#
+# A Sync hook for the same reason as migrations/job.yaml: a Job's pod template
+# is immutable, so as an ordinary resource the second sync would try to patch
+# it and fail. hook: Sync (not PreSync) so sync-wave still applies — PreSync
+# would run before wave 0, before postgres exists.
+#
+# Wave 1: same wave as db-migrations (CoreDb) and observability — both need
+# only postgres (wave 0) Healthy, and are independent of each other.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: flagsmith-create-db
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: flagsmith-create-db
+          image: postgres:17.6-alpine
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              until pg_isready -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                echo "Waiting for postgres..."; sleep 2
+              done
+              PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+                -tc "SELECT 1 FROM pg_database WHERE datname = 'FeatureDb'" | grep -q 1 || \
+              PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+                -c 'CREATE DATABASE "FeatureDb"'
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB

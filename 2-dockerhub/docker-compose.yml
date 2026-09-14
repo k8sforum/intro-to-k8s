@@ -101,7 +101,157 @@ services:
       END
       $$;
       EOSQL
-      
+
+#Feature flags - https://docs.flagsmith.com. Shares mytravels-postgres in a second
+# database (FeatureDb), not a second container — see CLAUDE.md "Feature flagging".
+  flagsmith-create-db:
+    image: postgres:17.6-alpine
+    container_name: flagsmith-create-db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    restart: "no"
+    # NOTE: command is given as a YAML list (not a plain multi-line string) on
+    # purpose — Compose shell-word-splits a string `command`, which silently
+    # breaks any command containing a pipe, `||`, or heredoc (only the first
+    # word ever reaches `sh -c`). Wrapping it as [sh, -c, "<script>"] keeps the
+    # whole script as one argv element. See cleanup-migrations above, which has
+    # this exact latent bug — its DELETE statement has never actually executed.
+    command:
+      - sh
+      - -c
+      - |
+        PGPASSWORD="$$POSTGRES_PASSWORD" psql -h postgres -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -tc "SELECT 1 FROM pg_database WHERE datname = 'FeatureDb'" | grep -q 1 || \
+        PGPASSWORD="$$POSTGRES_PASSWORD" psql -h postgres -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c 'CREATE DATABASE "FeatureDb"'
+
+  flagsmith-migrate:
+    image: docker.flagsmith.com/flagsmith/flagsmith:2.261.0
+    container_name: flagsmith-migrate
+    command: migrate
+    restart: "no"
+    environment: &flagsmith-env
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/FeatureDb
+      DJANGO_SECRET_KEY: ${FLAGSMITH_DJANGO_SECRET_KEY}
+      ENVIRONMENT: production
+      DJANGO_ALLOWED_HOSTS: "*"
+      ALLOW_ADMIN_INITIATION_VIA_CLI: "true"
+      ADMIN_EMAIL: ${FLAGSMITH_ADMIN_EMAIL}
+      FLAGSMITH_ADMIN_PASSWORD: ${FLAGSMITH_ADMIN_PASSWORD}
+      ORGANISATION_NAME: mytravels
+      PROJECT_NAME: mytravels
+    depends_on:
+      flagsmith-create-db:
+        condition: service_completed_successfully
+
+  # Creates the superuser + organisation + project (idempotent — a no-op on
+  # rerun). Logs a password-reset link rather than a usable password; the
+  # separate flagsmith-seed step below sets a real password directly via the
+  # ORM instead of parsing that link, since the link is only needed for the
+  # HTTP reset-password flow, which the ORM path skips entirely.
+  flagsmith-bootstrap:
+    image: docker.flagsmith.com/flagsmith/flagsmith:2.261.0
+    container_name: flagsmith-bootstrap
+    command: bootstrap
+    restart: "no"
+    environment: *flagsmith-env
+    depends_on:
+      flagsmith-migrate:
+        condition: service_completed_successfully
+
+  flagsmith:
+    image: docker.flagsmith.com/flagsmith/flagsmith:2.261.0
+    container_name: mytravels-flagsmith
+    command: serve
+    ports:
+      - "8000:8000"   # REST API + admin console UI (same image serves both)
+    environment: *flagsmith-env
+    depends_on:
+      flagsmith-bootstrap:
+        condition: service_completed_successfully
+    healthcheck:
+      # The image is Wolfi-based with no curl/wget; `flagsmith healthcheck http`
+      # is the image's own built-in check and defaults to GET /health/liveness.
+      test: ["CMD", "flagsmith", "healthcheck", "http"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  flagsmith-task-processor:
+    image: docker.flagsmith.com/flagsmith/flagsmith:2.261.0
+    container_name: flagsmith-task-processor
+    command: run-task-processor
+    environment: *flagsmith-env
+    depends_on:
+      flagsmith-migrate:
+        condition: service_completed_successfully
+
+  # Idempotent: creates the "Production" environment and the three flags (all
+  # defaulting to enabled) directly via Flagsmith's own Django ORM — no HTTP
+  # calls, no password/login dance. Also sets a real admin password (from
+  # FLAGSMITH_ADMIN_PASSWORD) so a human can still log into the console.
+  # Rewrites FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY and VITE_FLAGSMITH_ENVIRONMENT_ID
+  # into .env in place — see the two-phase bring-up note in runbook.ipynb: the
+  # rest of the stack must be started in a second `docker compose up` invocation
+  # after this rewrite, since Compose interpolates ${...} from .env once, at
+  # parse time, before this container has run.
+  flagsmith-seed:
+    image: docker.flagsmith.com/flagsmith/flagsmith:2.261.0
+    container_name: flagsmith-seed
+    user: root  # sed needs to write into the bind-mounted .env file below
+    restart: "no"
+    environment: *flagsmith-env
+    volumes:
+      - ./.env:/workspace/.env
+    depends_on:
+      flagsmith-bootstrap:
+        condition: service_completed_successfully
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -eu
+        OUTPUT=$$(flagsmith shell -c "
+        import os
+        from organisations.models import Organisation
+        from projects.models import Project
+        from environments.models import Environment, EnvironmentAPIKey
+        from features.models import Feature
+        from django.contrib.auth import get_user_model
+
+        org = Organisation.objects.get(name=os.environ['ORGANISATION_NAME'])
+        project = Project.objects.get(organisation=org, name=os.environ['PROJECT_NAME'])
+
+        user = get_user_model().objects.get(email=os.environ['ADMIN_EMAIL'])
+        user.set_password(os.environ['FLAGSMITH_ADMIN_PASSWORD'])
+        user.save()
+
+        env, _ = Environment.objects.get_or_create(project=project, name='Production')
+
+        server_key = EnvironmentAPIKey.objects.filter(environment=env, name='mytravels-seed').first()
+        if server_key is None:
+            server_key = EnvironmentAPIKey.objects.create(environment=env, name='mytravels-seed')
+
+        for name in ['enable-image-description', 'enable-poi-search', 'enable-message-tracing']:
+            Feature.objects.get_or_create(project=project, name=name, defaults={'default_enabled': True})
+
+        print(f'FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY={server_key.key}')
+        print(f'VITE_FLAGSMITH_ENVIRONMENT_ID={env.api_key}')
+        ")
+        SERVER_KEY_LINE=$$(echo "$$OUTPUT" | grep '^FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY=')
+        CLIENT_KEY_LINE=$$(echo "$$OUTPUT" | grep '^VITE_FLAGSMITH_ENVIRONMENT_ID=')
+        # Rewrite via a temp file + cat, not sed -i: sed -i renames over the
+        # target, and Docker bind-mounts of a single file reject renaming onto
+        # the mountpoint ("Device or resource busy").
+        sed -e "s|^FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY=.*|$$SERVER_KEY_LINE|" \
+            -e "s|^VITE_FLAGSMITH_ENVIRONMENT_ID=.*|$$CLIENT_KEY_LINE|" \
+            /workspace/.env > /tmp/.env.rewritten
+        cat /tmp/.env.rewritten > /workspace/.env
+        echo "flagsmith-seed: wrote keys into .env"
+
 # Migrations
   migrate-core-db:
     image: tshepontlhokoa/mytravels-migrations:v1.0.8
@@ -116,7 +266,7 @@ services:
   # ASP.NET CORE API
   api:
     container_name: mytravels-api
-    image: tshepontlhokoa/mytravels-api:v1.0.12
+    image: tshepontlhokoa/mytravels-api:v1.0.13
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       GoogleApiKey: ${GOOGLE_API_KEY}
@@ -130,6 +280,8 @@ services:
       MinIO__SecretKey: ${MINIO_ROOT_PASSWORD}
       Solr__Url: ${SOLR_URL}
       Solr__Collection: ${SOLR_COLLECTION}
+      Flagsmith__ApiUri: http://flagsmith:8000/api/v1/
+      Flagsmith__ServerSideEnvironmentKey: ${FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY}
       DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5101:5101
@@ -140,11 +292,13 @@ services:
         condition: service_healthy
       migrate-core-db:
         condition: service_completed_successfully
+      flagsmith:
+        condition: service_healthy
 
   # MESSAGING APP
   messaging:
     container_name: mytravels-messaging
-    image: tshepontlhokoa/mytravels-messaging:v1.0.15
+    image: tshepontlhokoa/mytravels-messaging:v1.0.16
     environment:
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
@@ -160,6 +314,8 @@ services:
       GooglePlacesUrl: ${GOOGLE_PLACES_URL}
       Solr__Url: ${SOLR_URL}
       Solr__Collection: ${SOLR_COLLECTION}
+      Flagsmith__ApiUri: http://flagsmith:8000/api/v1/
+      Flagsmith__ServerSideEnvironmentKey: ${FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY}
       DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5102:5102
@@ -170,6 +326,8 @@ services:
         condition: service_healthy
       migrate-core-db:
         condition: service_completed_successfully
+      flagsmith:
+        condition: service_healthy
 
   # MCP SERVER
   mcp:
@@ -207,7 +365,7 @@ services:
   # have nginx serve that copy instead of the image's own (unsubstituted) docroot.
   render-web-config:
     container_name: mytravels-web-render-config
-    image: tshepontlhokoa/mytravels-web:v1.0.8
+    image: tshepontlhokoa/mytravels-web:v1.0.9
     entrypoint: ["sh", "-c"]
     command:
       - |
@@ -216,24 +374,27 @@ services:
         find /docroot/assets -name '*.js' -exec sed -i \
           -e "s|__API_BASE_URL__|${VITE_API_BASE_URL}|g" \
           -e "s|__OTLP_TRACES_ENDPOINT__|${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}|g" \
+          -e "s|__FLAGSMITH_ENVIRONMENT_ID__|${VITE_FLAGSMITH_ENVIRONMENT_ID}|g" \
           {} +
-        if grep -rq '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__' /docroot/assets; then
+        if grep -rq '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__\|__FLAGSMITH_ENVIRONMENT_ID__' /docroot/assets; then
           echo "ERROR: unsubstituted placeholders remain in the bundle" >&2
-          grep -rlo '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__' /docroot/assets >&2
+          grep -rlo '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__\|__FLAGSMITH_ENVIRONMENT_ID__' /docroot/assets >&2
           exit 1
         fi
         echo "substituted VITE_API_BASE_URL=${VITE_API_BASE_URL}"
         echo "substituted VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}"
+        echo "substituted VITE_FLAGSMITH_ENVIRONMENT_ID=${VITE_FLAGSMITH_ENVIRONMENT_ID}"
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL}
       VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
+      VITE_FLAGSMITH_ENVIRONMENT_ID: ${VITE_FLAGSMITH_ENVIRONMENT_ID}
     volumes:
       - web-docroot:/docroot
 
   # WEB UI
   web:
     container_name: mytravels-web
-    image: tshepontlhokoa/mytravels-web:v1.0.8
+    image: tshepontlhokoa/mytravels-web:v1.0.9
     ports:
       - 5100:80
     volumes:

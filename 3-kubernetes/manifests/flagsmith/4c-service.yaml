@@ -1,0 +1,19 @@
+# Selector matches only the `flagsmith` (serve) Deployment's label, not
+# flagsmith-task-processor, which is deliberately labelled differently since it
+# serves no HTTP traffic.
+apiVersion: v1
+kind: Service
+metadata:
+  name: flagsmith
+  namespace: mytravels-default
+  labels:
+    app: flagsmith
+spec:
+  type: ClusterIP
+  selector:
+    app: flagsmith
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useBooleanFlagValue } from '@openfeature/react-sdk';
 import { getPointsOfInterest } from '../api/client';
 import type { PointOfInterest } from '../api/types';
 import { hasCoordinates } from '../api/types';
@@ -17,6 +18,7 @@ export function MapPage() {
   const [selectedPoi, setSelectedPoi] = useState<PointOfInterest | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const allPoisRef = useRef<PointOfInterest[]>([]);
+  const searchEnabled = useBooleanFlagValue('enable-poi-search', true);
 
   const pois = results ?? allPois;
 
@@ -71,9 +73,11 @@ export function MapPage() {
     <>
       <MapView pois={pois} onSelect={setSelectedPoi} />
 
-      <div className="absolute bottom-5 left-5 z-[500]">
-        <MapSearchBox onResults={setResults} />
-      </div>
+      {searchEnabled && (
+        <div className="absolute bottom-5 left-5 z-[500]">
+          <MapSearchBox onResults={setResults} />
+        </div>
+      )}
 
       <div className="absolute right-5 bottom-5 z-[500]">
         <UploadButton onUploaded={handleUploaded} />

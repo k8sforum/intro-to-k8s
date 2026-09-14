@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: tshepontlhokoa/mytravels-api:v1.0.12
+          image: tshepontlhokoa/mytravels-api:v1.0.13
           ports:
             - name: http
               containerPort: 5101
@@ -61,6 +61,13 @@ spec:
               value: http://otel-collector:4317
             - name: OTEL_SERVICE_NAME
               value: mytravels-api
+            - name: Flagsmith__ApiUri
+              value: http://flagsmith:8000/api/v1/
+            - name: Flagsmith__ServerSideEnvironmentKey
+              valueFrom:
+                secretKeyRef:
+                  name: flagsmith-keys
+                  key: FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY
             - name: DOTNET_hostBuilder__reloadConfigOnChange
               value: "false"
           resources:

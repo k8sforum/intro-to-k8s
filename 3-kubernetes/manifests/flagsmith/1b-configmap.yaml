@@ -1,0 +1,19 @@
+# Non-sensitive Flagsmith config, shared via envFrom by every Flagsmith-image
+# workload (create-db does not use this — it only needs postgres-secret).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flagsmith-config
+  namespace: mytravels-default
+  labels:
+    app: flagsmith
+data:
+  ENVIRONMENT: production
+  # Required on every flagsmith-image container (migrate/bootstrap/serve/
+  # task-processor/seed) — without it Django's ALLOWED_HOSTS check rejects
+  # every request, including the exec healthcheck's internal GET, with 400.
+  DJANGO_ALLOWED_HOSTS: "*"
+  ALLOW_ADMIN_INITIATION_VIA_CLI: "true"
+  ADMIN_EMAIL: admin@example.com
+  ORGANISATION_NAME: mytravels
+  PROJECT_NAME: mytravels

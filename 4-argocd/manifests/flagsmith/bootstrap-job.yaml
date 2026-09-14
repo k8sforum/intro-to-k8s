@@ -1,0 +1,44 @@
+# Creates the superuser + organisation + project (idempotent). Sync hook for
+# the same immutable-pod-template reason as create-db-job.yaml.
+#
+# Wave 3: one wave after flagsmith-migrate (wave 2) — the schema has to exist
+# before bootstrap can create rows in it.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: flagsmith-bootstrap
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: flagsmith-bootstrap
+          image: docker.flagsmith.com/flagsmith/flagsmith:2.261.0
+          args: ["bootstrap"]
+          envFrom:
+            - configMapRef:
+                name: flagsmith-config
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/FeatureDb"
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flagsmith-secret
+                  key: DJANGO_SECRET_KEY

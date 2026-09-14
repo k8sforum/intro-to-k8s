@@ -1,0 +1,32 @@
+# Scoped narrowly to what 6-seed-job.yaml's kubectl-apply container needs:
+# upsert exactly one Secret (flagsmith-keys), in this namespace only. No
+# cluster-wide access, no other resource kinds, no delete/watch.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flagsmith-seed
+  namespace: mytravels-default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: flagsmith-seed
+  namespace: mytravels-default
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: flagsmith-seed
+  namespace: mytravels-default
+subjects:
+  - kind: ServiceAccount
+    name: flagsmith-seed
+    namespace: mytravels-default
+roleRef:
+  kind: Role
+  name: flagsmith-seed
+  apiGroup: rbac.authorization.k8s.io

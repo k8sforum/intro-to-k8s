@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useBooleanFlagValue } from "@openfeature/react-sdk";
 import type { PointOfInterest } from "../api/types";
 import { getPointOfInterestImage } from "../api/client";
 import { Spinner } from "./Spinner";
@@ -48,6 +49,8 @@ function ImagePlaceholderIcon() {
 
 export function PoiDialog({ poi, onClose }: PoiDialogProps) {
   const [image, setImage] = useState<ImageState>({ status: "loading" });
+  const imageDescriptionEnabled = useBooleanFlagValue("enable-image-description", true);
+  const messageTracingEnabled = useBooleanFlagValue("enable-message-tracing", true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -93,7 +96,7 @@ export function PoiDialog({ poi, onClose }: PoiDialogProps) {
         </div>
 
         <div className="space-y-4 px-5 pt-1 pb-5">
-          {(poi.description || poi.tags.length > 0) && (
+          {imageDescriptionEnabled && (poi.description || poi.tags.length > 0) && (
             <div className="space-y-2 border-t border-brass/20 pt-3">
               {poi.description && (
                 <p className="font-sans text-sm text-ink dark:text-bone">{poi.description}</p>
@@ -149,13 +152,17 @@ export function PoiDialog({ poi, onClose }: PoiDialogProps) {
               <p className="font-mono text-[10px] tracking-[0.16em] text-brass uppercase">
                 Trace
               </p>
-              {poi.correlationId ? (
+              {poi.correlationId && messageTracingEnabled ? (
                 <Link
                   to={`/traceability?correlationId=${poi.correlationId}`}
                   className="font-sans text-sm text-ink underline decoration-brass/40 underline-offset-2 transition hover:text-postmark dark:text-bone dark:hover:text-postmark-light"
                 >
                   View message trace
                 </Link>
+              ) : poi.correlationId ? (
+                <span className="font-sans text-sm text-ink dark:text-bone">
+                  {poi.correlationId}
+                </span>
               ) : (
                 <span title="No trace data recorded for this point">
                   <span className="font-sans text-sm text-ink/40 dark:text-bone/40">

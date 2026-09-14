@@ -6,7 +6,7 @@ metadata:
   labels:
     app: messaging
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "6"
 spec:
   replicas: 2
   selector:
@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: messaging
-          image: tshepontlhokoa/mytravels-messaging:v1.0.15
+          image: tshepontlhokoa/mytravels-messaging:v1.0.16
           ports:
             - name: http
               containerPort: 5102
@@ -78,6 +78,13 @@ spec:
               value: http://otel-collector:4317
             - name: OTEL_SERVICE_NAME
               value: mytravels-messaging
+            - name: Flagsmith__ApiUri
+              value: http://flagsmith:8000/api/v1/
+            - name: Flagsmith__ServerSideEnvironmentKey
+              valueFrom:
+                secretKeyRef:
+                  name: flagsmith-keys
+                  key: FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY
             - name: DOTNET_hostBuilder__reloadConfigOnChange
               value: "false"
           resources:

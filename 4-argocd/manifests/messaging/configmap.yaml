@@ -6,6 +6,6 @@ metadata:
   labels:
     app: messaging
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "6"
 data:
   AnthropicModel: claude-haiku-4-5

@@ -1,0 +1,143 @@
+# Idempotent: creates the "Production" environment and the three flags (all
+# defaulting to enabled) via Flagsmith's own Django ORM, and sets a real admin
+# password. Same script as 1-dockerize/docker-compose.yml's flagsmith-seed
+# service, unescaped for a plain YAML block scalar (Compose's `$$` there exists
+# only to survive Compose's own variable interpolation — Kubernetes manifests
+# have no such layer, so plain `$` is correct here).
+#
+# Sync hook for the same immutable-pod-template reason as create-db-job.yaml.
+#
+# Two containers instead of Compose's one — see lesson 3's 6-seed-job.yaml for
+# the full reasoning:
+#   initContainer flagsmith-shell   runs the ORM script (the flagsmith image
+#                                    has no kubectl), writes the two captured
+#                                    KEY=value lines to an emptyDir file.
+#                                    initContainers always finish before the
+#                                    main container starts, so this doubles as
+#                                    the ordering guarantee — no wait loop.
+#   container    kubectl-apply       upserts the flagsmith-keys Secret from
+#                                    that file via the ServiceAccount token
+#                                    from seed-rbac.yaml.
+#
+# Wave 5: alongside seed-rbac.yaml, one wave after flagsmith/
+# flagsmith-task-processor (wave 4) — the org/project bootstrap-job.yaml
+# created (wave 3) must exist, which it does since wave 3 < wave 5. Ahead of
+# api/messaging/web (wave 6), which need the flagsmith-keys Secret this
+# produces to start cleanly.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: flagsmith-seed
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: flagsmith-seed
+      initContainers:
+        - name: flagsmith-shell
+          image: docker.flagsmith.com/flagsmith/flagsmith:2.261.0
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              flagsmith shell -c "
+              import os
+              from organisations.models import Organisation
+              from projects.models import Project
+              from environments.models import Environment, EnvironmentAPIKey
+              from features.models import Feature
+              from django.contrib.auth import get_user_model
+
+              org = Organisation.objects.get(name=os.environ['ORGANISATION_NAME'])
+              project = Project.objects.get(organisation=org, name=os.environ['PROJECT_NAME'])
+
+              user = get_user_model().objects.get(email=os.environ['ADMIN_EMAIL'])
+              user.set_password(os.environ['FLAGSMITH_ADMIN_PASSWORD'])
+              user.save()
+
+              env, _ = Environment.objects.get_or_create(project=project, name='Production')
+
+              server_key = EnvironmentAPIKey.objects.filter(environment=env, name='mytravels-seed').first()
+              if server_key is None:
+                  server_key = EnvironmentAPIKey.objects.create(environment=env, name='mytravels-seed')
+
+              for name in ['enable-image-description', 'enable-poi-search', 'enable-message-tracing']:
+                  Feature.objects.get_or_create(project=project, name=name, defaults={'default_enabled': True})
+
+              print(f'FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY={server_key.key}')
+              print(f'VITE_FLAGSMITH_ENVIRONMENT_ID={env.api_key}')
+              " > /tmp/seed-output.txt
+              grep '^FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY=' /tmp/seed-output.txt > /shared/keys.env
+              grep '^VITE_FLAGSMITH_ENVIRONMENT_ID=' /tmp/seed-output.txt >> /shared/keys.env
+              cat /tmp/seed-output.txt
+              echo "flagsmith-seed: wrote keys to /shared/keys.env"
+          envFrom:
+            - configMapRef:
+                name: flagsmith-config
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/FeatureDb"
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flagsmith-secret
+                  key: DJANGO_SECRET_KEY
+            - name: FLAGSMITH_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: flagsmith-secret
+                  key: FLAGSMITH_ADMIN_PASSWORD
+          volumeMounts:
+            - name: shared
+              mountPath: /shared
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+      containers:
+        # Small, commonly-used, explicitly-tagged kubectl image — no existing
+        # kubectl-in-a-Job pattern elsewhere in this repo to reuse (grepped
+        # both stage 3 and stage 4). Pinned to the k3d cluster's k3s minor
+        # version (v1.35, see the runbook's Step 2 `--image` flag).
+        - name: kubectl-apply
+          image: alpine/kubectl:1.35.0
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              kubectl create secret generic flagsmith-keys -n mytravels-default \
+                --from-env-file=/shared/keys.env \
+                --dry-run=client -o yaml | kubectl apply -f -
+              echo "flagsmith-seed: flagsmith-keys secret created/updated"
+          volumeMounts:
+            - name: shared
+              mountPath: /shared
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: shared
+          emptyDir: {}

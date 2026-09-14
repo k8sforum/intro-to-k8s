@@ -1,5 +1,7 @@
+using Flagsmith;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using OpenFeature.Contrib.Providers.Flagsmith;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
@@ -108,6 +110,18 @@ options =>
 
 builder.Services.Configure<MinIOConfig>(builder.Configuration.GetSection("MinIO"));
 builder.Services.Configure<SolrConfig>(builder.Configuration.GetSection("Solr"));
+
+var flagsmithProvider = new FlagsmithProvider(
+    new FlagsmithProviderConfiguration(),
+    new FlagsmithConfiguration
+    {
+        ApiUri = new Uri(builder.Configuration["Flagsmith:ApiUri"]!),
+        EnvironmentKey = builder.Configuration["Flagsmith:ServerSideEnvironmentKey"],
+        EnableAnalytics = false,
+        Retries = 1,
+    });
+await OpenFeature.Api.Instance.SetProviderAsync(flagsmithProvider);
+builder.Services.AddSingleton(OpenFeature.Api.Instance.GetClient("mytravels-api"));
 
 var app = builder.Build();
 

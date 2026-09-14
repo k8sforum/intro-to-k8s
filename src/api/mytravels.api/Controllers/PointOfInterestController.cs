@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using OpenFeature;
 using System.Diagnostics.CodeAnalysis;
 using mytravels.api.Extensions;
 using mytravels.contract.CustomException;
@@ -16,13 +17,16 @@ namespace mytravels.api.Controllers
         private const int DefaultRows = 100;
 
         private readonly IPointOfInterestService _service;
+        private readonly FeatureClient _featureClient;
 
         public PointOfInterestController
         (
-            IPointOfInterestService service
+            IPointOfInterestService service,
+            FeatureClient featureClient
         )
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _featureClient = featureClient ?? throw new ArgumentNullException(nameof(featureClient));
         }
 
         /// <summary>
@@ -58,6 +62,12 @@ namespace mytravels.api.Controllers
             [FromQuery] int start,
             CancellationToken cancellationToken)
         {
+            bool searchEnabled = await _featureClient.GetBooleanValueAsync("enable-poi-search", true);
+            if (!searchEnabled)
+            {
+                return NotFound();
+            }
+
             SolrSearchQuery query = new()
             {
                 Term = term,
