@@ -37,6 +37,10 @@ namespace mytravels.common.Services
             if (!_configured)
                 throw new ApiException(503, "The AI photo description service is not configured (AnthropicApiKey is unset).");
 
+            const long maxBase64SizeBytes = 5 * 1024 * 1024;
+            if (base64Image.Length > maxBase64SizeBytes)
+                throw new ApiException(413, $"Image is too large for AI processing ({base64Image.Length / (1024 * 1024)}MB). Maximum is 5MB.");
+
             Dictionary<string, JsonElement> schema = new()
             {
                 ["type"] = JsonSerializer.SerializeToElement("object"),
