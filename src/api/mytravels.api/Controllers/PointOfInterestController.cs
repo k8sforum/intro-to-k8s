@@ -38,22 +38,19 @@ namespace mytravels.api.Controllers
         [ProducesResponseType(typeof(List<PointOfInterestDto>), 200)]
         public async Task<IActionResult> GetMetadatasAsync([FromQuery] string filterString, CancellationToken cancellationToken)
         {
-            List<GetPointOfInterestResponse> response = await _service.GetAsync(filterString, cancellationToken);
+            SolrSearchQuery query = new() { Term = filterString };
+            List<GetPointOfInterestResponse> response = await _service.SearchAsync(query, cancellationToken);
             List<PointOfInterestDto> dtos = response.ToDto();
             return Ok(dtos);
         }
 
         /// <summary>
-        /// Searches points of interest through SOLR across the formatted address, tags and AI-generated
-        /// description, optionally narrowed to a tag and a capture-date range.
+        /// Searches points of interest through SOLR across the formatted address, tags and AI-generated description.
         /// </summary>
         [HttpGet("search")]
         [ProducesResponseType(typeof(List<PointOfInterestDto>), 200)]
         public async Task<IActionResult> SearchAsync(
             [FromQuery] string term,
-            [FromQuery] string tag,
-            [FromQuery] DateTime? from,
-            [FromQuery] DateTime? to,
             [FromQuery] int rows,
             [FromQuery] int start,
             CancellationToken cancellationToken)
@@ -61,9 +58,6 @@ namespace mytravels.api.Controllers
             SolrSearchQuery query = new()
             {
                 Term = term,
-                Tag = tag,
-                From = from,
-                To = to,
                 Rows = rows <= 0 ? DefaultRows : rows,
                 Start = start < 0 ? 0 : start
             };

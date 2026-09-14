@@ -7,8 +7,6 @@ namespace mytravels.contract.Interfaces;
 public interface IPointOfInterestService
 {
     Task<List<GetPointOfInterestResponse>> GetAsync(CancellationToken cancellationToken);
-    Task<List<GetPointOfInterestResponse>> GetAsync(string tagName, CancellationToken cancellationToken);
-    Task<List<GetPointOfInterestResponse>> SearchAsync(string searchTerm, CancellationToken cancellationToken);
     Task<List<GetPointOfInterestResponse>> SearchAsync(SolrSearchQuery query, CancellationToken cancellationToken);
 
     /// <summary>

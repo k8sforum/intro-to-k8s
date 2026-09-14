@@ -35,16 +35,6 @@ namespace mytravels.common.Services
                 new("wt", "json")
             ];
 
-            if (!string.IsNullOrWhiteSpace(query.Tag))
-            {
-                parameters.Add(new KeyValuePair<string, string>("fq", $"tag_exact:\"{EscapeQuoted(query.Tag)}\""));
-            }
-
-            if (query.From.HasValue || query.To.HasValue)
-            {
-                parameters.Add(new KeyValuePair<string, string>("fq", BuildDateFilter(query.From, query.To)));
-            }
-
             JObject response = await _client.SelectAsync(parameters, cancellationToken);
             JToken documents = response["response"]?["docs"];
 
@@ -142,28 +132,5 @@ namespace mytravels.common.Services
 
             return value is null ? new List<string>() : new List<string> { value.ToString() };
         }
-
-        /// <summary>
-        /// Filters on the capture date, falling back to the creation date for points that have none, so a
-        /// date-filtered search does not silently drop every photo without EXIF date metadata.
-        /// </summary>
-        private static string BuildDateFilter(DateTime? from, DateTime? to)
-        {
-            string lower = from.HasValue ? FormatDate(from.Value) : "*";
-            string upper = to.HasValue ? FormatDate(to.Value) : "*";
-
-            return $"date_taken:[{lower} TO {upper}] OR (-date_taken:[* TO *] AND date_created:[{lower} TO {upper}])";
-        }
-
-        private static string FormatDate(DateTime value)
-        {
-            DateTime utc = value.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
-                : value.ToUniversalTime();
-
-            return utc.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
-        }
-
-        private static string EscapeQuoted(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
 }

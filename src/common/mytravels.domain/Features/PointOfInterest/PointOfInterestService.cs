@@ -41,12 +41,6 @@ namespace mytravels.domain.Features.PointOfInterest
         public async Task<List<GetPointOfInterestResponse>> GetAsync(CancellationToken cancellationToken)
             => await _context.GetAllPointsOfInterestAsync(cancellationToken);
 
-        public async Task<List<GetPointOfInterestResponse>> GetAsync(string tagName, CancellationToken cancellationToken)
-            => await _solrSearchService.SearchAsync(new SolrSearchQuery { Tag = tagName }, cancellationToken);
-
-        public async Task<List<GetPointOfInterestResponse>> SearchAsync(string searchTerm, CancellationToken cancellationToken)
-            => await _solrSearchService.SearchAsync(new SolrSearchQuery { Term = searchTerm }, cancellationToken);
-
         public async Task<List<GetPointOfInterestResponse>> SearchAsync(SolrSearchQuery query, CancellationToken cancellationToken)
             => await _solrSearchService.SearchAsync(query, cancellationToken);
 

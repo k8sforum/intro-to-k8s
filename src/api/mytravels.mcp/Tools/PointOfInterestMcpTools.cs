@@ -19,25 +19,19 @@ public class PointOfInterestMcpTools
     }
 
     [McpServerTool(Name = "search_pointofinterest")]
-    [Description("Searches saved points of interest across their formatted address, tags and AI-generated description, ranked by relevance. Optionally narrow the results to an exact tag and to a capture-date range.")]
+    [Description("Searches saved points of interest across their formatted address, tags and AI-generated description, ranked by relevance.")]
     public async Task<List<PointOfInterestDto>> SearchPointOfInterestAsync(
         [Description("Free-text search term, matched against the formatted address, the tags and the description.")] string term,
-        [Description("Optional exact tag name to filter by, for example 'beach'.")] string tag,
-        [Description("Optional inclusive start of the capture-date range, as an ISO-8601 date such as 2025-06-01.")] DateTime? from,
-        [Description("Optional inclusive end of the capture-date range, as an ISO-8601 date such as 2025-08-31.")] DateTime? to,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(term) && string.IsNullOrWhiteSpace(tag) && from is null && to is null)
+        if (string.IsNullOrWhiteSpace(term))
         {
-            throw new McpException($"At least one of '{nameof(term)}', '{nameof(tag)}', '{nameof(from)}' or '{nameof(to)}' is required.");
+            throw new McpException($"Search term is required.");
         }
 
         SolrSearchQuery query = new()
         {
-            Term = term,
-            Tag = tag,
-            From = from,
-            To = to
+            Term = term
         };
 
         var response = await _service.SearchAsync(query, cancellationToken);
