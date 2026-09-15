@@ -375,19 +375,22 @@ services:
           -e "s|__API_BASE_URL__|${VITE_API_BASE_URL}|g" \
           -e "s|__OTLP_TRACES_ENDPOINT__|${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}|g" \
           -e "s|__FLAGSMITH_ENVIRONMENT_ID__|${VITE_FLAGSMITH_ENVIRONMENT_ID}|g" \
+          -e "s|__FLAGSMITH_API_URL__|${VITE_FLAGSMITH_API_URL}|g" \
           {} +
-        if grep -rq '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__\|__FLAGSMITH_ENVIRONMENT_ID__' /docroot/assets; then
+        if grep -rq '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__\|__FLAGSMITH_ENVIRONMENT_ID__\|__FLAGSMITH_API_URL__' /docroot/assets; then
           echo "ERROR: unsubstituted placeholders remain in the bundle" >&2
-          grep -rlo '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__\|__FLAGSMITH_ENVIRONMENT_ID__' /docroot/assets >&2
+          grep -rlo '__API_BASE_URL__\|__OTLP_TRACES_ENDPOINT__\|__FLAGSMITH_ENVIRONMENT_ID__\|__FLAGSMITH_API_URL__' /docroot/assets >&2
           exit 1
         fi
         echo "substituted VITE_API_BASE_URL=${VITE_API_BASE_URL}"
         echo "substituted VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}"
         echo "substituted VITE_FLAGSMITH_ENVIRONMENT_ID=${VITE_FLAGSMITH_ENVIRONMENT_ID}"
+        echo "substituted VITE_FLAGSMITH_API_URL=${VITE_FLAGSMITH_API_URL}"
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL}
       VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
       VITE_FLAGSMITH_ENVIRONMENT_ID: ${VITE_FLAGSMITH_ENVIRONMENT_ID}
+      VITE_FLAGSMITH_API_URL: ${VITE_FLAGSMITH_API_URL}
     volumes:
       - web-docroot:/docroot
 

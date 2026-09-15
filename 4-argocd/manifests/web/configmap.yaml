@@ -2,12 +2,15 @@
 #
 # Vite inlines VITE_* values into the JavaScript at image build time, so they are
 # normally frozen into the image tag. The web image is instead built with sentinel
-# placeholders (__API_BASE_URL__, __OTLP_TRACES_ENDPOINT__ — see
-# 2-dockerhub/docker-compose.build.yml), and the Deployment's init container
+# placeholders (__API_BASE_URL__, __OTLP_TRACES_ENDPOINT__, __FLAGSMITH_API_URL__ —
+# see 2-dockerhub/docker-compose.build.yml), and the Deployment's init container
 # substitutes the values below into the bundle before nginx serves it.
 #
-# Both URLs are resolved by the *browser*, not by a pod, so they must be the
+# All three URLs are resolved by the *browser*, not by a pod, so they must be the
 # ingress hostnames reachable from the host — not in-cluster service names.
+# VITE_FLAGSMITH_API_URL is the self-hosted Flagsmith REST API; leaving it unset
+# makes the Flagsmith JS SDK fall back to the public SaaS edge API, which rejects
+# a self-hosted environment key.
 #
 # Changing a URL is now a plain git commit that Argo CD syncs, with no image
 # rebuild and no tag bump. Argo CD does not restart pods when only a ConfigMap
@@ -24,3 +27,4 @@ metadata:
 data:
   VITE_API_BASE_URL: http://api.mytravels.local:8080
   VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel.mytravels.local:8080/v1/traces
+  VITE_FLAGSMITH_API_URL: http://flagsmith.mytravels.local:8080/api/v1/

@@ -13,13 +13,13 @@ services:
       dockerfile: common/mytravels.migration/Dockerfile
 
   api:
-    image: tshepontlhokoa/mytravels-api:v1.0.13-${ARCH}
+    image: tshepontlhokoa/mytravels-api:v1.0.12-${ARCH}
     build:
       context: ../src
       dockerfile: api/mytravels.api/Dockerfile
 
   messaging:
-    image: tshepontlhokoa/mytravels-messaging:v1.0.16-${ARCH}
+    image: tshepontlhokoa/mytravels-messaging:v1.0.15-${ARCH}
     build:
       context: ../src
       dockerfile: messaging/mytravels.messaging/Dockerfile
@@ -30,22 +30,24 @@ services:
       context: ../src
       dockerfile: api/mytravels.mcp/Dockerfile
 
-  # The three VITE_* values are inlined into the JavaScript bundle by Vite at build
+  # The VITE_* values are inlined into the JavaScript bundle by Vite at build
   # time, so they cannot normally be changed after the image is built. Building
-  # with sentinel placeholders instead of real values defers that choice to deploy
+  # with sentinel placeholders instead of real URLs defers that choice to deploy
   # time: the Kubernetes stages substitute them at pod start from a ConfigMap
-  # (see 3-kubernetes/manifests/web/1-configmap.yaml).
+  # (see 3-kubernetes/manifests/web/1-configmap.yaml). The Flagsmith environment ID
+  # is the exception — it's Flagsmith-generated, so it's substituted from the
+  # flagsmith-keys Secret instead of the ConfigMap.
   #
-  # VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT must be non-empty — telemetry.ts guards
-  # its OpenTelemetry setup with `if (otlpEndpoint)`, and an unset build arg makes
-  # that branch statically false, so Vite tree-shakes the whole browser-RUM block
-  # out of the bundle.
+  # VITE_API_BASE_URL and VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT must be non-empty
+  # — telemetry.ts guards its OpenTelemetry setup with `if (otlpEndpoint)`, and an
+  # unset build arg makes that branch statically false, so Vite tree-shakes the
+  # whole browser-RUM block out of the bundle.
   #
   # Consequence: this image is NOT usable from plain `docker compose up` without a
   # substitution step — the browser would call the literal `__API_BASE_URL__`. The
   # Compose stages (1-dockerize, 2-dockerhub) pin earlier tags built with real URLs.
   web:
-    image: tshepontlhokoa/mytravels-web:v1.0.9-${ARCH}
+    image: tshepontlhokoa/mytravels-web:v1.0.7-${ARCH}
     build:
       context: ../src
       dockerfile: web/Dockerfile
@@ -53,3 +55,4 @@ services:
         VITE_API_BASE_URL: __API_BASE_URL__
         VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: __OTLP_TRACES_ENDPOINT__
         VITE_FLAGSMITH_ENVIRONMENT_ID: __FLAGSMITH_ENVIRONMENT_ID__
+        VITE_FLAGSMITH_API_URL: __FLAGSMITH_API_URL__

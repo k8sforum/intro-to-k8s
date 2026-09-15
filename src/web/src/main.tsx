@@ -9,7 +9,10 @@ import './index.css'
 import App from './App.tsx'
 
 await OpenFeature.setProviderAndWait(
-  new FlagsmithClientProvider({ environmentID: import.meta.env.VITE_FLAGSMITH_ENVIRONMENT_ID }),
+  new FlagsmithClientProvider({
+    environmentID: import.meta.env.VITE_FLAGSMITH_ENVIRONMENT_ID,
+    api: import.meta.env.VITE_FLAGSMITH_API_URL,
+  }),
 )
 
 createRoot(document.getElementById('root')!).render(
