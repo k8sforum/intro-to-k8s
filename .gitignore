@@ -116,6 +116,11 @@ __pycache__/
 *.pyc
 
 # ========================
+# Kubernetes
+# ========================
+3-kubernetes/manifests/messaging/1-secret.yaml
+
+# ========================
 # Editors & OS
 # ========================
 .DS_Store
