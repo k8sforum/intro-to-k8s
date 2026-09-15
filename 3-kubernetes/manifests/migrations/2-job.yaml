@@ -19,7 +19,7 @@ spec:
               done
               PGPASSWORD="$POSTGRES_PASSWORD" psql \
                 -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-                -c "DO \$\$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'config' AND table_name = 'EFMigrationsHistory') THEN DELETE FROM \"EFMigrationsHistory\" WHERE \"MigrationId\" IN ('20600930075821_SeedData', '20590930075747_UpdateStoredProcedure'); END IF; END \$\$;"
+                -c "DO \$\$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'config' AND table_name = 'EFMigrationsHistory') THEN DELETE FROM \"config\".\"EFMigrationsHistory\" WHERE \"MigrationId\" IN ('20600930075821_SeedData', '20590930075747_UpdateStoredProcedure'); END IF; END \$\$;"
           env:
             - name: POSTGRES_USER
               valueFrom:
