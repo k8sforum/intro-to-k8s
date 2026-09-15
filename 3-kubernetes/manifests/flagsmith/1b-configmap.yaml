@@ -14,6 +14,6 @@ data:
   # every request, including the exec healthcheck's internal GET, with 400.
   DJANGO_ALLOWED_HOSTS: "*"
   ALLOW_ADMIN_INITIATION_VIA_CLI: "true"
-  ADMIN_EMAIL: admin@example.com
+  ADMIN_EMAIL: user123
   ORGANISATION_NAME: mytravels
   PROJECT_NAME: mytravels
