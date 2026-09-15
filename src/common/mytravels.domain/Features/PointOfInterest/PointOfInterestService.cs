@@ -116,7 +116,7 @@ namespace mytravels.domain.Features.PointOfInterest
             return point.Id;
         }
 
-        public async Task<string> GetImageAsync(int id, CancellationToken cancellationToken)
+        public async Task<string> GetImageAsync(int id, bool resizedImage, CancellationToken cancellationToken)
         {
             contract.Entities.PointOfInterest point = await _context.PointOfInterests
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
@@ -124,7 +124,12 @@ namespace mytravels.domain.Features.PointOfInterest
 
             if (string.IsNullOrWhiteSpace(point.GeneratedBlobName)) return string.Empty;
 
-            return await _objectStorageService.GetBase64Async(BucketNames.ResizedImagesContainer, point.GeneratedBlobName, cancellationToken);
+            // The resized copy only exists once ResizeImage has run, so fall back to the original until then.
+            string bucket = resizedImage && point.ImageResized
+                ? BucketNames.ResizedImagesContainer
+                : BucketNames.NewUploadedImagesContainer;
+
+            return await _objectStorageService.GetBase64Async(bucket, point.GeneratedBlobName, cancellationToken);
         }
 
         private async Task<int> CreatePointOfInterestAsync(IFormFile file, string objectName, SaveCoordinatesDto coordinates, DateTime? dateTaken, CancellationToken cancellationToken)

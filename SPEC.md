@@ -330,7 +330,7 @@ Excluded from the tree above (per instructions/format norms): `node_modules/`, `
 | GET | `/api/pointofinterest?rows=&start=` | optional `rows` (default 100), `start` — **served from SOLR** as a single capped `*:*` query since `api:v1.0.12`, not from PostgreSQL | `List<PointOfInterestDto>` | 200 | none |
 | GET | `/api/pointofinterest/search?term=&rows=&start=` | query `term` (free text over address, tags and description), optional `rows` (default 100), `start` — **gated behind the `enable-poi-search` Flagsmith flag** (`api:v1.0.13`+), evaluated first via the registered `FeatureClient`; returns `404` before touching `IPointOfInterestService` when off (default `true`) | `List<PointOfInterestDto>` | 200; 404 when `enable-poi-search` is off | none |
 | POST | `/api/pointofinterest/reindex?purgeFirst=` | query `purgeFirst` (default `true` when omitted) | `SolrReindexResponseDto { CorrelationId }` | 202 Accepted | none |
-| GET | `/api/pointofinterest/{id:int}?resizedImage=bool` | route `id`; query `resizedImage` is accepted but never used (Finding F-2) | `string` (base64 image) | 200 | none |
+| GET | `/api/pointofinterest/{id:int}?resizedImage=bool` | route `id`; query `resizedImage` selects the `resized-images` bucket when `true` (falls back to the original if the resize hasn't run yet) vs. `uploaded-images` when `false` (Finding F-2, resolved) | `string` (base64 image) | 200 | none |
 | PUT | `/api/pointofinterest` | multipart: `image` (file), query `pointOfInterestKey` | `SaveEntityResponseDto` | 200; 403 if image/key missing | none |
 | POST | `/api/pointofinterest/image` | multipart: `image` (file) | `SaveEntityResponseDto` | 200; 403 if image missing; **500 if the image carries no GPS EXIF** (`InvalidOperationException("Image is not geocoded")`) | none |
 | POST | `/api/pointofinterest/image/coordinates` | multipart: `image` (file) + `coordinates` (`SaveCoordinatesDto`: Latitude/Longitude `[Required][Range]`, FormattedAddress) | `SaveEntityResponseDto` | 200; 403 if image missing; 400 if `ModelState` invalid | none |
@@ -748,7 +748,7 @@ Each of the three semaphores is `static` **per subscriber class**, so the three 
 
 ### Bugs / probable defects
 
-- **F-2** — `GET /api/pointofinterest/{id}?resizedImage=bool` accepts `resizedImage` but never passes it to the service call; the parameter is dead and the endpoint always returns the same image regardless of the flag. `src/api/mytravels.api/Controllers/PointOfInterestController.cs:46-50`.
+- **F-2 [RESOLVED]** — `GET /api/pointofinterest/{id}?resizedImage=bool` used to accept `resizedImage` without ever passing it to the service call, so both values returned the same image. `IPointOfInterestService.GetImageAsync` now takes `resizedImage` and `PointOfInterestService.GetImageAsync` picks `BucketNames.ResizedImagesContainer` vs. `NewUploadedImagesContainer` accordingly, falling back to the original when `resizedImage` is `true` but `PointOfInterest.ImageResized` is still `false` (the resize hasn't run yet). `src/api/mytravels.api/Controllers/PointOfInterestController.cs:97-101`, `src/common/mytravels.domain/Features/PointOfInterest/PointOfInterestService.cs:119-131`.
 - **F-6** — `RequiredParameterNotFoundException` and `OutOfRadiusException` both map to HTTP 403 Forbidden instead of 400 Bad Request — semantically wrong for "missing/invalid input," and affects every action that validates required params. `src/api/mytravels.api/Middleware/ApiExceptionMiddleware.cs:37,41`.
 - **F-8** — Unhandled-exception responses serialize the raw `Exception.Message` straight into the client-facing JSON body — information disclosure of internal state (DB errors, stack details embedded in messages). `src/api/mytravels.api/Middleware/ApiExceptionMiddleware.cs:63`.
 - **F-11** — `AppendFormattedAddressSweeper` filters on `FormattedAddress == ""` (strict empty-string) while the live consumer's guard is `IsNullOrEmpty(...Trim())`; since `FormattedAddress` is a nullable column, a `NULL` row is retried by the live consumer but permanently skipped by the sweeper. `src/messaging/mytravels.messaging/AppendFormattedAddressSweeper.cs:33` vs. `AppendFormattedAddress.cs:43`.
@@ -849,7 +849,7 @@ Each of the three semaphores is `static` **per subscriber class**, so the three 
 
 ---
 
-*End of specification. 18/18 sections present, none marked N/A. Findings: 22 lettered (F-1…F-22, of which F-13, F-15, F-16 and F-17 are marked resolved) plus additional unlettered items in the "fragile" and "dead code" sub-buckets — 40+ total findings.*
+*End of specification. 18/18 sections present, none marked N/A. Findings: 22 lettered (F-1…F-22, of which F-2, F-13, F-15, F-16 and F-17 are marked resolved) plus additional unlettered items in the "fragile" and "dead code" sub-buckets — 40+ total findings.*
 
 *Revised 2026-09-14 (feature flagging via self-hosted Flagsmith, per `prompts/add feature flagging.md`):*
 - *§1, §14 — Flagsmith added as an integration: shares `mytravels-postgres` in a second database (`FeatureDb`), evaluated from `api` and `messaging` via the OpenFeature .NET SDK (`OpenFeature.Contrib.Providers.Flagsmith` v0.3.1) and from `web` via `@openfeature/web-sdk`/`@openfeature/react-sdk`/`@openfeature/flagsmith-client-provider`; `mcp` is not wired to it.*
@@ -892,6 +892,9 @@ Each of the three semaphores is `static` **per subscriber class**, so the three 
 - *§8.1, §8.3 — added `Description` and `CorrelationId` columns and the `20610930080000` stored-procedure migration.*
 - *§10.1, §10.2, §10.6 — Anthropic config moved from `api` to `messaging`; `AnthropicModel` is now deployment-configurable.*
 - *§12, §13, §14 — replaced the "infinite `nack(requeue:true)` redelivery" description with the actual bounded 3-retry + failed-exchange policy; added `AppendImageTags` and `FailedExchangeDeclarer` to the hosted-service list. New findings F-20 (failed exchanges have no bound queue, so payloads are discarded), F-21 (retries have no backoff), F-22 (`AppendImageTags` is not idempotent).*
+
+*Revised 2026-09-15:*
+- *§6.1 — F-2 resolved: `GET /api/pointofinterest/{id}?resizedImage=` now threads the flag from the controller through `IPointOfInterestService.GetImageAsync` to select the `resized-images` vs. `uploaded-images` bucket, falling back to the original when the resize hasn't completed yet.*
 - *§11 — verified the Azure Content Safety credential is **still present** in commit `a270e7d`; it was committed after the April 2026 `filter-repo` scrub and has only been removed from the working tree, not from history.*
 - *§3 — removed the non-existent `3-kubernetes/docker-compose.yml` (Compose stops at stage 2); added `prompts/todo/`, `user stories/`, `.claude/`.*
 - *§17 — confirmed all five image tags are published on Docker Hub, and documented that a tag bump alone does not publish (per-arch build + `merge-manifests.sh` merge required).*

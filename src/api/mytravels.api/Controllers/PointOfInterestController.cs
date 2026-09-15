@@ -96,7 +96,7 @@ namespace mytravels.api.Controllers
         [ProducesResponseType(typeof(string), 200)]
         public async Task<IActionResult> GetImageAsync([FromRoute] int id, [FromQuery] bool resizedImage, CancellationToken cancellationToken)
         {
-            string base64 = await _service.GetImageAsync(id, cancellationToken);
+            string base64 = await _service.GetImageAsync(id, resizedImage, cancellationToken);
             return Ok(base64);
         }
 
