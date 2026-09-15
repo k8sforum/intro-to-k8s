@@ -53,12 +53,19 @@ spec:
               mountPath: /etc/rabbitmq/enabled_plugins
               subPath: enabled_plugins
           livenessProbe:
-            exec:
-              command: ["rabbitmqctl", "status"]
-            initialDelaySeconds: 10
+            tcpSocket:
+              port: 5672
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 5672
+            initialDelaySeconds: 15
             periodSeconds: 5
-            timeoutSeconds: 10
-            failureThreshold: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
       volumes:
         - name: rabbitmq-data
           persistentVolumeClaim:
