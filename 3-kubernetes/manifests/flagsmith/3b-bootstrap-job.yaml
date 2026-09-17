@@ -1,8 +1,8 @@
-# Creates the superuser + organisation + project (idempotent — a no-op on
+# Creates the superuser + organisation + project (idempotent - a no-op on
 # rerun). Logs a password-reset link rather than a usable password; 6-seed-job.yaml
 # sets a real password directly via the Django ORM instead, since the reset link
 # is only needed for the HTTP reset-password flow, which the ORM path skips.
-# Must run after 3-migrate-job.yaml completes — see the runbook's two-phase
+# Must run after 3-migrate-job.yaml completes - see the runbook's two-phase
 # apply note.
 apiVersion: batch/v1
 kind: Job

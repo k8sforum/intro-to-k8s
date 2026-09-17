@@ -6,9 +6,9 @@ A geolocation-based Points of Interest (POI) management system built on .NET 10.
 
 MyTravels is a microservices-style application with two runnable services and a shared library layer:
 
-- **API** — REST API for creating, querying, and managing POIs
-- **Messaging** — Background worker that processes images and resolves addresses asynchronously
-- **Migration** — Once-Off console app to apply EF Core database migrations
+- **API** - REST API for creating, querying, and managing POIs
+- **Messaging** - Background worker that processes images and resolves addresses asynchronously
+- **Migration** - Once-Off console app to apply EF Core database migrations
 
 GPS coordinates are extracted from image EXIF data on upload. Addresses are fetched from Google Maps and written back asynchronously. Images are resized to thumbnails via a RabbitMQ queue.
 
@@ -64,7 +64,7 @@ migration ───────────────────────�
 
 ### With Docker Compose (recommended)
 
-All services — PostgreSQL, RabbitMQ, MinIO, migrations, API, and messaging worker — are orchestrated by Docker Compose. The `.env` file at the root of `3-kubernetes/` holds all required values; edit it before running.
+All services - PostgreSQL, RabbitMQ, MinIO, migrations, API, and messaging worker - are orchestrated by Docker Compose. The `.env` file at the root of `3-kubernetes/` holds all required values; edit it before running.
 
 ```bash
 cd 3-kubernetes
@@ -121,7 +121,7 @@ dotnet run
 
 ## Configuration
 
-### Docker Compose — `.env`
+### Docker Compose - `.env`
 
 All Docker Compose services read environment variables from the `.env` file in the `3-kubernetes/` directory.
 
@@ -138,7 +138,7 @@ All Docker Compose services read environment variables from the `.env` file in t
 | `ASPNETCORE_ENVIRONMENT` | ASP.NET Core environment (`Development`, `Production`) |
 | `ASPNETCORE_URLS` | Listen URL for the service (e.g. `http://+:5101`) |
 
-### Local development — `appsettings.Development.json`
+### Local development - `appsettings.Development.json`
 
 When running with `dotnet run`, configure `3-kubernetes/api/mytravels.api/appsettings.Development.json`:
 
@@ -199,8 +199,8 @@ PointOfInterestAuditLog      history of address changes
 ```
 
 **PostgreSQL schemas:**
-- `public` — main tables
-- `config` — EF Core migrations history
+- `public` - main tables
+- `config` - EF Core migrations history
 
 ## Async Processing (Messaging Service)
 

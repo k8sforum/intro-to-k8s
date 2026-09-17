@@ -12,14 +12,14 @@ retries failed geocoding. `api`, `messaging`, and `mcp` all export OTel traces,
 but a distributed-tracing / gap analysis of the actual code (see findings below,
 all verified against `src/`) found that once a message crosses into RabbitMQ,
 its connection back to the originating request is lost, and several failure
-paths have no terminal, observable signal at all — they either loop forever or
+paths have no terminal, observable signal at all - they either loop forever or
 disappear silently. This spec addresses each gap directly.
 
 ## Current state (verified findings)
 
 - **No trace-context propagation across RabbitMQ.** `MessagePublisher.PublishAsync`
   (`mytravels.common/Services/MessagePublisher.cs:27-34`) calls `BasicPublishAsync`
-  with no `IBasicProperties`/headers — no W3C `traceparent` is attached.
+  with no `IBasicProperties`/headers - no W3C `traceparent` is attached.
   `MessageSubscriberBase<T>`'s `ReceivedAsync` handler
   (`mytravels.common/Services/MessageSubscriberBase.cs:58-87`) never reads
   `ea.BasicProperties.Headers` to extract one. Neither `api`'s nor `messaging`'s
@@ -29,7 +29,7 @@ disappear silently. This spec addresses each gap directly.
   exchanges is invisible to tracing regardless of headers.
 - **No terminal failure signal; infinite requeue instead.** The generic catch in
   `MessageSubscriberBase.cs:82-86` logs `"Error processing message."` and
-  unconditionally `BasicNackAsync(..., requeue: true)` — no retry cap, no
+  unconditionally `BasicNackAsync(..., requeue: true)` - no retry cap, no
   dead-letter routing, no `<exchange>-failed` message is ever published anywhere
   in the codebase. A permanently-failing message (bad geocoding input, corrupt
   image) retries forever with only a repeating generic log line as evidence.
@@ -38,18 +38,18 @@ disappear silently. This spec addresses each gap directly.
   without the `PointOfInterestId` or `CorrelationId` as structured fields, so a
   specific upload's failure can't be found by searching on its id.
 - **`ResizeImage.cs` has no catch block at all** (`ResizeImage.cs:30-72`, only
-  `try`/`finally`) — a resize failure (bad image, MinIO write error) is logged
+  `try`/`finally`) - a resize failure (bad image, MinIO write error) is logged
   only by the generic base-class catch, with no `PointOfInterestId` context.
 - **Inconsistent `CorrelationId`.** `CreatePointOfInterestAsync`
   (`PointOfInterestService.cs:114-117`) mints one `Guid` and shares it across all
   three publishes. `UpdatePointOfInterestAsync`
   (`PointOfInterestService.cs:84`) publishes to `resize-image` with no
-  `CorrelationId` set (defaults to `Guid.Empty`) — the "add a photo to an
+  `CorrelationId` set (defaults to `Guid.Empty`) - the "add a photo to an
   existing POI" path has no correlation id at all.
 - **Sweeper batches fail atomically and lose correlation.**
   `AppendFormattedAddressSweeper.DoWorkAsync`
   (`AppendFormattedAddressSweeper.cs:36-43`) has no per-point try/catch inside
-  the `foreach` — one point's `GetAddressAsync` throwing aborts the whole batch,
+  the `foreach` - one point's `GetAddressAsync` throwing aborts the whole batch,
   caught only by the outer handler at `AppendFormattedAddressSweeper.cs:45-49`,
   which then rethrows. `PointOfInterest` (`mytravels.contract/Entities/PointOfInterest.cs`)
   has no `CorrelationId` column, so even a successful sweep retry can't be tied
@@ -67,15 +67,15 @@ disappear silently. This spec addresses each gap directly.
   (`HandleServerErrorAsync`, `ApiExceptionMiddleware.cs:61`, and
   `HandleClientErrorAsync`, `ApiExceptionMiddleware.cs:79`) mints
   `Guid.NewGuid().ToString("N")` as the returned `ErrorId`, unrelated to the
-  request's `Activity`/`TraceId` — support has to correlate by manual log search
+  request's `Activity`/`TraceId` - support has to correlate by manual log search
   instead of jumping into the trace.
 - **Silent geocoding retries.** `GoogleMapsService`'s `AsyncRetryPolicy`
   (`GoogleMapsService.cs:23-26`, mirrored in `OpenStreetMapsService.cs:25-28`)
-  has no `onRetry` callback — transient retries leave no log/metric trace.
+  has no `onRetry` callback - transient retries leave no log/metric trace.
 - **Documentation drift, not a code gap:** `CLAUDE.md` and `SPEC.md` describe
   `mytravels.mcp` exposing `upload_photo` / `upload_photo_with_coordinates`
   tools. Verified via `Program.cs:76-77` and `Tools/PointOfInterestMcpTools.cs:21`
-  that only `search_pointofinterest` and `search_place` are registered — no
+  that only `search_pointofinterest` and `search_place` are registered - no
   upload path exists through MCP today. This is a docs correction, not a
   traceability fix; see Out of scope.
 
@@ -92,7 +92,7 @@ disappear silently. This spec addresses each gap directly.
    and `messaging`.** Name it `"MyTravels.RabbitMQ"` so both publish (Producer)
    and consume (Consumer) spans appear under one source, added via
    `.AddSource("MyTravels.RabbitMQ")` next to the existing `.AddSource("Npgsql")`
-   calls. No collector/manifest changes needed — the OTLP exporter already
+   calls. No collector/manifest changes needed - the OTLP exporter already
    ships whatever spans are recorded.
 3. **Failure signaling is bounded retry + explicit `-failed` message, not
    infra-level dead-lettering.** Track an `x-retry-count` header, incremented on
@@ -111,7 +111,7 @@ disappear silently. This spec addresses each gap directly.
    `UpdatePointOfInterestAsync`'s `resize-image` publish.
 5. **Structured logging fields, not new logging infra.** Every subscriber catch
    block gets `PointOfInterestId` and `CorrelationId` as structured
-   `LogError` parameters — consistent with the pattern already used elsewhere
+   `LogError` parameters - consistent with the pattern already used elsewhere
    (`ApiExceptionMiddleware.cs:68` already does `{ErrorId} -- {ErrorMessage}`).
 6. **MCP upload tools are not built as part of this spec.** They're a separate
    feature (nothing to trace yet, since nothing publishes from `mcp` today).
@@ -164,7 +164,7 @@ disappear silently. This spec addresses each gap directly.
     dead-lettered after N attempts, and `BasicAckAsync` to remove it from the
     working queue.
   - This requires `MessageSubscriberBase<T>`'s constructor to also declare the
-    `-failed` exchange (fanout, no bound queue required — consumers are
+    `-failed` exchange (fanout, no bound queue required - consumers are
     optional/future) so publishing to it never fails on an undeclared exchange.
 - **`CronJobBase.cs`**: wrap the first call at line 19 in the same `try`/`catch`
   the loop already uses (extract the body of the existing `catch` into a small
@@ -178,7 +178,7 @@ disappear silently. This spec addresses each gap directly.
 - **`ApiExceptionMiddleware.cs`**: change `Id = Guid.NewGuid().ToString("N")`
   (lines 61 and 79) to prefer the active trace: `Id =
   System.Diagnostics.Activity.Current?.TraceId.ToString() ??
-  Guid.NewGuid().ToString("N")` — support can paste the `ErrorId` straight into
+  Guid.NewGuid().ToString("N")` - support can paste the `ErrorId` straight into
   the tracing backend's trace search when a trace was recorded, falling back to
   a random id only if `Activity.Current` is somehow null.
 - **`PointOfInterestService.cs`**:
@@ -195,7 +195,7 @@ disappear silently. This spec addresses each gap directly.
 - **`Program.cs`**: add `.AddSource("MyTravels.RabbitMQ")` next to
   `.AddSource("Npgsql")` (lines 28-31).
 - **`AppendFormattedAddress.cs:54`**: change the catch to
-  `_logger.LogError(ex, "Error processing AppendFormattedAddress message for POI {PointOfInterestId}, correlation {CorrelationId}", obj.PointOfInterestId, obj.CorrelationId);` — same
+  `_logger.LogError(ex, "Error processing AppendFormattedAddress message for POI {PointOfInterestId}, correlation {CorrelationId}", obj.PointOfInterestId, obj.CorrelationId);` - same
   exception/rethrow behavior otherwise (retry/dead-letter handling now lives in
   the base class per the design decision above).
 - **`AppendImageTags.cs:71`**: identical structured-logging change.
@@ -216,7 +216,7 @@ disappear silently. This spec addresses each gap directly.
 
 - **`GoogleMapsService.cs`** and **`OpenStreetMapsService.cs`**: add an
   `onRetry` callback to the existing `WaitAndRetryAsync` policies (lines 23-26
-  / 25-28) that logs the attempt number and exception at `Warning` — requires
+  / 25-28) that logs the attempt number and exception at `Warning` - requires
   injecting `ILogger` into both services (not currently a constructor
   dependency).
 
@@ -226,7 +226,7 @@ disappear silently. This spec addresses each gap directly.
   exposes `upload_photo` / `upload_photo_with_coordinates` tools; state that it
   currently exposes `search_pointofinterest` and `search_place` only.
 
-### Diagrams — `drawio/architecture.drawio`
+### Diagrams - `drawio/architecture.drawio`
 
 - **Monitoring** page: add the new `MyTravels.RabbitMQ` producer/consumer spans
   to the OTLP/telemetry arrows already drawn for `api` and `messaging`.
@@ -243,12 +243,12 @@ disappear silently. This spec addresses each gap directly.
   Grafana panel on queue depth). This spec only makes the failure observable
   and stops the infinite-requeue loop; wiring an actual alert is a follow-up.
 - RabbitMQ-level dead-letter-exchange (DLX) configuration as an alternative to
-  the application-level `x-retry-count` approach — rejected in favor of the
+  the application-level `x-retry-count` approach - rejected in favor of the
   simpler in-code approach (design decision 3) to avoid touching queue
   declare/infra across all five stages.
 - Backfilling `CorrelationId` for `PointOfInterest` rows created before this
   migration ships (column is nullable; historical rows stay `null`).
-- `Baggage`/`tracestate` propagation — only `traceparent` is propagated;
+- `Baggage`/`tracestate` propagation - only `traceparent` is propagated;
   richer context propagation is a future enhancement if needed.
-- Publisher-confirms performance impact assessment under load — flagged as a
+- Publisher-confirms performance impact assessment under load - flagged as a
   behavior change worth a quick load-test before merging, not designed here.

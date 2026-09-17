@@ -25,7 +25,7 @@
 
 ## Cloud Differences
 14. Self-managed vs managed services | [Docs](https://kubernetes.io/docs/setup/)
-15. Networking — install a network plugin | [Docs](https://kubernetes.io/docs/concepts/cluster-administration/addons/)
+15. Networking - install a network plugin | [Docs](https://kubernetes.io/docs/concepts/cluster-administration/addons/)
 
 ## Real World Patterns
 16. Access management (RBAC) | [Docs](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)

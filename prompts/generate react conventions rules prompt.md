@@ -7,12 +7,12 @@ globs: src/web/src/**/*.{ts,tsx}
 alwaysApply: false
 ---
 
-Derive every rule by reading the actual code in `src/web/src/` — do not
+Derive every rule by reading the actual code in `src/web/src/` - do not
 state generic React best practices. If fewer than 3 files agree on a
 pattern, or files actively disagree (e.g. quote style), leave it out
 rather than inventing a preference. Do not restate anything already
 enforced by `src/web/.oxlintrc.json` (currently `react/rules-of-hooks`,
-`react/only-export-components`) — just note that oxlint covers hooks
+`react/only-export-components`) - just note that oxlint covers hooks
 rules and move on.
 
 Cover, grounded in concrete examples from the code:
@@ -38,6 +38,6 @@ prose and bullet lists, no persona framing, no filler ("As a React
 expert..."), one rule per line where possible so each is independently
 checkable against a diff.
 
-Rules apply uniformly to `.ts` and `.tsx` files — don't scope any rule
+Rules apply uniformly to `.ts` and `.tsx` files - don't scope any rule
 to component files only unless the underlying pattern genuinely doesn't
 apply to plain `.ts` modules (e.g. JSX-specific rules).

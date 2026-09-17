@@ -11,7 +11,7 @@ namespace mytravels.functions;
 
 /// <summary>
 /// Rebuilds the whole SOLR collection from PostgreSQL. This is the recovery path for a lost index, and it
-/// must converge on the same document set the incremental IndexSolr path produces — both read the
+/// must converge on the same document set the incremental IndexSolr path produces - both read the
 /// latest-row-per-key read model and key documents on PointOfInterestKey.
 /// </summary>
 public class ReindexSolr : MessageSubscriberBase<SolrReindexMessage>

@@ -32,5 +32,5 @@ if errors:
         print(e)
     sys.exit(1)
 
-print("OK — no errors found.")
+print("OK - no errors found.")
 sys.exit(0)

@@ -1,7 +1,7 @@
 # Creates the superuser + organisation + project (idempotent). Sync hook for
 # the same immutable-pod-template reason as create-db-job.yaml.
 #
-# Wave 3: one wave after flagsmith-migrate (wave 2) — the schema has to exist
+# Wave 3: one wave after flagsmith-migrate (wave 2) - the schema has to exist
 # before bootstrap can create rows in it.
 apiVersion: batch/v1
 kind: Job

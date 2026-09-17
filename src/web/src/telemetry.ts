@@ -10,7 +10,7 @@ import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 const otlpEndpoint = import.meta.env.VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5101'
 // propagateTraceHeaderCorsUrls does an exact string match against the full
-// request URL, not just the origin — a RegExp is needed to cover every path.
+// request URL, not just the origin - a RegExp is needed to cover every path.
 const escapedApiBaseUrl = apiBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
 const apiUrlPattern = new RegExp('^' + escapedApiBaseUrl)
 

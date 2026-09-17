@@ -2,12 +2,12 @@
 #
 # Vite inlines VITE_* values into the JavaScript at image build time, so they are
 # normally frozen into the image tag. The web image is instead built with sentinel
-# placeholders (__API_BASE_URL__, __OTLP_TRACES_ENDPOINT__, __FLAGSMITH_API_URL__ —
+# placeholders (__API_BASE_URL__, __OTLP_TRACES_ENDPOINT__, __FLAGSMITH_API_URL__ -
 # see 2-dockerhub/docker-compose.build.yml), and the Deployment's init container
 # substitutes the values below into the bundle before nginx serves it.
 #
 # All three URLs are resolved by the *browser*, not by a pod, so they must be the
-# ingress hostnames reachable from the host — not in-cluster service names.
+# ingress hostnames reachable from the host - not in-cluster service names.
 # VITE_FLAGSMITH_API_URL is the self-hosted Flagsmith REST API; leaving it unset
 # makes the Flagsmith JS SDK fall back to the public SaaS edge API, which rejects
 # a self-hosted environment key.

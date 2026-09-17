@@ -102,7 +102,7 @@ services:
       EOSQL
 
 #Feature flags - https://docs.flagsmith.com. Shares mytravels-postgres in a second
-# database (FeatureDb), not a second container — see CLAUDE.md "Feature flagging".
+# database (FeatureDb), not a second container - see CLAUDE.md "Feature flagging".
 # The app runs from source in this stage, so api/messaging read Flagsmith via the
 # Flagsmith section of each project's appsettings.json (ApiUri already points at
 # http://localhost:8000/api/v1/) rather than via Compose environment variables.
@@ -118,11 +118,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     restart: "no"
     # NOTE: command is given as a YAML list (not a plain multi-line string) on
-    # purpose — Compose shell-word-splits a string `command`, which silently
+    # purpose - Compose shell-word-splits a string `command`, which silently
     # breaks any command containing a pipe, `||`, or heredoc (only the first
     # word ever reaches `sh -c`). Wrapping it as [sh, -c, "<script>"] keeps the
     # whole script as one argv element. See cleanup-migrations above, which has
-    # this exact latent bug — its DELETE statement has never actually executed.
+    # this exact latent bug - its DELETE statement has never actually executed.
     command:
       - sh
       - -c
@@ -149,7 +149,7 @@ services:
       flagsmith-create-db:
         condition: service_completed_successfully
 
-  # Creates the superuser + organisation + project (idempotent — a no-op on
+  # Creates the superuser + organisation + project (idempotent - a no-op on
   # rerun). Logs a password-reset link rather than a usable password; the
   # separate flagsmith-seed step below sets a real password directly via the
   # ORM instead of parsing that link, since the link is only needed for the
@@ -193,16 +193,16 @@ services:
         condition: service_completed_successfully
 
   # Idempotent: creates the "Production" environment and the three flags (all
-  # defaulting to enabled) directly via Flagsmith's own Django ORM — no HTTP
+  # defaulting to enabled) directly via Flagsmith's own Django ORM - no HTTP
   # calls, no password/login dance. Also sets a real admin password (from
   # FLAGSMITH_ADMIN_PASSWORD) so a human can still log into the console.
   # Rewrites FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY and VITE_FLAGSMITH_ENVIRONMENT_ID
-  # into .env in place — see runbook.ipynb: unlike stages 1/2, this stage has no
+  # into .env in place - see runbook.ipynb: unlike stages 1/2, this stage has no
   # containerized api/messaging/web reading those two vars at `docker compose up`
   # parse time, so there is no second bring-up phase here. Paste the written
   # FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY into each project's appsettings.json
   # (or export Flagsmith__ServerSideEnvironmentKey before `dotnet run`) to have
-  # the source-run api/messaging evaluate real flags — the same manual step this
+  # the source-run api/messaging evaluate real flags - the same manual step this
   # stage already requires for GoogleApiKey/AnthropicApiKey.
   flagsmith-seed:
     image: docker.flagsmith.com/flagsmith/flagsmith:2.261.0

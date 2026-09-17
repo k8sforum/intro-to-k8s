@@ -5,7 +5,7 @@
 # fail. As a hook it is deleted and recreated on every sync instead.
 #
 #   hook: Sync              runs as part of the sync, so sync-wave still applies
-#                           (PreSync would run before wave 0 — postgres would not
+#                           (PreSync would run before wave 0 - postgres would not
 #                           exist yet and the initContainer would wait forever)
 #   sync-wave: "1"          after postgres is Healthy (wave 0), before the apps (wave 2)
 #   hook-delete-policy      remove the previous Job right before creating the new one,

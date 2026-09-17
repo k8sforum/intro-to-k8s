@@ -65,7 +65,7 @@ public class ResizeImage : MessageSubscriberBase<PointOfInterestMessage>
             }
 
             // The description and tags are generated in AppendImageTags, which publishes index-solr only once
-            // it has persisted them — so chaining here rather than indexing directly is what keeps them out of
+            // it has persisted them - so chaining here rather than indexing directly is what keeps them out of
             // the indexed document until they exist. Replacing a photo publishes only resize-image, so this is
             // also what re-describes and reindexes the replacement row. The inbound CorrelationId is reused so
             // the whole chain shows up on the same trace.

@@ -6,7 +6,7 @@
 # (VITE_API_BASE_URL=__API_BASE_URL__,
 #  VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=__OTLP_TRACES_ENDPOINT__,
 #  VITE_FLAGSMITH_ENVIRONMENT_ID=__FLAGSMITH_ENVIRONMENT_ID__,
-#  VITE_FLAGSMITH_API_URL=__FLAGSMITH_API_URL__ — see
+#  VITE_FLAGSMITH_API_URL=__FLAGSMITH_API_URL__ - see
 # 2-dockerhub/docker-compose.build.yml) and the init container below rewrites them
 # from the web-config ConfigMap into a copy of the site before nginx serves it.
 # The Flagsmith environment ID is Flagsmith-generated rather than hand-configured,
@@ -16,7 +16,7 @@
 # The image layer itself stays read-only: the init container copies the site into
 # an emptyDir, patches the copy, and nginx mounts the emptyDir over its docroot.
 #
-# To change either URL, edit 1-configmap.yaml and roll the Deployment — the init
+# To change either URL, edit 1-configmap.yaml and roll the Deployment - the init
 # container re-runs on every new pod. No rebuild, no tag bump.
 apiVersion: apps/v1
 kind: Deployment

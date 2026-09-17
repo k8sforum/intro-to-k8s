@@ -1,5 +1,5 @@
 # Runs Flagsmith's Django migrations against FeatureDb. Must run after
-# 2-create-db-job.yaml completes (the database has to exist first) — see the
+# 2-create-db-job.yaml completes (the database has to exist first) - see the
 # runbook's two-phase apply note.
 apiVersion: batch/v1
 kind: Job

@@ -1,15 +1,15 @@
 # Exposes services via host-based routing:
-#   rabbitmq-management  — http://rabbitmq.mytravels.local
-#   minio-console        — http://minio.mytravels.local
-#   api                  — http://api.mytravels.local
-#   web                  — http://web.mytravels.local
-#   mcp                  — http://mcp.mytravels.local
-#   grafana              — http://grafana.mytravels.local
-#   prometheus           — http://prometheus.mytravels.local
-#   otel-collector       — http://otel.mytravels.local (OTLP/HTTP, for browser RUM traces)
-#   solr                 — http://solr.mytravels.local (Admin UI and HTTP API)
-#   flagsmith            — http://flagsmith.mytravels.local (admin console + REST API)
-#   postgres             — TCP via the 'postgres' Traefik entrypoint (see note below)
+#   rabbitmq-management  - http://rabbitmq.mytravels.local
+#   minio-console        - http://minio.mytravels.local
+#   api                  - http://api.mytravels.local
+#   web                  - http://web.mytravels.local
+#   mcp                  - http://mcp.mytravels.local
+#   grafana              - http://grafana.mytravels.local
+#   prometheus           - http://prometheus.mytravels.local
+#   otel-collector       - http://otel.mytravels.local (OTLP/HTTP, for browser RUM traces)
+#   solr                 - http://solr.mytravels.local (Admin UI and HTTP API)
+#   flagsmith            - http://flagsmith.mytravels.local (admin console + REST API)
+#   postgres             - TCP via the 'postgres' Traefik entrypoint (see note below)
 #
 # postgres note: HTTP Ingress does not support raw TCP. The IngressRouteTCP below
 # requires a dedicated TCP entrypoint named 'postgres' to be configured in Traefik,
@@ -186,7 +186,7 @@ spec:
 
 ---
 
-# Traefik CRD for raw TCP — routes all connections on the 'postgres' entrypoint
+# Traefik CRD for raw TCP - routes all connections on the 'postgres' entrypoint
 # to the postgres service. HostSNI(*) is required for non-TLS TCP routes.
 apiVersion: traefik.io/v1alpha1
 kind: IngressRouteTCP

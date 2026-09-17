@@ -3,7 +3,7 @@
 # By default argocd-server serves HTTPS with a self-signed certificate and
 # redirects plain HTTP to it. Behind the Traefik `web` (HTTP) entrypoint that
 # produces a redirect loop in the browser, so we turn TLS off at the server and
-# let the ingress own the edge. That is the standard pattern — in a real cluster
+# let the ingress own the edge. That is the standard pattern - in a real cluster
 # you would terminate real TLS at the ingress instead.
 #
 # This ConfigMap is created empty by the upstream install manifest; applying this

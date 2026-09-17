@@ -1,5 +1,5 @@
 # Selector matches only the `flagsmith` (serve) Deployment, not
-# flagsmith-task-processor (deliberately labelled differently — it serves no
+# flagsmith-task-processor (deliberately labelled differently - it serves no
 # HTTP traffic).
 apiVersion: v1
 kind: Service

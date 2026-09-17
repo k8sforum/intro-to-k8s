@@ -5,10 +5,10 @@
 #
 # A Sync hook for the same reason as migrations/job.yaml: a Job's pod template
 # is immutable, so as an ordinary resource the second sync would try to patch
-# it and fail. hook: Sync (not PreSync) so sync-wave still applies — PreSync
+# it and fail. hook: Sync (not PreSync) so sync-wave still applies - PreSync
 # would run before wave 0, before postgres exists.
 #
-# Wave 1: same wave as db-migrations (CoreDb) and observability — both need
+# Wave 1: same wave as db-migrations (CoreDb) and observability - both need
 # only postgres (wave 0) Healthy, and are independent of each other.
 apiVersion: batch/v1
 kind: Job

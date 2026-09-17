@@ -1,4 +1,4 @@
-# The flagsmith `serve` container — REST API + admin console UI. Stateless, no
+# The flagsmith `serve` container - REST API + admin console UI. Stateless, no
 # PVC. Wave 4: one wave after flagsmith-bootstrap (wave 3).
 apiVersion: apps/v1
 kind: Deployment
@@ -57,7 +57,7 @@ spec:
               memory: 1Gi
           # The image is Wolfi-based with no curl/wget; `flagsmith healthcheck
           # http` is the image's own built-in check (GET /health/liveness on
-          # 8000 internally) — verified working by hand, unlike a guessed
+          # 8000 internally) - verified working by hand, unlike a guessed
           # httpGet path.
           livenessProbe:
             exec:

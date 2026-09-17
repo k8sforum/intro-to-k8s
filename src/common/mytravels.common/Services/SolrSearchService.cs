@@ -57,7 +57,7 @@ namespace mytravels.common.Services
 
         /// <summary>
         /// Turns one SOLR document into one response row per tag, or a single row with a null tag when the
-        /// document carries none — the exact shape spGetPointOfInterest() produces.
+        /// document carries none - the exact shape spGetPointOfInterest() produces.
         /// </summary>
         private static IEnumerable<GetPointOfInterestResponse> Expand(JToken document, ref int rowId)
         {

@@ -35,16 +35,16 @@ services:
   # with sentinel placeholders instead of real URLs defers that choice to deploy
   # time: the Kubernetes stages substitute them at pod start from a ConfigMap
   # (see 3-kubernetes/manifests/web/1-configmap.yaml). The Flagsmith environment ID
-  # is the exception — it's Flagsmith-generated, so it's substituted from the
+  # is the exception - it's Flagsmith-generated, so it's substituted from the
   # flagsmith-keys Secret instead of the ConfigMap.
   #
   # VITE_API_BASE_URL and VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT must be non-empty
-  # — telemetry.ts guards its OpenTelemetry setup with `if (otlpEndpoint)`, and an
+  # - telemetry.ts guards its OpenTelemetry setup with `if (otlpEndpoint)`, and an
   # unset build arg makes that branch statically false, so Vite tree-shakes the
   # whole browser-RUM block out of the bundle.
   #
   # Consequence: this image is NOT usable from plain `docker compose up` without a
-  # substitution step — the browser would call the literal `__API_BASE_URL__`. The
+  # substitution step - the browser would call the literal `__API_BASE_URL__`. The
   # Compose stages (1-dockerize, 2-dockerhub) pin earlier tags built with real URLs.
   web:
     image: tshepontlhokoa/mytravels-web:v1.0.9-${ARCH}

@@ -34,7 +34,7 @@ data:
         static_configs:
           - targets: ["minio:9000"]
 
-      # cadvisor is a DaemonSet — discovered via the headless cadvisor
+      # cadvisor is a DaemonSet - discovered via the headless cadvisor
       # Service's SRV record so every node's pod gets scraped, not just one.
       - job_name: cadvisor
         dns_sd_configs:

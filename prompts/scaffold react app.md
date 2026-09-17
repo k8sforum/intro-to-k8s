@@ -1,7 +1,7 @@
 Create a React app (Vite + TypeScript + Tailwind CSS) called "MyTravels POI Viewer".
 
 Data source: a .NET API at http://localhost:5101 (CORS must be configured
-server-side for the Vite dev origin — assume http://localhost:5100).
+server-side for the Vite dev origin - assume http://localhost:5100).
 
 Endpoints used:
 - GET  /api/PointOfInterest
@@ -12,7 +12,7 @@ Endpoints used:
 - GET  /api/PointOfInterest/{id}?resizedImage=true
     → base64-encoded image string, used to render the POI's photo/thumbnail
 - POST /api/PointOfInterest/image  (multipart/form-data, field name "image")
-    → { id } — uploads a photo; GPS coordinates and address are extracted
+    → { id } - uploads a photo; GPS coordinates and address are extracted
       and resolved asynchronously on the backend (EXIF + geocoding), so the
       new POI's coordinates/address may not be ready immediately
 

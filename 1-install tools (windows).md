@@ -1,17 +1,17 @@
-# Required Tools — Windows
+# Required Tools - Windows
 
-Install notes for the tools used across the runbooks in this repo. Each notebook's Prerequisites cell links back here and only lists which of these tools it actually needs — this file has the install commands and any gotchas.
+Install notes for the tools used across the runbooks in this repo. Each notebook's Prerequisites cell links back here and only lists which of these tools it actually needs - this file has the install commands and any gotchas.
 
 All commands use `winget`, which ships built in on Windows 10 (1809+) and Windows 11. Run them from PowerShell.
 
-> **Run Windows Terminal as Administrator.** Open Windows Terminal (or PowerShell) with **Run as administrator** and use that same elevated window for every command below and in the rest of this repo's runbooks — some installs and WSL/Kubernetes operations fail silently or with permissions errors otherwise.
+> **Run Windows Terminal as Administrator.** Open Windows Terminal (or PowerShell) with **Run as administrator** and use that same elevated window for every command below and in the rest of this repo's runbooks - some installs and WSL/Kubernetes operations fail silently or with permissions errors otherwise.
 
 ## Quick reference
 
 | Tool | Purpose | Install |
 |---|---|---|
 | Rancher Desktop | Docker engine + `docker compose` + container registry | `winget install --id SUSE.RancherDesktop -e` |
-| Docker / Docker Compose | Container runtime + compose CLI | bundled with Rancher Desktop — see below |
+| Docker / Docker Compose | Container runtime + compose CLI | bundled with Rancher Desktop - see below |
 | k3d | Local Kubernetes cluster (used in `3-kubernetes`) | `winget install --id k3d.k3d -e` |
 | kubectl | Kubernetes CLI | `winget install --id Kubernetes.kubectl -e` |
 | JupyterLab | Run these notebooks | `winget install --id ProjectJupyter.JupyterLab -e` |
@@ -38,11 +38,11 @@ Rancher Desktop already provides both `docker` and `docker compose`. No separate
 winget install --id k3d.k3d -e
 ```
 
-Used to create the local multi-node Kubernetes cluster in `3-kubernetes`. Requires Rancher Desktop (or another Docker engine) to be running first, and talks to it over the same named pipe Rancher Desktop's own `docker` CLI uses — no WSL-specific setup needed beyond what Rancher Desktop already configured.
+Used to create the local multi-node Kubernetes cluster in `3-kubernetes`. Requires Rancher Desktop (or another Docker engine) to be running first, and talks to it over the same named pipe Rancher Desktop's own `docker` CLI uses - no WSL-specific setup needed beyond what Rancher Desktop already configured.
 
-> **`%%bash` notebook cells run inside WSL, not this Windows install.** The `runbook.ipynb` cells use Jupyter's `%%bash` magic, which spawns whatever `bash` your `PATH` resolves to. Git for Windows deliberately doesn't put its own `bash.exe` on `PATH`, so the only one found is `C:\Users\<user>\AppData\Local\Microsoft\WindowsApps\bash.exe` — the WSL launcher. That means every `%%bash` cell actually runs inside your default WSL distro, not a native Windows shell.
+> **`%%bash` notebook cells run inside WSL, not this Windows install.** The `runbook.ipynb` cells use Jupyter's `%%bash` magic, which spawns whatever `bash` your `PATH` resolves to. Git for Windows deliberately doesn't put its own `bash.exe` on `PATH`, so the only one found is `C:\Users\<user>\AppData\Local\Microsoft\WindowsApps\bash.exe` - the WSL launcher. That means every `%%bash` cell actually runs inside your default WSL distro, not a native Windows shell.
 >
-> `docker` and `kubectl` still work there because Rancher Desktop forwards native Linux builds of both directly into that WSL distro. The `k3d.exe` installed above by `winget` is Windows-only, so it's invisible to WSL bash under the bare name `k3d` — and even calling it explicitly as `k3d.exe` from inside WSL doesn't help, since Windows binaries launched through WSL interop can't reach Rancher Desktop's Docker named pipe (`open //./pipe/docker_engine: The system cannot find the file specified`).
+> `docker` and `kubectl` still work there because Rancher Desktop forwards native Linux builds of both directly into that WSL distro. The `k3d.exe` installed above by `winget` is Windows-only, so it's invisible to WSL bash under the bare name `k3d` - and even calling it explicitly as `k3d.exe` from inside WSL doesn't help, since Windows binaries launched through WSL interop can't reach Rancher Desktop's Docker named pipe (`open //./pipe/docker_engine: The system cannot find the file specified`).
 >
 > **Fix:** also install a native Linux build of k3d inside WSL, matching how `docker`/`kubectl` already get there. Open your WSL distro (Start Menu → **Ubuntu**, or `wsl` from a terminal) and run:
 > ```bash
@@ -84,7 +84,7 @@ Installs the current Node.js LTS line (22.x, matching `src/web/Dockerfile`) and 
 
 ## Freelens / OpenLens (optional)
 
-A desktop GUI for browsing the cluster (pods, logs, exec, metrics) as an alternative to raw `kubectl`. Not required by any notebook cell — purely a convenience.
+A desktop GUI for browsing the cluster (pods, logs, exec, metrics) as an alternative to raw `kubectl`. Not required by any notebook cell - purely a convenience.
 
 ```powershell
 winget install --id Freelensapp.Freelens -e

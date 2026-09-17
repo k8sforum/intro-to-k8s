@@ -7,7 +7,7 @@
 
 POI search today is a single PostgreSQL `ILIKE` over one column. `CoreDbContext.SearchPointsOfInterestByFormattedAddressAsync`
 (`mytravels.domain/CoreDbContext.cs:44-70`) matches `%term%` against `FormattedAddress`
-only — it cannot search the AI-generated `Description`, cannot search tags, has no
+only - it cannot search the AI-generated `Description`, cannot search tags, has no
 date filtering, no relevance ranking (results come back in table order), and no
 stemming or tokenisation, so "cape town" does not match "Cape Town, South Africa"
 any better than a substring does.
@@ -30,7 +30,7 @@ kept in sync from RabbitMQ, with a full-rebuild path for recovery.
   lookup via stored proc (`PointOfInterestController.cs:35-42`, `PointOfInterestService.cs:41-42`).
 - **MCP exposes only the address path.** `search_pointofinterest`
   (`mytravels.mcp/Tools/PointOfInterestMcpTools.cs:21-31`) calls the same
-  `SearchAsync`, and its `ToDto` (`:33-61`) drops `Description` entirely — an MCP
+  `SearchAsync`, and its `ToDto` (`:33-61`) drops `Description` entirely - an MCP
   client cannot see descriptions even where they exist.
 - **`Description` is persisted.** `PointOfInterest.Description`
   (`mytravels.contract/Entities/PointOfInterest.cs:32`) is written by the
@@ -57,7 +57,7 @@ kept in sync from RabbitMQ, with a full-rebuild path for recovery.
   `searchPlaces` (geocoding lookup). No frontend change is required.
 - **Stage 3 has no Compose file.** Compose stages are 0, 1 and 2 only; stages 3 and 4
   are manifests. `CLAUDE.md` and `SPEC.md` §3 both claim a `3-kubernetes/docker-compose.yml`
-  — it does not exist. Correct both while editing them.
+  - it does not exist. Correct both while editing them.
 
 ## Design decisions
 
@@ -73,7 +73,7 @@ kept in sync from RabbitMQ, with a full-rebuild path for recovery.
   two messages for the same key processed out of order would leave stale data in the
   index. This makes indexing order-independent and idempotent.
 - **Index after enrichment, not only at creation.** At `CreatePointOfInterestAsync`
-  the address, description and tags are all still empty — they arrive asynchronously.
+  the address, description and tags are all still empty - they arrive asynchronously.
   `index-solr` is therefore published four times per upload: once on create (so the
   POI is findable by date/coordinates immediately) and once at the end of each of
   `AppendFormattedAddress`, `AppendImageTags` and `ResizeImage`. SOLR upserts by key,
@@ -84,7 +84,7 @@ kept in sync from RabbitMQ, with a full-rebuild path for recovery.
   the service implementation, not the API contract.
 - **Schema is created at runtime through SOLR's Schema API, not a mounted configset.**
   A configset would have to be maintained as a bind mount in Compose *and* as a
-  ConfigMap in stage 3 *and* stage 4 — three copies to drift apart, which is exactly
+  ConfigMap in stage 3 *and* stage 4 - three copies to drift apart, which is exactly
   the failure mode `CLAUDE.md` warns about. A `SolrSchemaInitializer : IHostedService`
   in `messaging` that idempotently PUTs field definitions keeps one definition in C#
   and makes every stage self-healing. Trade-off: the schema lives in code rather than
@@ -106,92 +106,92 @@ kept in sync from RabbitMQ, with a full-rebuild path for recovery.
 
 ### Contract (`mytravels.contract`)
 
-- `Constants/ExchangeNames.cs` — add four constants following the existing
+- `Constants/ExchangeNames.cs` - add four constants following the existing
   `X` / `X-failed` pairing:
   `IndexSolr = "index-solr"`, `IndexSolrFailed = "index-solr-failed"`,
   `ReindexSolr = "reindex-solr"`, `ReindexSolrFailed = "reindex-solr-failed"`.
-- `Messages/SolrReindexMessage.cs` — new `IMessage` with `CorrelationId` and a
+- `Messages/SolrReindexMessage.cs` - new `IMessage` with `CorrelationId` and a
   `PurgeFirst` bool (default `true`). It deliberately has no `PointOfInterestId`;
   `MessageSubscriberBase`'s audit reflection (`MessageSubscriberBase.cs:132-141`)
   reads that property by name and tolerates its absence.
-- `Interfaces/ISolrSearchService.cs` — `SearchAsync(SolrSearchQuery query, CancellationToken)`
+- `Interfaces/ISolrSearchService.cs` - `SearchAsync(SolrSearchQuery query, CancellationToken)`
   returning `List<GetPointOfInterestResponse>`.
-- `Interfaces/ISolrIndexService.cs` — `IndexAsync(int pointOfInterestId, CancellationToken)`,
+- `Interfaces/ISolrIndexService.cs` - `IndexAsync(int pointOfInterestId, CancellationToken)`,
   `IndexBatchAsync(IEnumerable<...>, CancellationToken)`, `PurgeAsync(CancellationToken)`,
   `EnsureSchemaAsync(CancellationToken)`.
-- `Dtos/SolrSearchQuery.cs` — `Term`, `Tag`, `From`, `To`, `Rows`, `Start`.
-- `Config/SolrConfig.cs` — `Url`, `Collection`, `TimeoutSeconds`, `BatchSize`
+- `Dtos/SolrSearchQuery.cs` - `Term`, `Tag`, `From`, `To`, `Rows`, `Start`.
+- `Config/SolrConfig.cs` - `Url`, `Collection`, `TimeoutSeconds`, `BatchSize`
   (bound from a `Solr` config section, mirroring `MinIOConfig`).
 
 `PointOfInterestMessage` is reused as-is for `index-solr`.
 
 ### Common (`mytravels.common/Services`)
 
-- `SolrClient.cs` — thin Flurl wrapper over `/select`, `/update?commit=true`,
+- `SolrClient.cs` - thin Flurl wrapper over `/select`, `/update?commit=true`,
   and `/schema`. Same Polly shape as `GoogleMapsService`: 2 retries, exponential backoff.
-- `SolrSearchService.cs` — builds the `edismax` query (`q`, `qf` with the boosts above,
+- `SolrSearchService.cs` - builds the `edismax` query (`q`, `qf` with the boosts above,
   `fq` for tag and date range, `rows`/`start`), executes it, and expands each returned
-  document into one `GetPointOfInterestResponse` per tag — or a single row with null
+  document into one `GetPointOfInterestResponse` per tag - or a single row with null
   `TagId`/`TagName` when the document has no tags, matching what the stored proc
   produces today.
-- `SolrIndexService.cs` — implements `ISolrIndexService`. Resolves latest-for-key via
+- `SolrIndexService.cs` - implements `ISolrIndexService`. Resolves latest-for-key via
   `ICoreDbContext` (which lives in `contract`, so no new project reference is needed),
   maps to a SOLR document, and posts it. `EnsureSchemaAsync` issues idempotent
   `add-field` calls and ignores "field already exists" responses.
 
 ### Domain (`mytravels.domain`)
 
-- `CoreDbContext.cs` — delete `SearchPointsOfInterestByFormattedAddressAsync` (`:44-70`)
+- `CoreDbContext.cs` - delete `SearchPointsOfInterestByFormattedAddressAsync` (`:44-70`)
   and `GetPointsOfInterestByTagAsync` (`:35-36`); remove both from `ICoreDbContext`.
-- `Features/PointOfInterest/public.spGetPointOfInterestByTagName.sql` — delete, and add
+- `Features/PointOfInterest/public.spGetPointOfInterestByTagName.sql` - delete, and add
   a migration that drops the function. Note the repo convention: stored-proc changes ship
   as EF migrations (`SPEC.md` §16), and `SeedData`/`UpdateStoredProcedure` carry
-  deliberately future-dated timestamps so they re-run last — do not disturb those two ids.
-- `PointOfInterestService.cs` — `SearchAsync` delegates to `ISolrSearchService`;
+  deliberately future-dated timestamps so they re-run last - do not disturb those two ids.
+- `PointOfInterestService.cs` - `SearchAsync` delegates to `ISolrSearchService`;
   `GetAsync(string tagName)` delegates to the same service with the tag filter set.
   `CreatePointOfInterestAsync` (`:108-133`) gains a fourth publish to
   `ExchangeNames.IndexSolr` alongside the existing three.
 
 ### API (`mytravels.api`)
 
-- `Controllers/PointOfInterestController.cs` — `SearchAsync` (`:44-51`) gains optional
+- `Controllers/PointOfInterestController.cs` - `SearchAsync` (`:44-51`) gains optional
   `tag`, `from`, `to`, `rows`, `start` query parameters. `GetMetadatasAsync(filterString)`
   (`:35-42`) keeps its route and shape for compatibility but now resolves through SOLR.
-- New `POST /api/pointofinterest/reindex` — mints a `CorrelationId`, publishes a
+- New `POST /api/pointofinterest/reindex` - mints a `CorrelationId`, publishes a
   `SolrReindexMessage` to `ExchangeNames.ReindexSolr`, returns `202 Accepted` with the
   correlation id so the caller can follow it through the existing traceability UI.
   It must not do the rebuild inline.
-- `appsettings.json` — add the `Solr` section. While here, drop the stale
+- `appsettings.json` - add the `Solr` section. While here, drop the stale
   `AnthropicApiKey` placeholder (`CLAUDE.md` notes `api` does not use it).
-- `Program.cs` — register `SolrConfig`, `ISolrSearchService`, `ISolrIndexService`.
+- `Program.cs` - register `SolrConfig`, `ISolrSearchService`, `ISolrIndexService`.
 
 ### MCP (`mytravels.mcp`)
 
-- `Tools/PointOfInterestMcpTools.cs` — widen `search_pointofinterest` to accept
+- `Tools/PointOfInterestMcpTools.cs` - widen `search_pointofinterest` to accept
   `tag`, `from`, `to`; update the `[Description]` text, which currently promises
-  address-only search. Add `Description` to the `ToDto` projection (`:40-57`) — it is
+  address-only search. Add `Description` to the `ToDto` projection (`:40-57`) - it is
   populated in the response object and silently discarded today.
-- `Program.cs` and `appsettings.json` — same registrations and `Solr` section as `api`.
+- `Program.cs` and `appsettings.json` - same registrations and `Solr` section as `api`.
 
 ### Messaging (`mytravels.messaging`)
 
-- `IndexSolr.cs` — new `MessageSubscriberBase<PointOfInterestMessage>`, constructed with
+- `IndexSolr.cs` - new `MessageSubscriberBase<PointOfInterestMessage>`, constructed with
   `(ExchangeNames.IndexSolr, ExchangeNames.IndexSolr, ExchangeNames.IndexSolrFailed)`,
   following `AppendImageTags.cs` line for line.
-- `ReindexSolr.cs` — new `MessageSubscriberBase<SolrReindexMessage>`. Purges the
+- `ReindexSolr.cs` - new `MessageSubscriberBase<SolrReindexMessage>`. Purges the
   collection when `PurgeFirst`, then pages `GetAllPointsOfInterestAsync()` in
   `SolrConfig.BatchSize` chunks, grouping by `PointOfInterestId` to collect tags, and
-  posts each batch. Log progress per batch — a full rebuild is the one operation here
+  posts each batch. Log progress per batch - a full rebuild is the one operation here
   with no natural per-item observability.
-- `SolrSchemaInitializer.cs` — `IHostedService` calling `EnsureSchemaAsync` at startup.
+- `SolrSchemaInitializer.cs` - `IHostedService` calling `EnsureSchemaAsync` at startup.
   Must tolerate SOLR not yet being reachable (retry with backoff) rather than crashing
   the host, since Compose `depends_on` does not guarantee readiness.
-- `AppendFormattedAddress.cs`, `AppendImageTags.cs`, `ResizeImage.cs` — publish
+- `AppendFormattedAddress.cs`, `AppendImageTags.cs`, `ResizeImage.cs` - publish
   `index-solr` on successful completion, reusing the inbound `CorrelationId` so the
   reindex is visible on the same trace.
-- `FailedExchangeDeclarer.cs` — declare `index-solr-failed` and `reindex-solr-failed`
+- `FailedExchangeDeclarer.cs` - declare `index-solr-failed` and `reindex-solr-failed`
   alongside the existing three.
-- `Program.cs` — register the two subscribers and the schema initializer as hosted
+- `Program.cs` - register the two subscribers and the schema initializer as hosted
   services, and the SOLR services in DI.
 
 ### SOLR schema
@@ -218,7 +218,7 @@ for the filter path that `spGetPointOfInterestByTagName` used to serve.
 
 ### Infrastructure
 
-Compose — `0-local/`, `1-dockerize/`, `2-dockerhub/` (stage 0 runs the app from
+Compose - `0-local/`, `1-dockerize/`, `2-dockerhub/` (stage 0 runs the app from
 source but its infra comes from Compose, so SOLR belongs there too):
 
 ```yaml
@@ -241,7 +241,7 @@ Add a `solr-data` named volume. `api`, `mcp` and `messaging` gain
 
 Stage 3 (`3-kubernetes/manifests/solr/`, numbered for apply order):
 `1-pv-pvc.yaml`, `2-deployment.yaml`, `3-service.yaml`. Follow
-`minio/2-pv-pvc.yaml` — note it hard-pins `nodeAffinity` to
+`minio/2-pv-pvc.yaml` - note it hard-pins `nodeAffinity` to
 `k3d-mytravels-agent-2`; match that so SOLR lands on the same node as the other
 `hostPath` volumes. Add `solr.mytravels.local` → `solr:8983` to
 `9-ingress.yaml` for the Admin UI, and to the host comment block at the top,
@@ -250,7 +250,7 @@ which currently lists every other exposed host.
 Stage 4 (`4-argocd/manifests/solr/`): same three files without the number
 prefixes, plus `argocd.argoproj.io/sync-wave` annotations placing SOLR in the
 same wave as Postgres/RabbitMQ/MinIO, ahead of `api`/`messaging`/`mcp`. Stage 4
-keeps no Secret manifests — nothing here is secret, so no `.env` plumbing is needed
+keeps no Secret manifests - nothing here is secret, so no `.env` plumbing is needed
 beyond the two `Solr__*` values.
 
 `.env.example` for stages 0, 1, 2 and 4: add `SOLR_URL`, `SOLR_COLLECTION`.
@@ -263,20 +263,20 @@ stages 2–4, or those stages break on pull.
 
 ### Documentation
 
-- `SPEC.md` — §6.1/§6.2 (new and changed endpoints and the MCP tool signature),
+- `SPEC.md` - §6.1/§6.2 (new and changed endpoints and the MCP tool signature),
   §6.4 (two new exchange pairs), §8.3 (dropped stored proc), §9 (SOLR as a second
   persistence store), §10 (the `Solr` config section), §14 (SOLR as an integration).
   Also fix §7.5, which wrongly says descriptions are not persisted, and §3, which
   lists a `3-kubernetes/docker-compose.yml` that does not exist.
-- `CLAUDE.md` — add SOLR to the architecture sketch and to the "a service added to
+- `CLAUDE.md` - add SOLR to the architecture sketch and to the "a service added to
   the app must be wired into all five stages" checklist; correct the same phantom
   stage-3 Compose file.
-- All five `runbook.ipynb` — a SOLR section per stage: bring it up, confirm the
+- All five `runbook.ipynb` - a SOLR section per stage: bring it up, confirm the
   collection exists, run a search, trigger a reindex. Per the repo's runbook rule
   (`.claude/skills/validate-runbook/`), a failed health check must run its diagnostic
   command inline in the same cell, never print a suggestion to run one. Validate each
   notebook end-to-end with the `validate-runbook` skill afterwards.
-- `drawio/architecture.drawio` — add SOLR and the two new exchanges.
+- `drawio/architecture.drawio` - add SOLR and the two new exchanges.
 
 ## Implementation order
 
@@ -289,7 +289,7 @@ stages 2–4, or those stages break on pull.
    `PointOfInterestService` and the three enrichment subscribers. Upload a photo and
    watch the document appear in the Admin UI.
 4. `ReindexSolr` subscriber and the `POST /reindex` endpoint. Verify purge-and-rebuild
-   converges on the same document set the incremental path produced in step 3 — that
+   converges on the same document set the incremental path produced in step 3 - that
    equivalence is the whole point of the key design decision above, so test it
    explicitly rather than assuming it.
 5. `SolrSearchService`, then repoint `PointOfInterestService.SearchAsync` and

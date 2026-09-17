@@ -36,7 +36,7 @@ export function MapSearchBox({ onResults }: MapSearchBoxProps) {
     const trimmed = term.trim();
 
     // Emptying the box is the explicit "show me everything again" gesture. Falling below the
-    // minimum length is not — the last result set stays on the map until it is emptied or hidden,
+    // minimum length is not - the last result set stays on the map until it is emptied or hidden,
     // so backspacing a couple of characters doesn't flash the whole library back up.
     if (trimmed.length === 0) {
       setSearch({ status: 'idle' });
@@ -147,7 +147,7 @@ function describe(search: SearchState): string {
       return 'Searching…';
     case 'loaded':
       return search.count === 0
-        ? `No points match “${search.term}”. The map is empty, not broken — clear the box to bring every pin back.`
+        ? `No points match “${search.term}”. The map is empty, not broken - clear the box to bring every pin back.`
         : `${search.count} ${search.count === 1 ? 'point' : 'points'} on the map.`;
     case 'error':
       return 'Search failed. Please try again.';

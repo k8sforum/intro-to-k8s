@@ -1,6 +1,6 @@
 # Flagsmith's background task processor (analytics, audit log processing,
 # etc). Does not serve HTTP, so unlike 4-deployment.yaml it has no ports and no
-# probes — same as its Compose counterpart, which also defines no healthcheck.
+# probes - same as its Compose counterpart, which also defines no healthcheck.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

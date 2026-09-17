@@ -3,7 +3,7 @@
 # they are allowed to create.
 #
 # The built-in `default` project allows everything from everywhere. Defining an
-# explicit project is the habit worth forming — if a manifest in this repo ever
+# explicit project is the habit worth forming - if a manifest in this repo ever
 # grows a resource the project does not permit, the sync fails loudly instead of
 # quietly creating it.
 apiVersion: argoproj.io/v1alpha1
@@ -24,8 +24,8 @@ spec:
       namespace: mytravels-default
 
   # Cluster-scoped resources are denied unless listed here. This stack needs two:
-  #   Namespace        — manifests/namespace.yaml
-  #   PersistentVolume — the manual hostPath PVs in manifests/minio/
+  #   Namespace        - manifests/namespace.yaml
+  #   PersistentVolume - the manual hostPath PVs in manifests/minio/
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace

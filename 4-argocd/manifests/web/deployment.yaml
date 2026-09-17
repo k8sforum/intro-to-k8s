@@ -6,7 +6,7 @@
 # (VITE_API_BASE_URL=__API_BASE_URL__,
 #  VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=__OTLP_TRACES_ENDPOINT__,
 #  VITE_FLAGSMITH_ENVIRONMENT_ID=__FLAGSMITH_ENVIRONMENT_ID__,
-#  VITE_FLAGSMITH_API_URL=__FLAGSMITH_API_URL__ — see
+#  VITE_FLAGSMITH_API_URL=__FLAGSMITH_API_URL__ - see
 # 2-dockerhub/docker-compose.build.yml) and the init container below rewrites them
 # from the web-config ConfigMap into a copy of the site before nginx serves it.
 # The Flagsmith environment ID is Flagsmith-generated rather than hand-configured,
@@ -18,7 +18,7 @@
 #
 # GitOps note: Argo CD syncs a changed ConfigMap but does not restart pods for it,
 # because nothing in this pod spec changed. Bump the config-revision annotation
-# below in the same commit as a configmap.yaml edit — that mutates the pod
+# below in the same commit as a configmap.yaml edit - that mutates the pod
 # template, so Argo CD rolls the Deployment and the init container re-runs.
 apiVersion: apps/v1
 kind: Deployment
@@ -28,7 +28,7 @@ metadata:
   labels:
     app: web
   annotations:
-    # Wave 6 (moved from 2) — one wave after flagsmith-seed (wave 5), which
+    # Wave 6 (moved from 2) - one wave after flagsmith-seed (wave 5), which
     # produces the flagsmith-keys Secret this Deployment's init container now
     # reads from. See manifests/flagsmith/ for the full wave sequence.
     argocd.argoproj.io/sync-wave: "6"

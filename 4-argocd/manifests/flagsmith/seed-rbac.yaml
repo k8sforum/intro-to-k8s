@@ -2,7 +2,7 @@
 # exactly one Secret (flagsmith-keys), in this namespace only.
 #
 # Wave 5: one wave after deployment.yaml/task-processor-deployment.yaml
-# (wave 4), ahead of api/messaging/web (wave 6). Plain resources (not hooks —
+# (wave 4), ahead of api/messaging/web (wave 6). Plain resources (not hooks -
 # no immutable-field issue), but kept in the same wave as seed-job.yaml since
 # a ServiceAccount write is an instant etcd write that will always land well
 # before the Job controller gets around to admitting a Pod that references it.

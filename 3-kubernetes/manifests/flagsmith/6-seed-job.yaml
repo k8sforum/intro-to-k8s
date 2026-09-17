@@ -1,11 +1,11 @@
 # Idempotent: creates the "Production" environment and the three flags (all
-# defaulting to enabled) directly via Flagsmith's own Django ORM — no HTTP
+# defaulting to enabled) directly via Flagsmith's own Django ORM - no HTTP
 # calls, no password/login dance. Also sets a real admin password (from
 # flagsmith-secret's FLAGSMITH_ADMIN_PASSWORD) so a human can still log into
 # the console. The python below is the same script as
 # 1-dockerize/docker-compose.yml's flagsmith-seed service, unescaped for a
 # plain YAML block scalar (Compose's `$$` there exists only to survive
-# Compose's own variable interpolation — Kubernetes manifests have no such
+# Compose's own variable interpolation - Kubernetes manifests have no such
 # layer, so plain `$` is correct here).
 #
 # Two containers instead of Compose's one:
@@ -15,7 +15,7 @@
 #                                    file. initContainers always run to
 #                                    completion before the main container
 #                                    starts, so this also gives us "wait for
-#                                    the ORM step to finish" for free — no
+#                                    the ORM step to finish" for free - no
 #                                    polling loop needed.
 #   container    kubectl-apply       upserts the flagsmith-keys Secret from
 #                                    that file using the ServiceAccount token
@@ -25,7 +25,7 @@
 #                                    secret bootstrap step in this repo.
 #
 # Must run after 3b-bootstrap-job.yaml completes (org/project must already
-# exist) — see the runbook's two-phase apply note.
+# exist) - see the runbook's two-phase apply note.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -112,7 +112,7 @@ spec:
               cpu: 500m
               memory: 1Gi
       containers:
-        # Small, commonly-used, explicitly-tagged kubectl image — no existing
+        # Small, commonly-used, explicitly-tagged kubectl image - no existing
         # kubectl-in-a-Job pattern elsewhere in this repo's manifests to reuse
         # (grepped both stage 3 and stage 4). Pinned to the k3d cluster's k3s
         # minor version (v1.35, see the runbook's Step 2 `--image` flag) per

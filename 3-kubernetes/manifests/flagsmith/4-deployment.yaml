@@ -1,4 +1,4 @@
-# The flagsmith `serve` container — REST API + admin console UI (same image
+# The flagsmith `serve` container - REST API + admin console UI (same image
 # serves both). Stateless: all state lives in FeatureDb on the shared postgres
 # instance, so no PVC.
 apiVersion: apps/v1
@@ -56,7 +56,7 @@ spec:
               memory: 1Gi
           # The image is Wolfi-based with no curl/wget; `flagsmith healthcheck
           # http` is the image's own built-in check (GET /health/liveness on
-          # 8000 internally) — verified working by hand, unlike a guessed
+          # 8000 internally) - verified working by hand, unlike a guessed
           # httpGet path.
           livenessProbe:
             exec:

@@ -106,7 +106,7 @@ services:
       $$;
       EOSQL
 #Feature flags - https://docs.flagsmith.com. Shares mytravels-postgres in a second
-# database (FeatureDb), not a second container — see CLAUDE.md "Feature flagging".
+# database (FeatureDb), not a second container - see CLAUDE.md "Feature flagging".
   flagsmith-create-db:
     image: postgres:17.6-alpine
     container_name: flagsmith-create-db
@@ -119,11 +119,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     restart: "no"
     # NOTE: command is given as a YAML list (not a plain multi-line string) on
-    # purpose — Compose shell-word-splits a string `command`, which silently
+    # purpose - Compose shell-word-splits a string `command`, which silently
     # breaks any command containing a pipe, `||`, or heredoc (only the first
     # word ever reaches `sh -c`). Wrapping it as [sh, -c, "<script>"] keeps the
     # whole script as one argv element. See cleanup-migrations above, which has
-    # this exact latent bug — its DELETE statement has never actually executed.
+    # this exact latent bug - its DELETE statement has never actually executed.
     command:
       - sh
       - -c
@@ -150,7 +150,7 @@ services:
       flagsmith-create-db:
         condition: service_completed_successfully
 
-  # Creates the superuser + organisation + project (idempotent — a no-op on
+  # Creates the superuser + organisation + project (idempotent - a no-op on
   # rerun). Logs a password-reset link rather than a usable password; the
   # separate flagsmith-seed step below sets a real password directly via the
   # ORM instead of parsing that link, since the link is only needed for the
@@ -194,11 +194,11 @@ services:
         condition: service_completed_successfully
 
   # Idempotent: creates the "Production" environment and the three flags (all
-  # defaulting to enabled) directly via Flagsmith's own Django ORM — no HTTP
+  # defaulting to enabled) directly via Flagsmith's own Django ORM - no HTTP
   # calls, no password/login dance. Also sets a real admin password (from
   # FLAGSMITH_ADMIN_PASSWORD) so a human can still log into the console.
   # Rewrites FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY and VITE_FLAGSMITH_ENVIRONMENT_ID
-  # into .env in place — see the two-phase bring-up note in runbook.ipynb: the
+  # into .env in place - see the two-phase bring-up note in runbook.ipynb: the
   # rest of the stack must be started in a second `docker compose up` invocation
   # after this rewrite, since Compose interpolates ${...} from .env once, at
   # parse time, before this container has run.
@@ -411,7 +411,7 @@ services:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     ports:
-      - "9091:9090"   # host 9091 — 9090 is already taken by the minio console
+      - "9091:9090"   # host 9091 - 9090 is already taken by the minio console
     depends_on:
       - otel-collector
     healthcheck:

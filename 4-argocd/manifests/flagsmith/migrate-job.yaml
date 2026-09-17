@@ -1,9 +1,9 @@
 # Runs Flagsmith's Django migrations against FeatureDb. Sync hook for the same
 # immutable-pod-template reason as create-db-job.yaml.
 #
-# Wave 2: one wave after flagsmith-create-db (wave 1) — the database has to
+# Wave 2: one wave after flagsmith-create-db (wave 1) - the database has to
 # exist before migrations can run against it. Shares its numeric wave with mcp
-# (unrelated, no dependency either way — safe to coexist).
+# (unrelated, no dependency either way - safe to coexist).
 apiVersion: batch/v1
 kind: Job
 metadata:

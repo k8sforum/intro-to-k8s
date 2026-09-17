@@ -57,7 +57,7 @@ public class AppendImageTags : MessageSubscriberBase<PointOfInterestMessage>
             {
                 // ResizeImage runs immediately before this subscriber in the chain and always leaves a
                 // resized copy in ResizedImagesContainer under the same blob name (either freshly written,
-                // or already there from a prior run). Use that instead of the full-resolution original —
+                // or already there from a prior run). Use that instead of the full-resolution original -
                 // it's a fraction of the pixel count, which keeps memory use and the Anthropic request size
                 // bounded regardless of how large the uploaded photo was.
                 string base64 = await objectStorageService.GetBase64Async(BucketNames.ResizedImagesContainer, point.GeneratedBlobName, cancellationToken);

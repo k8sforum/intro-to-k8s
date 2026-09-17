@@ -1,5 +1,5 @@
 # Reuses postgres-secret (from manifests/postgres/1-secret.yaml) rather than
-# creating a second credential — postgres_exporter assembles its connection
+# creating a second credential - postgres_exporter assembles its connection
 # string from these three env vars instead of one interpolated DSN string.
 apiVersion: apps/v1
 kind: Deployment

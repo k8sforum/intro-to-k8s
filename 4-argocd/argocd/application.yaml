@@ -3,7 +3,7 @@
 # git" and the application-controller keeps it that way.
 #
 # Argo clones the repo from *inside* the cluster, so the manifests it deploys are
-# the ones on the remote — pushing is now part of deploying.
+# the ones on the remote - pushing is now part of deploying.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -33,7 +33,7 @@ spec:
     automated:
       # Delete resources that were removed from git.
       prune: true
-      # Left off deliberately for now — with selfHeal on, `kubectl edit` is undone
+      # Left off deliberately for now - with selfHeal on, `kubectl edit` is undone
       # within seconds, which makes the diagnostics steps confusing. The runbook
       # turns it on later as its own step.
       selfHeal: false
@@ -50,7 +50,7 @@ spec:
 
   ignoreDifferences:
     # Kubernetes writes spec.claimRef into a PersistentVolume when it binds, which
-    # is not in git — without this the minio PVs sit permanently OutOfSync.
+    # is not in git - without this the minio PVs sit permanently OutOfSync.
     - group: ""
       kind: PersistentVolume
       jsonPointers:

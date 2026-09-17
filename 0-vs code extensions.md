@@ -5,7 +5,7 @@
 | antfu.file-nesting | File Nesting Updater | 2.0.1 |
 | anthropic.claude-code | Claude Code | 2.1.220 |
 | dbaeumer.vscode-eslint | ESLint | 3.0.34 |
-| eamodio.gitlens | GitLens — Git supercharged | 18.3.0 |
+| eamodio.gitlens | GitLens - Git supercharged | 18.3.0 |
 | equimper.react-native-react-redux | React Native/React/Redux snippets | 2.0.6 |
 | esbenp.prettier-vscode | Prettier - Code formatter | 12.4.0 |
 | formulahendry.dotnet-test-explorer | .NET Core Test Explorer | 0.7.8 |
