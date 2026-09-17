@@ -2,25 +2,25 @@
 # defaulting to enabled) via Flagsmith's own Django ORM, and sets a real admin
 # password. Same script as 1-dockerize/docker-compose.yml's flagsmith-seed
 # service, unescaped for a plain YAML block scalar (Compose's `$$` there exists
-# only to survive Compose's own variable interpolation — Kubernetes manifests
+# only to survive Compose's own variable interpolation - Kubernetes manifests
 # have no such layer, so plain `$` is correct here).
 #
 # Sync hook for the same immutable-pod-template reason as create-db-job.yaml.
 #
-# Two containers instead of Compose's one — see lesson 3's 6-seed-job.yaml for
+# Two containers instead of Compose's one - see lesson 3's 6-seed-job.yaml for
 # the full reasoning:
 #   initContainer flagsmith-shell   runs the ORM script (the flagsmith image
 #                                    has no kubectl), writes the two captured
 #                                    KEY=value lines to an emptyDir file.
 #                                    initContainers always finish before the
 #                                    main container starts, so this doubles as
-#                                    the ordering guarantee — no wait loop.
+#                                    the ordering guarantee - no wait loop.
 #   container    kubectl-apply       upserts the flagsmith-keys Secret from
 #                                    that file via the ServiceAccount token
 #                                    from seed-rbac.yaml.
 #
 # Wave 5: alongside seed-rbac.yaml, one wave after flagsmith/
-# flagsmith-task-processor (wave 4) — the org/project bootstrap-job.yaml
+# flagsmith-task-processor (wave 4) - the org/project bootstrap-job.yaml
 # created (wave 3) must exist, which it does since wave 3 < wave 5. Ahead of
 # api/messaging/web (wave 6), which need the flagsmith-keys Secret this
 # produces to start cleanly.
@@ -114,7 +114,7 @@ spec:
               cpu: 500m
               memory: 1Gi
       containers:
-        # Small, commonly-used, explicitly-tagged kubectl image — no existing
+        # Small, commonly-used, explicitly-tagged kubectl image - no existing
         # kubectl-in-a-Job pattern elsewhere in this repo to reuse (grepped
         # both stage 3 and stage 4). Pinned to the k3d cluster's k3s minor
         # version (v1.35, see the runbook's Step 2 `--image` flag).
