@@ -93,3 +93,674 @@ data:
         }
       ]
     }
+  mytravels-postgres.json: |
+    {
+      "title": "MyTravels Postgres",
+      "uid": "mytravels-postgres",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-15m", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Postgres up",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "pg_up{job=\"postgres\"}",
+              "legendFormat": "up"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Active connections by state",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(pg_stat_activity_count{job=\"postgres\"}) by (state)",
+              "legendFormat": "{{state}}"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Transactions per second",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(pg_stat_database_xact_commit{job=\"postgres\"}[1m]))",
+              "legendFormat": "commit"
+            },
+            {
+              "expr": "sum(rate(pg_stat_database_xact_rollback{job=\"postgres\"}[1m]))",
+              "legendFormat": "rollback"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "Cache hit ratio",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "sum(rate(pg_stat_database_blks_hit{job=\"postgres\"}[5m])) / (sum(rate(pg_stat_database_blks_hit{job=\"postgres\"}[5m])) + sum(rate(pg_stat_database_blks_read{job=\"postgres\"}[5m])))",
+              "legendFormat": "hit ratio"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Database size",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "pg_database_size_bytes{job=\"postgres\"}",
+              "legendFormat": "{{datname}}"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Deadlocks",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 20 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(pg_stat_database_deadlocks{job=\"postgres\"}[5m])) by (datname)",
+              "legendFormat": "{{datname}}"
+            }
+          ]
+        }
+      ]
+    }
+  mytravels-rabbitmq.json: |
+    {
+      "title": "MyTravels RabbitMQ",
+      "uid": "mytravels-rabbitmq",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-15m", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Queue depth (ready)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "rabbitmq_queue_messages_ready{job=\"rabbitmq\"}",
+              "legendFormat": "{{queue}}"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Unacked messages",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "rabbitmq_queue_messages_unacked{job=\"rabbitmq\"}",
+              "legendFormat": "{{queue}}"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Publish rate",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(rabbitmq_channel_messages_published_total{job=\"rabbitmq\"}[1m]))",
+              "legendFormat": "published/s"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "Deliver / ack rate",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(rabbitmq_channel_messages_delivered_total{job=\"rabbitmq\"}[1m]))",
+              "legendFormat": "delivered/s"
+            },
+            {
+              "expr": "sum(rate(rabbitmq_channel_messages_acked_total{job=\"rabbitmq\"}[1m]))",
+              "legendFormat": "acked/s"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Consumers per queue",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "rabbitmq_queue_consumers{job=\"rabbitmq\"}",
+              "legendFormat": "{{queue}}"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Connections",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "rabbitmq_connections{job=\"rabbitmq\"}",
+              "legendFormat": "connections"
+            }
+          ]
+        }
+      ]
+    }
+  mytravels-containers.json: |
+    {
+      "title": "MyTravels Containers",
+      "uid": "mytravels-containers",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-15m", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Container CPU usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{job=\"cadvisor\", name!=\"\"}[1m])) by (name)",
+              "legendFormat": "{{name}}"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Container memory working set",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "container_memory_working_set_bytes{job=\"cadvisor\", name!=\"\"}",
+              "legendFormat": "{{name}}"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Container network receive",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "sum(rate(container_network_receive_bytes_total{job=\"cadvisor\", name!=\"\"}[1m])) by (name)",
+              "legendFormat": "{{name}}"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "Container network transmit",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "sum(rate(container_network_transmit_bytes_total{job=\"cadvisor\", name!=\"\"}[1m])) by (name)",
+              "legendFormat": "{{name}}"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Container filesystem usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "container_fs_usage_bytes{job=\"cadvisor\", name!=\"\"}",
+              "legendFormat": "{{name}}"
+            }
+          ]
+        }
+      ]
+    }
+  mytravels-minio.json: |
+    {
+      "title": "MyTravels MinIO",
+      "uid": "mytravels-minio",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-15m", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Cluster nodes online / offline",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "minio_cluster_nodes_online_total{job=\"minio\"}",
+              "legendFormat": "online"
+            },
+            {
+              "expr": "minio_cluster_nodes_offline_total{job=\"minio\"}",
+              "legendFormat": "offline"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Usable capacity",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "minio_cluster_capacity_usable_total_bytes{job=\"minio\"}",
+              "legendFormat": "total"
+            },
+            {
+              "expr": "minio_cluster_capacity_usable_free_bytes{job=\"minio\"}",
+              "legendFormat": "free"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "S3 request rate",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(minio_s3_requests_total{job=\"minio\"}[1m]))",
+              "legendFormat": "requests/s"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "S3 request errors",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(minio_s3_requests_errors_total{job=\"minio\"}[1m]))",
+              "legendFormat": "errors/s"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "S3 traffic",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "sum(rate(minio_s3_traffic_sent_bytes{job=\"minio\"}[1m]))",
+              "legendFormat": "sent"
+            },
+            {
+              "expr": "sum(rate(minio_s3_traffic_received_bytes{job=\"minio\"}[1m]))",
+              "legendFormat": "received"
+            }
+          ]
+        }
+      ]
+    }
+  mytravels-otel.json: |
+    {
+      "title": "MyTravels API & Messaging (OTel)",
+      "uid": "mytravels-otel",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": {
+        "from": "now-15m",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "ASP.NET Core (HTTP server)",
+          "type": "row",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "collapsed": false,
+          "panels": []
+        },
+        {
+          "id": 2,
+          "title": "Request rate by service",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_request_duration_seconds_count{job=\"otel-collector\"}[1m])) by (service_name)",
+              "legendFormat": "{{service_name}}"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Error rate (5xx) by service",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_request_duration_seconds_count{job=\"otel-collector\", http_response_status_code=~\"5..\"}[1m])) by (service_name)",
+              "legendFormat": "{{service_name}}"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "Request duration p95 by service",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 9
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{job=\"otel-collector\"}[5m])) by (le, service_name))",
+              "legendFormat": "{{service_name}}"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Outbound HTTP client",
+          "type": "row",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 17
+          },
+          "collapsed": false,
+          "panels": []
+        },
+        {
+          "id": 6,
+          "title": "Outbound request rate by target",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 18
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_client_request_duration_seconds_count{job=\"otel-collector\"}[1m])) by (service_name, server_address)",
+              "legendFormat": "{{service_name}} -> {{server_address}}"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "title": "Outbound request duration p95 by target",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 18
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_client_request_duration_seconds_bucket{job=\"otel-collector\"}[5m])) by (le, server_address))",
+              "legendFormat": "{{server_address}}"
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "title": ".NET runtime",
+          "type": "row",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 26
+          },
+          "collapsed": false,
+          "panels": []
+        },
+        {
+          "id": 9,
+          "title": "GC heap size by service",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 27
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "process_runtime_dotnet_gc_heap_size_bytes{job=\"otel-collector\"}",
+              "legendFormat": "{{service_name}} gen{{generation}}"
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "title": "GC collections rate by generation",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 27
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(process_runtime_dotnet_gc_collections_count_total{job=\"otel-collector\"}[5m])) by (service_name, generation)",
+              "legendFormat": "{{service_name}} gen{{generation}}"
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "title": "Allocation rate by service",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 35
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(process_runtime_dotnet_gc_allocations_size_bytes_total{job=\"otel-collector\"}[1m])) by (service_name)",
+              "legendFormat": "{{service_name}}"
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "title": "Thread pool queue length",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 35
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "expr": "process_runtime_dotnet_thread_pool_queue_length{job=\"otel-collector\"}",
+              "legendFormat": "{{service_name}}"
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "title": "Thread pool thread count",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 43
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "expr": "process_runtime_dotnet_thread_pool_threads_count{job=\"otel-collector\"}",
+              "legendFormat": "{{service_name}}"
+            }
+          ]
+        },
+        {
+          "id": 14,
+          "title": "Exceptions rate by service",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 43
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(process_runtime_dotnet_exceptions_count_total{job=\"otel-collector\"}[5m])) by (service_name)",
+              "legendFormat": "{{service_name}}"
+            }
+          ]
+        }
+      ]
+    }

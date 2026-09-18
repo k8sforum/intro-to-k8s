@@ -1,0 +1,93 @@
+{
+  "title": "MyTravels RabbitMQ",
+  "uid": "mytravels-rabbitmq",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Queue depth (ready)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rabbitmq_queue_messages_ready{job=\"rabbitmq\"}",
+          "legendFormat": "{{queue}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Unacked messages",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rabbitmq_queue_messages_unacked{job=\"rabbitmq\"}",
+          "legendFormat": "{{queue}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Publish rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(rabbitmq_channel_messages_published_total{job=\"rabbitmq\"}[1m]))",
+          "legendFormat": "published/s"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Deliver / ack rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(rabbitmq_channel_messages_delivered_total{job=\"rabbitmq\"}[1m]))",
+          "legendFormat": "delivered/s"
+        },
+        {
+          "expr": "sum(rate(rabbitmq_channel_messages_acked_total{job=\"rabbitmq\"}[1m]))",
+          "legendFormat": "acked/s"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Consumers per queue",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rabbitmq_queue_consumers{job=\"rabbitmq\"}",
+          "legendFormat": "{{queue}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rabbitmq_connections{job=\"rabbitmq\"}",
+          "legendFormat": "connections"
+        }
+      ]
+    }
+  ]
+}
