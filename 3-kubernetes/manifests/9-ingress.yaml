@@ -1,6 +1,6 @@
 # Exposes services via host-based routing:
 #   rabbitmq-management  - http://rabbitmq.mytravels.local
-#   minio-console        - http://minio.mytravels.local
+#   seaweedfs-admin      - http://seaweedfs.mytravels.local
 #   api                  - http://api.mytravels.local
 #   web                  - http://web.mytravels.local
 #   mcp                  - http://mcp.mytravels.local
@@ -36,16 +36,16 @@ spec:
                 name: rabbitmq-management
                 port:
                   number: 15672
-    - host: minio.mytravels.local
+    - host: seaweedfs.mytravels.local
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: minio-console
+                name: seaweedfs-admin
                 port:
-                  number: 9090
+                  number: 23646
     - host: grafana.mytravels.local
       http:
         paths:

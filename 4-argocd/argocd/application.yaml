@@ -50,7 +50,7 @@ spec:
 
   ignoreDifferences:
     # Kubernetes writes spec.claimRef into a PersistentVolume when it binds, which
-    # is not in git - without this the minio PVs sit permanently OutOfSync.
+    # is not in git - without this the seaweedfs PVs sit permanently OutOfSync.
     - group: ""
       kind: PersistentVolume
       jsonPointers:

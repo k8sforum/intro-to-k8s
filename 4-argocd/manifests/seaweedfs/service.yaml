@@ -1,37 +1,41 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: minio
+  name: seaweedfs-s3
   namespace: mytravels-default
   labels:
-    app: minio
+    app: seaweedfs
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
   type: ClusterIP
   selector:
-    app: minio
+    app: seaweedfs
   ports:
     - name: s3-api
-      port: 9000
-      targetPort: 9000
+      port: 8333
+      targetPort: 8333
+      protocol: TCP
+    - name: metrics
+      port: 9327
+      targetPort: 9327
       protocol: TCP
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: minio-console
+  name: seaweedfs-admin
   namespace: mytravels-default
   labels:
-    app: minio
+    app: seaweedfs
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
   type: ClusterIP
   selector:
-    app: minio
+    app: seaweedfs
   ports:
-    - name: console
-      port: 9090
-      targetPort: 9090
+    - name: admin-ui
+      port: 23646
+      targetPort: 23646
       protocol: TCP

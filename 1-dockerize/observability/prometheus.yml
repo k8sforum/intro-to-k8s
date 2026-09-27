@@ -20,10 +20,9 @@ scrape_configs:
     static_configs:
       - targets: ["rabbitmq:15692"]
 
-  - job_name: minio
-    metrics_path: /minio/v2/metrics/cluster
+  - job_name: seaweedfs
     static_configs:
-      - targets: ["minio:9000"]
+      - targets: ["seaweedfs:9327"]
 
   - job_name: cadvisor
     static_configs:

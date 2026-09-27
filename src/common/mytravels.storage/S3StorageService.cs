@@ -14,15 +14,15 @@ using mytravels.contract.Interfaces;
 namespace mytravels.storage;
 
 [ExcludeFromCodeCoverage]
-public class MinIOStorageService : IObjectStorageService
+public class S3StorageService : IObjectStorageService
 {
     private readonly IMinioClient _minioClient;
 
-    public MinIOStorageService(IOptions<MinIOConfig> options)
+    public S3StorageService(IOptions<ObjectStorageConfig> options)
     {
         if (options is null) throw new ArgumentNullException(nameof(options));
 
-        MinIOConfig config = options.Value;
+        ObjectStorageConfig config = options.Value;
 
         _minioClient = new MinioClient()
                           .WithEndpoint(config.Endpoint)

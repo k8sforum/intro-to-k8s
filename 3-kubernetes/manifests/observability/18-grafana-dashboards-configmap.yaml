@@ -364,10 +364,10 @@ data:
         }
       ]
     }
-  mytravels-minio.json: |
+  mytravels-seaweedfs.json: |
     {
-      "title": "MyTravels MinIO",
-      "uid": "mytravels-minio",
+      "title": "MyTravels SeaweedFS",
+      "uid": "mytravels-seaweedfs",
       "timezone": "browser",
       "schemaVersion": 39,
       "version": 1,
@@ -376,35 +376,31 @@ data:
       "panels": [
         {
           "id": 1,
-          "title": "Cluster nodes online / offline",
+          "title": "Node up",
           "type": "timeseries",
           "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "targets": [
             {
-              "expr": "minio_cluster_nodes_online_total{job=\"minio\"}",
-              "legendFormat": "online"
-            },
-            {
-              "expr": "minio_cluster_nodes_offline_total{job=\"minio\"}",
-              "legendFormat": "offline"
+              "expr": "up{job=\"seaweedfs\"}",
+              "legendFormat": "up"
             }
           ]
         },
         {
           "id": 2,
-          "title": "Usable capacity",
+          "title": "Volume disk usage",
           "type": "timeseries",
           "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
           "targets": [
             {
-              "expr": "minio_cluster_capacity_usable_total_bytes{job=\"minio\"}",
-              "legendFormat": "total"
+              "expr": "SeaweedFS_volumeServer_resource{job=\"seaweedfs\",type=\"used\"}",
+              "legendFormat": "used"
             },
             {
-              "expr": "minio_cluster_capacity_usable_free_bytes{job=\"minio\"}",
+              "expr": "SeaweedFS_volumeServer_resource{job=\"seaweedfs\",type=\"free\"}",
               "legendFormat": "free"
             }
           ]
@@ -417,8 +413,8 @@ data:
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "targets": [
             {
-              "expr": "sum(rate(minio_s3_requests_total{job=\"minio\"}[1m]))",
-              "legendFormat": "requests/s"
+              "expr": "sum(rate(SeaweedFS_s3_request_total{job=\"seaweedfs\"}[1m])) by (type)",
+              "legendFormat": "{{type}}"
             }
           ]
         },
@@ -430,25 +426,25 @@ data:
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "targets": [
             {
-              "expr": "sum(rate(minio_s3_requests_errors_total{job=\"minio\"}[1m]))",
+              "expr": "sum(rate(SeaweedFS_s3_request_total{job=\"seaweedfs\",code!~\"2..\"}[1m]))",
               "legendFormat": "errors/s"
             }
           ]
         },
         {
           "id": 5,
-          "title": "S3 traffic",
+          "title": "S3 bucket traffic",
           "type": "timeseries",
           "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
           "targets": [
             {
-              "expr": "sum(rate(minio_s3_traffic_sent_bytes{job=\"minio\"}[1m]))",
+              "expr": "sum(rate(SeaweedFS_s3_bucket_traffic_sent_bytes_total{job=\"seaweedfs\"}[1m]))",
               "legendFormat": "sent"
             },
             {
-              "expr": "sum(rate(minio_s3_traffic_received_bytes{job=\"minio\"}[1m]))",
+              "expr": "sum(rate(SeaweedFS_s3_bucket_traffic_received_bytes_total{job=\"seaweedfs\"}[1m]))",
               "legendFormat": "received"
             }
           ]

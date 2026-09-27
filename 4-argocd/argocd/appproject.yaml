@@ -25,7 +25,7 @@ spec:
 
   # Cluster-scoped resources are denied unless listed here. This stack needs two:
   #   Namespace        - manifests/namespace.yaml
-  #   PersistentVolume - the manual hostPath PVs in manifests/minio/
+  #   PersistentVolume - the manual hostPath PVs in manifests/seaweedfs/
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace

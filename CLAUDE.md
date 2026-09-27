@@ -8,7 +8,7 @@ A Kubernetes learning course (KCNA/CKAD-oriented) built around one running examp
 
 | Stage | Directory | Adds |
 |---|---|---|
-| 0 | `0-local/` | Infra only (Postgres/RabbitMQ/MinIO/SOLR) via Compose; app run from source |
+| 0 | `0-local/` | Infra only (Postgres/RabbitMQ/SeaweedFS/SOLR) via Compose; app run from source |
 | 1 | `1-dockerize/` | Full stack containerized, built locally via Compose; adds the observability stack |
 | 2 | `2-dockerhub/` | Images built & pushed to Docker Hub, stack runs from registry images (no observability) |
 | 3 | `3-kubernetes/` | Deployed to a k3d cluster via raw `kubectl apply` manifests + Traefik ingress |
@@ -52,7 +52,7 @@ web (React/nginx) → api (5101) ──► PostgreSQL
    /  (map)             │   │        ▲  (POIs + MessageAuditLogs + FeatureDb)
    /traceability        │   └──────► SOLR (8983) ◄── index/reindex
         │               ▼ publish    ▲    (POI search: address + tags + description)
-        │           RabbitMQ ──► messaging worker (5102) ──► MinIO (S3) / PostgreSQL
+        │           RabbitMQ ──► messaging worker (5102) ──► SeaweedFS (S3) / PostgreSQL
         │              ▲                     └──► Anthropic (description/tags)
         │  evaluate flags          evaluate flags
         └──────────────┴──────────────► Flagsmith (8000) ◄── shares mytravels-postgres (FeatureDb)

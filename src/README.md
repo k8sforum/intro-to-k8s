@@ -21,7 +21,7 @@ GPS coordinates are extracted from image EXIF data on upload. Addresses are fetc
 | Database | PostgreSQL |
 | ORM | Entity Framework Core 9 |
 | Message Broker | RabbitMQ |
-| Object Storage | MinIO (S3-compatible) or Azure Blob Storage |
+| Object Storage | SeaweedFS (S3-compatible) or Azure Blob Storage |
 | Image Processing | ImageMagick (Magick.NET) |
 | API Docs | Swagger / OpenAPI |
 | HTTP Client | Flurl.Http |
@@ -40,7 +40,7 @@ GPS coordinates are extracted from image EXIF data on upload. Addresses are fetc
     ├── mytravels.contract/         # Entities, DTOs, interfaces, constants
     ├── mytravels.common/           # Shared services (messaging, geo, cron)
     ├── mytravels.domain/           # EF Core DbContext, stored procedures, migrations
-    ├── mytravels.storage/          # MinIO and Azure Blob Storage adapters
+    ├── mytravels.storage/          # SeaweedFS (S3) and Azure Blob Storage adapters
     └── mytravels.migration/        # Migration runner (console app)
 ```
 
@@ -64,7 +64,7 @@ migration ───────────────────────�
 
 ### With Docker Compose (recommended)
 
-All services - PostgreSQL, RabbitMQ, MinIO, migrations, API, and messaging worker - are orchestrated by Docker Compose. The `.env` file at the root of `3-kubernetes/` holds all required values; edit it before running.
+All services - PostgreSQL, RabbitMQ, SeaweedFS, migrations, API, and messaging worker - are orchestrated by Docker Compose. The `.env` file at the root of `3-kubernetes/` holds all required values; edit it before running.
 
 ```bash
 cd 3-kubernetes
@@ -86,14 +86,15 @@ dotnet run
 
 #### 2. Object Storage
 
-Start MinIO locally:
+Start SeaweedFS locally (all-in-one master+volume+filer+S3 gateway):
 
 ```bash
-docker run -p 9000:9000 -p 9001:9001 \
-  -e MINIO_ROOT_USER=minioadmin \
-  -e MINIO_ROOT_PASSWORD=minioadmin \
-  minio/minio server /data --console-address ":9001"
+docker run -p 8333:8333 -p 8888:8888 -p 9333:9333 \
+  chrislusf/seaweedfs server -dir=/data -ip=localhost \
+  -s3 -s3.port=8333 -filer -filer.port=8888 -master.port=9333
 ```
+
+The S3 gateway started this way has no credential enforcement configured, so for local dev any access/secret key pair works; production/Compose/Kubernetes deployments render an `s3.json` identity file with the real `user123`/`password123` credentials (see `ObjectStorage` config below).
 
 The application expects two buckets: `uploaded-images` and `resized-images`. These are created automatically on startup.
 
@@ -132,9 +133,9 @@ All Docker Compose services read environment variables from the `.env` file in t
 | `GOOGLE_API_KEY` | Google Maps Geocoding API key |
 | `GOOGLE_MAPS_URL` | Google Maps base URL |
 | `GOOGLE_PLACES_URL` | Google Places base URL |
-| `MINIO_ROOT_USER` | MinIO access key (also used as `MinIO__AccessKey` inside containers) |
-| `MINIO_ROOT_PASSWORD` | MinIO secret key (also used as `MinIO__SecretKey` inside containers) |
-| `MINIO_ENDPOINT` | MinIO endpoint reachable from inside the Compose network (e.g. `minio:9000`) |
+| `SEAWEEDFS_ACCESS_KEY` | SeaweedFS S3 access key (also used as `ObjectStorage__AccessKey` inside containers) |
+| `SEAWEEDFS_SECRET_KEY` | SeaweedFS S3 secret key (also used as `ObjectStorage__SecretKey` inside containers) |
+| `SEAWEEDFS_ENDPOINT` | SeaweedFS S3 endpoint reachable from inside the Compose network (e.g. `seaweedfs:8333`) |
 | `ASPNETCORE_ENVIRONMENT` | ASP.NET Core environment (`Development`, `Production`) |
 | `ASPNETCORE_URLS` | Listen URL for the service (e.g. `http://+:5101`) |
 
@@ -152,10 +153,10 @@ When running with `dotnet run`, configure `3-kubernetes/api/mytravels.api/appset
   },
   "GoogleApiKey": "<YOUR_GOOGLE_API_KEY>",
   "GoogleMapsUrl": "https://maps.googleapis.com",
-  "MinIO": {
-    "Endpoint": "http://localhost:9000",
-    "AccessKey": "minioadmin",
-    "SecretKey": "minioadmin"
+  "ObjectStorage": {
+    "Endpoint": "localhost:8333",
+    "AccessKey": "user123",
+    "SecretKey": "password123"
   },
   "CorsHosts": "http://localhost:3000"
 }
@@ -240,5 +241,5 @@ docker build -f 3-kubernetes/common/mytravels.migration/Dockerfile    -t mytrave
 | PostgreSQL | TCP | 5432 | 5432 | Default PostgreSQL port |
 | RabbitMQ | AMQP | 5672 | 5672 | Message broker |
 | RabbitMQ Management | HTTP | 15672 | 15672 | Management UI at `http://localhost:15672` |
-| MinIO S3 API | HTTP (S3) | 9000 | 9000 | S3-compatible object storage |
-| MinIO Console | HTTP | 9001 | 9090 | Web UI: `http://localhost:9001` (local) · `http://localhost:9090` (Compose) |
+| SeaweedFS S3 API | HTTP (S3) | 8333 | 8333 | S3-compatible object storage |
+| SeaweedFS Filer | HTTP | 8888 | 8888 | Browser UI (plain directory listing, not a full console): `http://localhost:8888` |

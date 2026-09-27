@@ -21,7 +21,7 @@ spec:
           command: ['sh', '-c', 'until nc -z rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done']
       containers:
         - name: messaging
-          image: tshepontlhokoa/mytravels-messaging:v1.0.16
+          image: tshepontlhokoa/mytravels-messaging:v1.0.17
           ports:
             - name: http
               containerPort: 5102
@@ -35,8 +35,8 @@ spec:
               value: https://maps.googleapis.com
             - name: GooglePlacesUrl
               value: https://places.googleapis.com
-            - name: MinIO__Endpoint
-              value: minio:9000
+            - name: ObjectStorage__Endpoint
+              value: seaweedfs-s3:8333
             - name: Solr__Url
               value: http://solr:8983
             - name: Solr__Collection
@@ -51,16 +51,16 @@ spec:
                 secretKeyRef:
                   name: messaging-secret
                   key: RabbitMQ__Uri
-            - name: MinIO__AccessKey
+            - name: ObjectStorage__AccessKey
               valueFrom:
                 secretKeyRef:
                   name: messaging-secret
-                  key: MinIO__AccessKey
-            - name: MinIO__SecretKey
+                  key: ObjectStorage__AccessKey
+            - name: ObjectStorage__SecretKey
               valueFrom:
                 secretKeyRef:
                   name: messaging-secret
-                  key: MinIO__SecretKey
+                  key: ObjectStorage__SecretKey
             - name: AnthropicApiKey
               valueFrom:
                 secretKeyRef:

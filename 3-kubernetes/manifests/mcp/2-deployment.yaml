@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: mcp
-          image: tshepontlhokoa/mytravels-mcp:v1.0.2
+          image: tshepontlhokoa/mytravels-mcp:v1.0.3
           ports:
             - name: http
               containerPort: 5103
@@ -31,8 +31,8 @@ spec:
               value: https://maps.googleapis.com
             - name: GooglePlacesUrl
               value: https://places.googleapis.com
-            - name: MinIO__Endpoint
-              value: minio:9000
+            - name: ObjectStorage__Endpoint
+              value: seaweedfs-s3:8333
             - name: Solr__Url
               value: http://solr:8983
             - name: Solr__Collection
@@ -47,16 +47,16 @@ spec:
                 secretKeyRef:
                   name: mcp-secret
                   key: RabbitMQ__Uri
-            - name: MinIO__AccessKey
+            - name: ObjectStorage__AccessKey
               valueFrom:
                 secretKeyRef:
                   name: mcp-secret
-                  key: MinIO__AccessKey
-            - name: MinIO__SecretKey
+                  key: ObjectStorage__AccessKey
+            - name: ObjectStorage__SecretKey
               valueFrom:
                 secretKeyRef:
                   name: mcp-secret
-                  key: MinIO__SecretKey
+                  key: ObjectStorage__SecretKey
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://otel-collector:4317
             - name: OTEL_SERVICE_NAME

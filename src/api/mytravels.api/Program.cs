@@ -86,7 +86,7 @@ builder.Services.AddSingleton<IConnectionFactory>(sp =>
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
 builder.Services.AddTransient<IMessageAuditLogger, MessageAuditLogger>();
 builder.Services.AddTransient<ITraceabilityService, TraceabilityService>();
-builder.Services.AddTransient<IObjectStorageService, MinIOStorageService>();
+builder.Services.AddTransient<IObjectStorageService, S3StorageService>();
 builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddMapsService(builder.Configuration);
 builder.Services.AddTransient<IImageDescriptionService, AnthropicImageDescriptionService>();
@@ -108,7 +108,7 @@ options =>
     });
 });
 
-builder.Services.Configure<MinIOConfig>(builder.Configuration.GetSection("MinIO"));
+builder.Services.Configure<ObjectStorageConfig>(builder.Configuration.GetSection("ObjectStorage"));
 builder.Services.Configure<SolrConfig>(builder.Configuration.GetSection("Solr"));
 
 var flagsmithProvider = new FlagsmithProvider(
