@@ -1,0 +1,40 @@
+services:
+  db:
+    # TODO 1a: pin an exact Postgres version instead of a bare major version
+    # (any 16.x is fine - check https://hub.docker.com/_/postgres/tags)
+    image: postgres:16
+    restart: unless-stopped
+    # TODO 2a: load POSTGRES_* from .env instead of leaving this service
+    # unconfigured - see starter-project/.env.example
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  broker:
+    # TODO 1b: pin an exact Redis version
+    # (check https://hub.docker.com/_/redis/tags)
+    image: redis:7
+    restart: unless-stopped
+    volumes:
+      - broker-data:/data
+
+  webserver:
+    # TODO 1c: pin an exact paperless-ngx release tag instead of `latest`
+    # (check https://github.com/paperless-ngx/paperless-ngx/releases)
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: unless-stopped
+    depends_on:
+      - db
+      - broker
+    ports:
+      - "8000:8000"
+    # TODO 2b: load all PAPERLESS_* config from .env instead of inline
+    # environment: - contrast with the stage 1 lab, which used inline values
+    volumes:
+      - paperless-data:/usr/src/paperless/data
+      - paperless-media:/usr/src/paperless/media
+
+volumes:
+  db-data:
+  broker-data:
+  paperless-data:
+  paperless-media:

@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16.4
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  broker:
+    image: redis:7.4
+    restart: unless-stopped
+    volumes:
+      - broker-data:/data
+
+  webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:3.1.3
+    restart: unless-stopped
+    depends_on:
+      - db
+      - broker
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - paperless-data:/usr/src/paperless/data
+      - paperless-media:/usr/src/paperless/media
+
+volumes:
+  db-data:
+  broker-data:
+  paperless-data:
+  paperless-media:

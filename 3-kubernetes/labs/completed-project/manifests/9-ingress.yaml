@@ -1,0 +1,22 @@
+# Reuses the Traefik installation already configured for MyTravels
+# (3-kubernetes/manifests/8-traefik-config.yaml) - no separate Traefik setup
+# needed for this lab.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: paperless-ingress
+  namespace: paperless-lab
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: paperless.lab.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: paperless
+                port:
+                  number: 8000

@@ -1,0 +1,45 @@
+# Same idea as 4-argocd/argocd/application.yaml in the main course: one
+# object tells Argo CD "make the cluster look like this folder in git."
+#
+# Uses the built-in `default` AppProject rather than a dedicated one, unlike
+# the main course's `mytravels` AppProject - a deliberate shortcut so this lab
+# stays focused on sync-waves and self-heal.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: paperless-lab
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    # TODO: point this at your own fork/remote - Argo CD clones from git,
+    # it won't see local uncommitted changes.
+    repoURL:
+    targetRevision: main
+    # TODO: point this at this lab's manifests folder.
+    path:
+    directory:
+      recurse: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: paperless-lab
+
+  syncPolicy:
+    automated:
+      prune: true
+      # Left off deliberately, same as the main course - flip to true only
+      # for the drift/self-heal exercise in the README.
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
