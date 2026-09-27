@@ -73,6 +73,26 @@ namespace mytravels.domain.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FailedMessages",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    CorrelationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OriginalExchange = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    Payload = table.Column<string>(type: "text", nullable: true),
+                    PointOfInterestId = table.Column<int>(type: "integer", nullable: true),
+                    ErrorMessage = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    RetryCount = table.Column<int>(type: "integer", nullable: false),
+                    FailedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ResolvedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FailedMessages", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PointOfInterestTagAssociations",
                 columns: table => new
                 {
@@ -105,6 +125,11 @@ namespace mytravels.domain.Migrations
                 column: "CorrelationId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FailedMessages_ResolvedAt",
+                table: "FailedMessages",
+                column: "ResolvedAt");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PointOfInterestTagAssociations_PointOfInterestId",
                 table: "PointOfInterestTagAssociations",
                 column: "PointOfInterestId");
@@ -126,6 +151,9 @@ namespace mytravels.domain.Migrations
         {
             migrationBuilder.DropTable(
                 name: "MessageAuditLogs");
+
+            migrationBuilder.DropTable(
+                name: "FailedMessages");
 
             migrationBuilder.DropTable(
                 name: "PointOfInterestTagAssociations");

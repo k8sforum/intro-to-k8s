@@ -48,3 +48,13 @@ export interface MessageAuditEvent {
   errorMessage: string | null;
   createdAt: string;
 }
+
+export interface FailedMessageSummary {
+  id: number;
+  correlationId: string;
+  originalExchange: string;
+  pointOfInterestId: number | null;
+  errorMessage: string | null;
+  retryCount: number;
+  failedAt: string;
+}

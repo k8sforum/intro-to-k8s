@@ -65,7 +65,7 @@ spec:
               if server_key is None:
                   server_key = EnvironmentAPIKey.objects.create(environment=env, name='mytravels-seed')
 
-              for name in ['enable-image-description', 'enable-poi-search', 'enable-message-tracing']:
+              for name in ['enable-image-description', 'enable-poi-search', 'enable-message-tracing', 'enable-failed-message-admin']:
                   Feature.objects.get_or_create(project=project, name=name, defaults={'default_enabled': True})
 
               print(f'FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY={server_key.key}')

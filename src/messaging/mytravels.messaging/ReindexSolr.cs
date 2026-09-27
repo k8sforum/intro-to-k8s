@@ -25,7 +25,7 @@ public class ReindexSolr : MessageSubscriberBase<SolrReindexMessage>
             IConfiguration configuration,
             IOptions<SolrConfig> solrConfig,
             IServiceScopeFactory serviceScopeFactory)
-        : base(logger, configuration, ExchangeNames.ReindexSolr, ExchangeNames.ReindexSolr, ExchangeNames.ReindexSolrFailed, serviceScopeFactory)
+        : base(logger, configuration, ExchangeNames.ReindexSolr, ExchangeNames.ReindexSolr, serviceScopeFactory)
     {
         _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
         _solrConfig = solrConfig?.Value ?? throw new ArgumentNullException(nameof(solrConfig));

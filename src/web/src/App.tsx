@@ -2,12 +2,25 @@ import { Link, Route, Routes, useLocation } from 'react-router-dom';
 import { useBooleanFlagValue } from '@openfeature/react-sdk';
 import { MapPage } from './components/MapPage';
 import { TraceabilityPage } from './components/TraceabilityPage';
+import { FailedMessagesPage } from './components/FailedMessagesPage';
 import { PostmarkGlyph } from './components/icons';
+
+function NavLink({ to, label }: { to: string; label: string }) {
+  return (
+    <Link
+      to={to}
+      className="ml-1 rounded border border-brass/40 px-2 py-1 font-mono text-[10px] tracking-wide text-brass uppercase transition hover:border-postmark hover:text-postmark dark:hover:text-postmark-light"
+    >
+      {label}
+    </Link>
+  );
+}
 
 function Header() {
   const location = useLocation();
-  const onTraceability = location.pathname.startsWith('/traceability');
+  const onMap = location.pathname === '/';
   const messageTracingEnabled = useBooleanFlagValue('enable-message-tracing', true);
+  const failedMessageAdminEnabled = useBooleanFlagValue('enable-failed-message-admin', true);
 
   return (
     <header className="absolute top-4 right-4 z-[500] sm:top-5 sm:right-5">
@@ -21,13 +34,15 @@ function Header() {
             Field Log
           </span>
         </h1>
-        {messageTracingEnabled && (
-          <Link
-            to={onTraceability ? '/' : '/traceability'}
-            className="ml-1 rounded border border-brass/40 px-2 py-1 font-mono text-[10px] tracking-wide text-brass uppercase transition hover:border-postmark hover:text-postmark dark:hover:text-postmark-light"
-          >
-            {onTraceability ? 'Map' : 'Traceability'}
-          </Link>
+        {onMap ? (
+          <>
+            {messageTracingEnabled && <NavLink to="/traceability" label="Traceability" />}
+            {failedMessageAdminEnabled && (
+              <NavLink to="/admin/failed-messages" label="Failed Messages" />
+            )}
+          </>
+        ) : (
+          <NavLink to="/" label="Map" />
         )}
       </div>
     </header>
@@ -41,6 +56,7 @@ function App() {
       <Routes>
         <Route path="/" element={<MapPage />} />
         <Route path="/traceability" element={<TraceabilityPage />} />
+        <Route path="/admin/failed-messages" element={<FailedMessagesPage />} />
       </Routes>
     </div>
   );

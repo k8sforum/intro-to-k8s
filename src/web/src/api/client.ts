@@ -1,5 +1,6 @@
 import type {
   CorrelationSummary,
+  FailedMessageSummary,
   MessageAuditEvent,
   Place,
   PointOfInterest,
@@ -116,4 +117,17 @@ export function getCorrelationEvents(
   return fetch(`${BASE_URL}/api/Traceability/${correlationId}`, { signal }).then((r) =>
     unwrap<MessageAuditEvent[]>(r),
   );
+}
+
+/** Lists dead-lettered messages awaiting admin action (excludes already-retried ones). */
+export function getFailedMessages(signal?: AbortSignal): Promise<FailedMessageSummary[]> {
+  return fetch(`${BASE_URL}/api/FailedMessages`, { signal }).then((r) =>
+    unwrap<FailedMessageSummary[]>(r),
+  );
+}
+
+/** Resubmits a failed message to its original exchange with a fresh retry budget. */
+export async function retryFailedMessage(id: number): Promise<void> {
+  const response = await fetch(`${BASE_URL}/api/FailedMessages/${id}/retry`, { method: 'POST' });
+  await throwForStatus(response);
 }

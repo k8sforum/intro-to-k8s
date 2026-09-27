@@ -22,6 +22,7 @@ namespace mytravels.domain
         public DbSet<Tag> Tags { get; set; }
         public DbSet<GetPointOfInterestResponse> GetPointOfInterestResponses { get; set; }
         public DbSet<MessageAuditLog> MessageAuditLogs { get; set; }
+        public DbSet<FailedMessage> FailedMessages { get; set; }
         public void DetachObject(object entity) => Entry(entity).State = EntityState.Detached;
         public void DeleteObject(object entity) => Entry(entity).State = EntityState.Deleted;
         public void AddObject(object entity) => Entry(entity).State = EntityState.Added;
@@ -72,6 +73,39 @@ namespace mytravels.domain
                     CreatedAt = x.CreatedAt
                 })
                 .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<FailedMessageDto>> GetFailedMessagesAsync(CancellationToken cancellationToken)
+        {
+            return await this.FailedMessages
+                .Where(x => x.ResolvedAt == null)
+                .OrderByDescending(x => x.FailedAt)
+                .Select(x => new FailedMessageDto
+                {
+                    Id = x.Id,
+                    CorrelationId = x.CorrelationId,
+                    OriginalExchange = x.OriginalExchange,
+                    PointOfInterestId = x.PointOfInterestId,
+                    ErrorMessage = x.ErrorMessage,
+                    RetryCount = x.RetryCount,
+                    FailedAt = x.FailedAt
+                })
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<FailedMessage> GetFailedMessageByIdAsync(int id, CancellationToken cancellationToken)
+            => await this.FailedMessages.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        public async Task MarkFailedMessageResolvedAsync(int id, CancellationToken cancellationToken)
+        {
+            FailedMessage message = await this.FailedMessages.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+            if (message is null) return;
+
+            message.ResolvedAt = DateTime.UtcNow;
+            var entry = this.Entry(message);
+            entry.State = EntityState.Unchanged;
+            entry.Property(nameof(message.ResolvedAt)).IsModified = true;
+            await this.SaveChangesAsync(cancellationToken);
         }
 
         public async Task<int> UpdatePointOfInterestTagsAsync(List<SavePointOfInterestDto> dtos, CancellationToken cancellationToken)
@@ -151,6 +185,9 @@ namespace mytravels.domain
 
             modelBuilder.Entity<MessageAuditLog>()
                 .HasIndex(e => e.CorrelationId);
+
+            modelBuilder.Entity<FailedMessage>()
+                .HasIndex(e => e.ResolvedAt);
         }
 
         private Task<List<T>> ExecuteProcInterpolatedAsync<T>(FormattableString query) where T : class

@@ -22,7 +22,7 @@ public class AppendImageTags : MessageSubscriberBase<PointOfInterestMessage>
             IConfiguration configuration,
             IServiceScopeFactory serviceScopeFactory,
             FeatureClient featureClient)
-        : base(logger, configuration, ExchangeNames.AppendImageTags, ExchangeNames.AppendImageTags, ExchangeNames.AppendImageTagsFailed, serviceScopeFactory)
+        : base(logger, configuration, ExchangeNames.AppendImageTags, ExchangeNames.AppendImageTags, serviceScopeFactory)
     {
         _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
         _featureClient = featureClient ?? throw new ArgumentNullException(nameof(featureClient));

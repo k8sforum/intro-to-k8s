@@ -16,6 +16,7 @@ using mytravels.common.Services;
 using mytravels.contract.Config;
 using mytravels.contract.Interfaces;
 using mytravels.domain;
+using mytravels.domain.Features.FailedMessages;
 using mytravels.domain.Features.PointOfInterest;
 using mytravels.domain.Features.Traceability;
 using mytravels.storage;
@@ -86,6 +87,7 @@ builder.Services.AddSingleton<IConnectionFactory>(sp =>
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
 builder.Services.AddTransient<IMessageAuditLogger, MessageAuditLogger>();
 builder.Services.AddTransient<ITraceabilityService, TraceabilityService>();
+builder.Services.AddTransient<IFailedMessageService, FailedMessageService>();
 builder.Services.AddTransient<IObjectStorageService, S3StorageService>();
 builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddMapsService(builder.Configuration);

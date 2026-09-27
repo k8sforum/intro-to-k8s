@@ -14,7 +14,7 @@ public class IndexSolr : MessageSubscriberBase<PointOfInterestMessage>
             ILogger<IndexSolr> logger,
             IConfiguration configuration,
             IServiceScopeFactory serviceScopeFactory)
-        : base(logger, configuration, ExchangeNames.IndexSolr, ExchangeNames.IndexSolr, ExchangeNames.IndexSolrFailed, serviceScopeFactory)
+        : base(logger, configuration, ExchangeNames.IndexSolr, ExchangeNames.IndexSolr, serviceScopeFactory)
     {
         _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
     }

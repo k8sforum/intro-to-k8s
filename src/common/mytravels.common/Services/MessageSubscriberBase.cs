@@ -20,17 +20,15 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
     protected readonly IConfiguration _configuration;
     private readonly string _exchangeName;
     private readonly string _queueName;
-    private readonly string _failedExchangeName;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     protected readonly ConnectionFactory _factory;
 
-    protected MessageSubscriberBase(ILogger<MessageSubscriberBase<T>> logger, IConfiguration configuration, string exchangeName, string queueName, string failedExchangeName, IServiceScopeFactory serviceScopeFactory)
+    protected MessageSubscriberBase(ILogger<MessageSubscriberBase<T>> logger, IConfiguration configuration, string exchangeName, string queueName, IServiceScopeFactory serviceScopeFactory)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _exchangeName = exchangeName ?? throw new ArgumentNullException(nameof(exchangeName));
         _queueName = queueName ?? throw new ArgumentNullException(nameof(queueName));
-        _failedExchangeName = failedExchangeName ?? throw new ArgumentNullException(nameof(failedExchangeName));
         _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
 
         string uri = _configuration.GetValue<string>("RabbitMQ:Uri")
@@ -55,9 +53,6 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
 
         await channel.ExchangeDeclareAsync(exchange: _exchangeName, type: ExchangeType.Fanout);
         _logger.LogInformation("Exchange '{Exchange}' declared.", _exchangeName);
-
-        await channel.ExchangeDeclareAsync(exchange: _failedExchangeName, type: ExchangeType.Fanout, durable: false, autoDelete: true);
-        _logger.LogInformation("Failed exchange '{FailedExchange}' declared.", _failedExchangeName);
 
         await channel.QueueDeclareAsync(queue: _queueName, durable: true, exclusive: false, autoDelete: false);
 
@@ -181,35 +176,39 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
                 }
                 else
                 {
-                    // Failed after 3 attempts: publish to -failed exchange
-                    var failedMsg = new
-                    {
-                        CorrelationId = correlationId,
-                        PointOfInterestId = pointOfInterestId,
-                        OriginalExchange = ea.Exchange,
-                        ErrorMessage = ex.Message,
-                        FailedAt = DateTime.UtcNow
-                    };
-
-                    var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(failedMsg));
-                    var properties = new BasicProperties();
-
-                    await channel.BasicPublishAsync(
-                        exchange: _failedExchangeName,
-                        routingKey: "",
-                        mandatory: false,
-                        basicProperties: properties,
-                        body: body,
-                        cancellationToken: cancellationToken
-                    );
+                    // Failed after 3 attempts: persist the payload so it can be inspected/retried from the admin page
+                    await SaveFailedMessageAsync(correlationId, pointOfInterestId, ea.Exchange, ea.Body.ToArray(), ex.Message, retryCount, cancellationToken);
 
                     // Acknowledge original message so it stops retrying
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken);
-                    _logger.LogError("Message dead-lettered to {FailedExchange} after 3 attempts, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
-                        _failedExchangeName, pointOfInterestId, correlationId);
+                    _logger.LogError("Message dead-lettered after 3 attempts on {Exchange}, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
+                        ea.Exchange, pointOfInterestId, correlationId);
                     await LogAuditEventAsync(correlationId, pointOfInterestId, ea.Exchange, MessageAuditEventTypes.Failed, retryCount, ex.Message, cancellationToken);
                 }
             }
+        }
+    }
+
+    private async Task SaveFailedMessageAsync(Guid? correlationId, int? pointOfInterestId, string exchange, byte[] body, string errorMessage, int retryCount, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using IServiceScope scope = _serviceScopeFactory.CreateScope();
+            IFailedMessageWriter writer = scope.ServiceProvider.GetRequiredService<IFailedMessageWriter>();
+            await writer.SaveAsync(new FailedMessage
+            {
+                CorrelationId = correlationId ?? Guid.Empty,
+                PointOfInterestId = pointOfInterestId,
+                OriginalExchange = exchange,
+                Payload = Encoding.UTF8.GetString(body),
+                ErrorMessage = errorMessage,
+                RetryCount = retryCount,
+                FailedAt = DateTime.UtcNow
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to persist failed-message record for {Exchange}, correlation {CorrelationId}", exchange, correlationId);
         }
     }
 

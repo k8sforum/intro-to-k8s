@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using RabbitMQ.Client;
 using System.Text;
 using System.Diagnostics;
@@ -26,6 +26,24 @@ public class MessagePublisher : IMessagePublisher
 
     public async Task PublishAsync<T>(string exchange, T message, CancellationToken cancellationToken)
     {
+        var correlationIdProperty = message.GetType().GetProperty("CorrelationId");
+        Guid? messageCorrelationId = correlationIdProperty?.GetValue(message) as Guid?;
+        var pointOfInterestId = message.GetType().GetProperty("PointOfInterestId")?.GetValue(message) as int?;
+
+        string str = JsonConvert.SerializeObject(message);
+        byte[] body = Encoding.UTF8.GetBytes(str);
+
+        await PublishBytesAsync(exchange, body, messageCorrelationId, pointOfInterestId, cancellationToken);
+    }
+
+    public async Task PublishRawAsync(string exchange, string payloadJson, Guid correlationId, int? pointOfInterestId, CancellationToken cancellationToken)
+    {
+        byte[] body = Encoding.UTF8.GetBytes(payloadJson);
+        await PublishBytesAsync(exchange, body, correlationId, pointOfInterestId, cancellationToken);
+    }
+
+    private async Task PublishBytesAsync(string exchange, byte[] body, Guid? correlationId, int? pointOfInterestId, CancellationToken cancellationToken)
+    {
         using (var activity = _activitySource.StartActivity($"{exchange} publish", ActivityKind.Producer))
         {
             IConnection connection = await _factory.CreateConnectionAsync(cancellationToken);
@@ -44,26 +62,16 @@ public class MessagePublisher : IMessagePublisher
                 properties.Headers["traceparent"] = Activity.Current.Id;
             }
 
-            // AMQP correlation: use message's CorrelationId
-            var correlationIdProperty = message.GetType().GetProperty("CorrelationId");
-            Guid? messageCorrelationId = null;
-            if (correlationIdProperty != null)
+            bool hasCorrelationId = correlationId.HasValue && correlationId != Guid.Empty;
+            if (hasCorrelationId)
             {
-                messageCorrelationId = correlationIdProperty.GetValue(message) as Guid?;
-                if (messageCorrelationId.HasValue && messageCorrelationId != Guid.Empty)
-                {
-                    properties.CorrelationId = messageCorrelationId.ToString();
-                }
-            }
+                properties.CorrelationId = correlationId.ToString();
 
-            if (messageCorrelationId.HasValue && messageCorrelationId != Guid.Empty)
-            {
-                var pointOfInterestId = message.GetType().GetProperty("PointOfInterestId")?.GetValue(message) as int?;
                 try
                 {
                     await _auditLogger.LogAsync(new MessageAuditLog
                     {
-                        CorrelationId = messageCorrelationId.Value,
+                        CorrelationId = correlationId.Value,
                         ExchangeName = exchange,
                         EventType = MessageAuditEventTypes.Published,
                         PointOfInterestId = pointOfInterestId,
@@ -72,12 +80,9 @@ public class MessagePublisher : IMessagePublisher
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to write audit log for publish to {Exchange}, correlation {CorrelationId}", exchange, messageCorrelationId);
+                    _logger.LogWarning(ex, "Failed to write audit log for publish to {Exchange}, correlation {CorrelationId}", exchange, correlationId);
                 }
             }
-
-            string str = JsonConvert.SerializeObject(message);
-            byte[] body = Encoding.UTF8.GetBytes(str);
 
             // Publish message
             await channel.BasicPublishAsync

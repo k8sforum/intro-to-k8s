@@ -14,6 +14,7 @@ using mytravels.common.Services;
 using mytravels.contract.Config;
 using mytravels.contract.Interfaces;
 using mytravels.domain;
+using mytravels.domain.Features.FailedMessages;
 using mytravels.domain.Features.PointOfInterest;
 using mytravels.domain.Features.Traceability;
 using mytravels.functions;
@@ -67,6 +68,7 @@ builder.Services.AddTransient<ISolrIndexService, SolrIndexService>();
 builder.Services.AddTransient<IGeoService, ImageMetadataService>();
 builder.Services.AddTransient<IMessagePublisher, MessagePublisher>();
 builder.Services.AddTransient<IMessageAuditLogger, MessageAuditLogger>();
+builder.Services.AddTransient<IFailedMessageWriter, FailedMessageWriter>();
 builder.Services.AddMapsService(builder.Configuration);
 builder.Services.AddTransient<IObjectStorageService, S3StorageService>();
 builder.Services.AddTransient<IImageDescriptionService, AnthropicImageDescriptionService>();
@@ -79,9 +81,6 @@ builder.Services.AddHostedService<ResizeImage>();
 builder.Services.AddHostedService<AppendImageTags>();
 builder.Services.AddHostedService<IndexSolr>();
 builder.Services.AddHostedService<ReindexSolr>();
-
-// Declare failed exchanges (fanout, non-durable, auto-delete)
-builder.Services.AddHostedService<FailedExchangeDeclarer>();
 
 // Create the SOLR fields the app queries, retrying until SOLR is reachable
 builder.Services.AddHostedService<SolrSchemaInitializer>();

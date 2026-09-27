@@ -15,6 +15,7 @@ public interface ICoreDbContext
     DbSet<PointOfInterestTagAssociation> PointOfInterestTagAssociations { get; set; }
     DbSet<Tag> Tags { get; set; }
     DbSet<MessageAuditLog> MessageAuditLogs { get; set; }
+    DbSet<FailedMessage> FailedMessages { get; set; }
     EntityEntry Entry(object entity);
     DbSet<TEntity> Set<TEntity>() where TEntity : class;
     Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken);
@@ -34,4 +35,7 @@ public interface ICoreDbContext
     Task<List<GetPointOfInterestResponse>> GetAllPointsOfInterestAsync(CancellationToken cancellationToken);
     Task<List<CorrelationSummaryDto>> GetCorrelationSummariesAsync(int page, int pageSize, CancellationToken cancellationToken);
     Task<List<MessageAuditLogDto>> GetEventsByCorrelationIdAsync(Guid correlationId, CancellationToken cancellationToken);
+    Task<List<FailedMessageDto>> GetFailedMessagesAsync(CancellationToken cancellationToken);
+    Task<FailedMessage> GetFailedMessageByIdAsync(int id, CancellationToken cancellationToken);
+    Task MarkFailedMessageResolvedAsync(int id, CancellationToken cancellationToken);
 }
