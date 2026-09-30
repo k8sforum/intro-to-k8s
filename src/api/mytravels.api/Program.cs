@@ -1,6 +1,8 @@
 using Flagsmith;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.OpenApi;
 using OpenFeature.Contrib.Providers.Flagsmith;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
@@ -9,6 +11,7 @@ using OpenTelemetry.Resources;
 using RabbitMQ.Client;
 using System.Globalization;
 using System.Reflection;
+using mytravels.api.Extensions;
 using mytravels.api.Middleware;
 using mytravels.common.Config;
 using mytravels.common.Extensions;
@@ -46,10 +49,15 @@ builder.Configuration
        .Build();
 
 builder.Services
-       .AddControllers()
+       .AddControllers(options =>
+       {
+           options.Conventions.Add(new RouteTokenTransformerConvention(new LowercaseParameterTransformer()));
+       })
        .AddJsonOptions(options =>
        {
        });
+
+builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
 builder.Services.AddEndpointsApiExplorer();
 

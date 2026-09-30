@@ -280,7 +280,7 @@ Excluded from the tree above (per instructions/format norms): `node_modules/`, `
 | Grafana Tempo | 2.6.1 | same |
 | postgres-exporter | v0.15.0 | same |
 | cAdvisor | v0.49.1 | Compose service (stage 1); DaemonSet in stages 3–4 |
-| Swashbuckle.AspNetCore (Swagger) | 9.0.5 | `src/api/mytravels.api/mytravels.api.csproj` |
+| Swashbuckle.AspNetCore (Swagger) | 10.2.3 | `src/api/mytravels.api/mytravels.api.csproj` |
 | Newtonsoft.Json | 13.0.4 | `src/api/mytravels.api/mytravels.api.csproj`, `mytravels.common.csproj` |
 | MetadataExtractor (EXIF) | 2.8.1 | `src/common/mytravels.contract/mytravels.contract.csproj`, `mytravels.common.csproj` |
 | Geolocation | 1.2.1 | `src/common/mytravels.domain/mytravels.domain.csproj` |
@@ -405,15 +405,15 @@ Both live in `mytravels.contract/Interfaces/` and are implemented in `mytravels.
 
 | # | Method | Path | Purpose |
 |---|---|---|---|
-| 1 | GET | `/api/PointOfInterest` | List POIs (initial load + polling) |
-| 2 | GET | `/api/PointOfInterest/{id}?resizedImage={bool}` | Fetch a POI's photo (base64 `text/plain`) |
-| 3 | POST | `/api/PointOfInterest/image` | Upload photo with EXIF GPS |
-| 4 | POST | `/api/PointOfInterest/image/coordinates` | Upload photo + manually-picked place |
-| 5 | GET | `/api/Place?query=` | Place search (debounced 400ms, min 3 chars) |
-| 6 | GET | `/api/Traceability?page=&pageSize=` | Correlation summaries for the traceability list (called with `page=1, pageSize=50`) |
-| 7 | GET | `/api/Traceability/{correlationId}` | Event timeline for one expanded correlation |
-| 8 | GET | `/api/FailedMessages` | List unresolved failed messages for the admin page |
-| 9 | POST | `/api/FailedMessages/{id}/retry` | Resubmit a failed message and drop it from the list |
+| 1 | GET | `/api/pointofinterest` | List POIs (initial load + polling) |
+| 2 | GET | `/api/pointofinterest/{id}?resizedImage={bool}` | Fetch a POI's photo (base64 `text/plain`) |
+| 3 | POST | `/api/pointofinterest/image` | Upload photo with EXIF GPS |
+| 4 | POST | `/api/pointofinterest/image/coordinates` | Upload photo + manually-picked place |
+| 5 | GET | `/api/place?query=` | Place search (debounced 400ms, min 3 chars) |
+| 6 | GET | `/api/traceability?page=&pageSize=` | Correlation summaries for the traceability list (called with `page=1, pageSize=50`) |
+| 7 | GET | `/api/traceability/{correlationId}` | Event timeline for one expanded correlation |
+| 8 | GET | `/api/failedmessages` | List unresolved failed messages for the admin page |
+| 9 | POST | `/api/failedmessages/{id}/retry` | Resubmit a failed message and drop it from the list |
 
 Routing (`src/web/src/App.tsx`, react-router): `/` → `MapPage` (map, upload, polling), `/traceability` → `TraceabilityPage`, `/admin/failed-messages` → `FailedMessagesPage`. On `/` the header shows outbound links to Traceability and Failed Messages (each independently flag-gated); on either of the other two routes it shows a single link back to Map.
 
@@ -431,7 +431,7 @@ Routing (`src/web/src/App.tsx`, react-router): `/` → `MapPage` (map, upload, p
 6. `AppendFormattedAddress` consumer resolves and writes `FormattedAddress` (skipped if already non-empty - idempotent).
 7. `ResizeImage` consumer resizes the image to 10% of original dimensions, uploads to `resized-images`, sets `ImageResized = true` (the resize itself is skipped if already `true` - idempotent). It then publishes `append-image-tags` with the inbound `CorrelationId`; that publish happens on both paths, so a redelivery against an already-resized row still drives the chain rather than dropping it.
 8. `AppendImageTags` consumer, if `enable-image-description` is on (default, Flagsmith-gated as of `messaging:v1.0.16`), sends the original image to Claude and writes `Description` + tags (§7.5); either way it then publishes `index-solr` - so the document is indexed with description/tags when the flag is on, or indexed without them when it's off, but `index-solr` fires unconditionally. **Not idempotent when the flag is on** - it has no "already described" guard, so a redelivery re-calls the Anthropic API.
-9. Frontend polls `GET /api/PointOfInterest` every 3s (`POLL_INTERVAL_MS`), up to 10 attempts (`POLL_MAX_ATTEMPTS`), watching for the new POI's coordinates to become non-zero.
+9. Frontend polls `GET /api/pointofinterest` every 3s (`POLL_INTERVAL_MS`), up to 10 attempts (`POLL_MAX_ATTEMPTS`), watching for the new POI's coordinates to become non-zero.
 
 ### 7.2 Upload without GPS EXIF
 
@@ -507,7 +507,7 @@ Navigation: `PointOfInterestTagAssociations` (1:N).
 
 **PointOfInterestTagAssociation** (join table): `Id` PK, `PointOfInterestId` FK (cascade, indexed, required), `TagId` FK (cascade, indexed, required), `DateCreated`.
 
-**MessageAuditLog** (table `MessageAuditLogs`): `Id` PK, `CorrelationId uuid` (indexed, not a FK - the join key across message lifecycle events), `ExchangeName varchar(100)`, `EventType varchar(30)` (`Published`/`ConsumeSucceeded`/`Retried`/`Failed`), `PointOfInterestId int?` (no FK constraint, generic across message types), `RetryCount int`, `ErrorMessage varchar(500)`, `CreatedAt`. Written from `MessagePublisher.PublishAsync` and `MessageSubscriberBase<T>.ReceivedAsync` (best-effort - a write failure is logged, never blocks publish/consume); read by `ITraceabilityService` / `api/Traceability` for the message-traceability UI (`src/web/src/components/TraceabilityPage.tsx`). Replaces the earlier `PointOfInterestAuditLog`/`PointOfInterestAuditLogs`, which had no writers anywhere in the code.
+**MessageAuditLog** (table `MessageAuditLogs`): `Id` PK, `CorrelationId uuid` (indexed, not a FK - the join key across message lifecycle events), `ExchangeName varchar(100)`, `EventType varchar(30)` (`Published`/`ConsumeSucceeded`/`Retried`/`Failed`), `PointOfInterestId int?` (no FK constraint, generic across message types), `RetryCount int`, `ErrorMessage varchar(500)`, `CreatedAt`. Written from `MessagePublisher.PublishAsync` and `MessageSubscriberBase<T>.ReceivedAsync` (best-effort - a write failure is logged, never blocks publish/consume); read by `ITraceabilityService` / `api/traceability` for the message-traceability UI (`src/web/src/components/TraceabilityPage.tsx`). Replaces the earlier `PointOfInterestAuditLog`/`PointOfInterestAuditLogs`, which had no writers anywhere in the code.
 
 **FailedMessage** (table `FailedMessages`, created in `Init` after the 2026-09-27 squash - see §16): `Id` PK, `CorrelationId uuid` (not a FK), `OriginalExchange varchar(100)`, `Payload text` (the exact JSON body being retried when it dead-lettered - what makes retry possible; contrast the old, discarded `-failed`-exchange payload, F-20), `PointOfInterestId int?` (no FK), `ErrorMessage varchar(500)`, `RetryCount int`, `FailedAt`, `ResolvedAt timestamptz?` (indexed; null = still awaiting retry, set by `POST /api/failedmessages/{id}/retry` on success). Written from `MessageSubscriberBase<T>.ReceivedAsync`'s dead-letter branch via `IFailedMessageWriter`; read/updated by `IFailedMessageService` for the failed-message admin page (`src/web/src/components/FailedMessagesPage.tsx`). Despite the name, it is an ordinary EF entity, not an `IMessage` - nothing publishes it to RabbitMQ.
 
@@ -859,7 +859,7 @@ Each of the three semaphores is `static` **per subscriber class**, so the three 
 
 *Revised 2026-09-14 (feature flagging via self-hosted Flagsmith, per `prompts/add feature flagging.md`):*
 - *§1, §14 - Flagsmith added as an integration: shares `mytravels-postgres` in a second database (`FeatureDb`), evaluated from `api` and `messaging` via the OpenFeature .NET SDK (`OpenFeature.Contrib.Providers.Flagsmith` v0.3.1) and from `web` via `@openfeature/web-sdk`/`@openfeature/react-sdk`/`@openfeature/flagsmith-client-provider`; `mcp` is not wired to it.*
-- *§6.1 - `/api/pointofinterest/search` and both `/api/Traceability` actions now 404 when their respective flag is off: `enable-poi-search` and `enable-message-tracing`.*
+- *§6.1 - `/api/pointofinterest/search` and both `/api/traceability` actions now 404 when their respective flag is off: `enable-poi-search` and `enable-message-tracing`.*
 - *§7.1, §7.5 - `AppendImageTags` gates the Anthropic call and `Description`/tag persistence behind `enable-image-description`; the trailing `index-solr` publish is unconditional either way.*
 - *§10.1, §10.2 - new `Flagsmith:ApiUri`/`Flagsmith:ServerSideEnvironmentKey` config section on `api` and `messaging`, same environment key value on both.*
 - *§17 - new finding: Compose's `command:` field, given as a plain multi-line string, is shell-word-split by Compose itself, so only the first word reaches `sh -c` - a pipe/`||`/heredoc silently never executes. This affects the pre-existing `cleanup-migrations` service in every Compose stage, whose DELETE statement has never actually run; discovered while building the new Flagsmith one-shot services, which avoid it by giving `command` as a YAML list instead. Not fixed as part of this revision.*

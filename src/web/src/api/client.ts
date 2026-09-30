@@ -26,7 +26,7 @@ async function unwrap<T>(response: Response): Promise<T> {
  * once the messaging worker has indexed it, and the list is capped at `rows` by the API.
  */
 export function getPointsOfInterest(signal?: AbortSignal): Promise<PointOfInterest[]> {
-  return fetch(`${BASE_URL}/api/PointOfInterest`, { signal }).then((r) =>
+  return fetch(`${BASE_URL}/api/pointofinterest`, { signal }).then((r) =>
     unwrap<PointOfInterest[]>(r),
   );
 }
@@ -44,7 +44,7 @@ export function searchPointsOfInterest(
     start: String(start),
   });
 
-  return fetch(`${BASE_URL}/api/PointOfInterest/search?${params}`, { signal }).then((r) =>
+  return fetch(`${BASE_URL}/api/pointofinterest/search?${params}`, { signal }).then((r) =>
     unwrap<PointOfInterest[]>(r),
   );
 }
@@ -55,7 +55,7 @@ export async function getPointOfInterestImage(
   signal?: AbortSignal,
 ): Promise<string> {
   const response = await fetch(
-    `${BASE_URL}/api/PointOfInterest/${id}?resizedImage=${resizedImage}`,
+    `${BASE_URL}/api/pointofinterest/${id}?resizedImage=${resizedImage}`,
     { signal },
   );
   await throwForStatus(response);
@@ -79,7 +79,7 @@ function postImage(
 
 /** Uploads an image whose coordinates are read from its EXIF GPS metadata by the API. */
 export function uploadPointOfInterestImage(file: File): Promise<SaveEntityResponse> {
-  return postImage('/api/PointOfInterest/image', file);
+  return postImage('/api/pointofinterest/image', file);
 }
 
 /** Uploads an image that carries no GPS metadata, against a location the user picked. */
@@ -87,7 +87,7 @@ export function uploadPointOfInterestImageAtPlace(
   file: File,
   place: Place,
 ): Promise<SaveEntityResponse> {
-  return postImage('/api/PointOfInterest/image/coordinates', file, {
+  return postImage('/api/pointofinterest/image/coordinates', file, {
     latitude: String(place.latitude),
     longitude: String(place.longitude),
     formattedAddress: place.formattedAddress,
@@ -95,7 +95,7 @@ export function uploadPointOfInterestImageAtPlace(
 }
 
 export function searchPlaces(query: string, signal?: AbortSignal): Promise<Place[]> {
-  return fetch(`${BASE_URL}/api/Place?query=${encodeURIComponent(query)}`, {
+  return fetch(`${BASE_URL}/api/place?query=${encodeURIComponent(query)}`, {
     signal,
   }).then((r) => unwrap<Place[]>(r));
 }
@@ -105,7 +105,7 @@ export function getCorrelationSummaries(
   pageSize = 25,
   signal?: AbortSignal,
 ): Promise<CorrelationSummary[]> {
-  return fetch(`${BASE_URL}/api/Traceability?page=${page}&pageSize=${pageSize}`, { signal }).then(
+  return fetch(`${BASE_URL}/api/traceability?page=${page}&pageSize=${pageSize}`, { signal }).then(
     (r) => unwrap<CorrelationSummary[]>(r),
   );
 }
@@ -114,20 +114,20 @@ export function getCorrelationEvents(
   correlationId: string,
   signal?: AbortSignal,
 ): Promise<MessageAuditEvent[]> {
-  return fetch(`${BASE_URL}/api/Traceability/${correlationId}`, { signal }).then((r) =>
+  return fetch(`${BASE_URL}/api/traceability/${correlationId}`, { signal }).then((r) =>
     unwrap<MessageAuditEvent[]>(r),
   );
 }
 
 /** Lists dead-lettered messages awaiting admin action (excludes already-retried ones). */
 export function getFailedMessages(signal?: AbortSignal): Promise<FailedMessageSummary[]> {
-  return fetch(`${BASE_URL}/api/FailedMessages`, { signal }).then((r) =>
+  return fetch(`${BASE_URL}/api/failedmessages`, { signal }).then((r) =>
     unwrap<FailedMessageSummary[]>(r),
   );
 }
 
 /** Resubmits a failed message to its original exchange with a fresh retry budget. */
 export async function retryFailedMessage(id: number): Promise<void> {
-  const response = await fetch(`${BASE_URL}/api/FailedMessages/${id}/retry`, { method: 'POST' });
+  const response = await fetch(`${BASE_URL}/api/failedmessages/${id}/retry`, { method: 'POST' });
   await throwForStatus(response);
 }
