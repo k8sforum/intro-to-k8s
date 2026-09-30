@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Net;
 using mytravels.contract.CustomException;
@@ -33,21 +33,21 @@ namespace mytravels.api.Middleware
 
                 await InvokeNext(_next, context);
             }
-            catch (RequiredParameterNotFoundException ex)
+            catch (Exception ex) when (ex is RequiredParameterNotFoundException or OutOfRadiusException or InvalidImageException)
             {
-                await HandleClientErrorAsync(context, ex, (int)HttpStatusCode.Forbidden);
+                await HandleClientErrorAsync(context, ex, (int)HttpStatusCode.BadRequest);
             }
-            catch (OutOfRadiusException ex)
-            {
-                await HandleClientErrorAsync(context, ex, (int)HttpStatusCode.Forbidden);
-            }
-            catch (DataNotFoundException ex)
+            catch (Exception ex) when (ex is DataNotFoundException or EntityNotFoundException)
             {
                 await HandleClientErrorAsync(context, ex, (int)HttpStatusCode.NotFound);
             }
             catch (ApiException ex)
             {
                 await HandleServerErrorAsync(context, ex, ex.StatusCode);
+            }
+            catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+            {
+                // The client went away; there is nobody to respond to and nothing worth logging as an error.
             }
             catch (Exception ex)
             {
@@ -61,7 +61,9 @@ namespace mytravels.api.Middleware
             {
                 Id = Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString("N"),
                 HttpStatusCode = httpStatuscode,
-                Message = exception.Message,
+                // Raw messages can carry database or infrastructure detail, so only deliberate ApiExceptions are echoed.
+                // Everything else is reachable through the trace id in the logs.
+                Message = exception is ApiException ? exception.Message : "An unexpected error occurred.",
                 Title = "An error occurred in the API.  Please use the id and contact our support team if the error persists.",
                 Links = context.Request?.Path ?? ""
             };
@@ -84,7 +86,7 @@ namespace mytravels.api.Middleware
                 Links = context.Request?.Path ?? ""
             };
 
-            _logger.LogError(exception, "Client, {ErrorId} -- {ErrorMessage}.", error.Id, exception.Message);
+            _logger.LogWarning(exception, "Client error, {ErrorId} -- {ErrorMessage}.", error.Id, exception.Message);
             var result = JsonConvert.SerializeObject(error);
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = httpStatuscode;

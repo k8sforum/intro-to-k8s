@@ -1,4 +1,4 @@
-﻿using mytravels.contract.Interfaces;
+using mytravels.contract.Interfaces;
 
 namespace mytravels.contract.Messages
 {
@@ -6,5 +6,7 @@ namespace mytravels.contract.Messages
     {
         public Guid CorrelationId { get; set; }
         public int PointOfInterestId { get; set; }
+
+        int? IMessage.AuditPointOfInterestId => PointOfInterestId;
     }
 }

@@ -6,6 +6,6 @@ namespace mytravels.api.Extensions
     /// </summary>
     public sealed class LowercaseParameterTransformer : IOutboundParameterTransformer
     {
-        public string? TransformOutbound(object? value) => value?.ToString()?.ToLowerInvariant();
+        public string TransformOutbound(object value) => value?.ToString()?.ToLowerInvariant();
     }
 }

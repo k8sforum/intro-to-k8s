@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using mytravels.contract.Dtos;
 
 namespace mytravels.contract.CustomException;
@@ -19,9 +19,4 @@ public class ApiException : Exception
 
     public int StatusCode { get; }
     public ApiErrorDto ApiError { get; }
-
-    protected ApiException(System.Runtime.Serialization.SerializationInfo serializationInfo, System.Runtime.Serialization.StreamingContext streamingContext)
-    {
-        throw new NotImplementedException();
-    }
 }

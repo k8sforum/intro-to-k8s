@@ -11,7 +11,7 @@ namespace mytravels.functions;
 public class AppendFormattedAddress : MessageSubscriberBase<PointOfInterestMessage>
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+    private static readonly SemaphoreSlim semaphore = new(1, 1);
 
     public AppendFormattedAddress
         (
@@ -26,9 +26,10 @@ public class AppendFormattedAddress : MessageSubscriberBase<PointOfInterestMessa
     protected override async Task ProcessMessageAsync(PointOfInterestMessage obj, CancellationToken cancellationToken)
     {
         if (obj is null) return;
+
+        await semaphore.WaitAsync(cancellationToken);
         try
         {
-            await semaphore.WaitAsync();
             using IServiceScope scope = _serviceScopeFactory.CreateScope();
             ICoreDbContext context = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             IMapsService mapsService = scope.ServiceProvider.GetRequiredService<IMapsService>();
@@ -43,11 +44,11 @@ public class AppendFormattedAddress : MessageSubscriberBase<PointOfInterestMessa
 
             if (string.IsNullOrEmpty(point.FormattedAddress?.Trim()))
             {
-                point.FormattedAddress = await mapsService.GetAddressAsync(point.Latitude, point.Longitude, default);
+                point.FormattedAddress = await mapsService.GetAddressAsync(point.Latitude, point.Longitude, cancellationToken);
                 var entry = context.Entry(point);
                 entry.State = EntityState.Unchanged;
                 entry.Property(nameof(point.FormattedAddress)).IsModified = true;
-                await context.SaveChangesAsync(default);
+                await context.SaveChangesAsync(cancellationToken);
             }
 
             // The address is one of the fields SOLR ranks on, so reindex now that it exists. The inbound

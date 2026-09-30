@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -22,6 +22,12 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
     private readonly string _queueName;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     protected readonly ConnectionFactory _factory;
+    private readonly CancellationTokenSource _stopping = new();
+    private IConnection _connection;
+    private IChannel _channel;
+
+    private const int MaxRetries = 3;
+    private static readonly TimeSpan RetryBaseDelay = TimeSpan.FromSeconds(2);
 
     protected MessageSubscriberBase(ILogger<MessageSubscriberBase<T>> logger, IConfiguration configuration, string exchangeName, string queueName, IServiceScopeFactory serviceScopeFactory)
     {
@@ -45,27 +51,28 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
     {
         _logger.LogInformation("{Service} is starting.", nameof(MessageSubscriberBase<T>));
 
-        IConnection connection = await _factory.CreateConnectionAsync(cancellationToken);
+        _connection = await _factory.CreateConnectionAsync(cancellationToken);
         _logger.LogInformation("Connected to RabbitMQ at {Uri}", _factory.Uri);
 
-        IChannel channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+        IChannel channel = _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
         _logger.LogInformation("Channel created.");
 
-        await channel.ExchangeDeclareAsync(exchange: _exchangeName, type: ExchangeType.Fanout);
+        await channel.ExchangeDeclareAsync(exchange: _exchangeName, type: ExchangeType.Fanout, cancellationToken: cancellationToken);
         _logger.LogInformation("Exchange '{Exchange}' declared.", _exchangeName);
 
-        await channel.QueueDeclareAsync(queue: _queueName, durable: true, exclusive: false, autoDelete: false);
+        await channel.QueueDeclareAsync(queue: _queueName, durable: true, exclusive: false, autoDelete: false, cancellationToken: cancellationToken);
 
-        await channel.QueueBindAsync(queue: _queueName, exchange: _exchangeName, routingKey: string.Empty);
+        await channel.QueueBindAsync(queue: _queueName, exchange: _exchangeName, routingKey: string.Empty, cancellationToken: cancellationToken);
         _logger.LogInformation("Queue '{Queue}' bound to exchange '{Exchange}'.", _queueName, _exchangeName);
 
-        await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 10, global: false);
+        await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 10, global: false, cancellationToken: cancellationToken);
 
         var consumer = new AsyncEventingBasicConsumer(channel);
 
-        consumer.ReceivedAsync += async (model, ea) => await ReceivedAsync(model, ea, channel, cancellationToken);
+        // Handlers run for the life of the consumer, so they observe the stop token rather than the start-up one.
+        consumer.ReceivedAsync += async (model, ea) => await ReceivedAsync(model, ea, channel, _stopping.Token);
 
-        await channel.BasicConsumeAsync(_queueName, autoAck: false, consumer: consumer);
+        await channel.BasicConsumeAsync(_queueName, autoAck: false, consumer: consumer, cancellationToken: cancellationToken);
         _logger.LogInformation("Consuming messages from queue '{Queue}'.", _queueName);
     }
 
@@ -124,22 +131,23 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
                 // Success: acknowledge
                 await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken);
 
-                var successCorrelationId = typeof(T).GetProperty("CorrelationId")?.GetValue(message) as Guid?;
-                var successPointOfInterestId = typeof(T).GetProperty("PointOfInterestId")?.GetValue(message) as int?;
-                await LogAuditEventAsync(successCorrelationId, successPointOfInterestId, ea.Exchange, MessageAuditEventTypes.ConsumeSucceeded, retryCount, null, cancellationToken);
+                await LogAuditEventAsync(message.CorrelationId, message.AuditPointOfInterestId, ea.Exchange, MessageAuditEventTypes.ConsumeSucceeded, retryCount, null);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Shutting down mid-message: hand it back untouched rather than burning a retry on it.
+                await TryRequeueAsync(channel, ea.DeliveryTag);
             }
             catch (Exception ex)
             {
-                var correlationIdValue = message != null ? typeof(T).GetProperty("CorrelationId")?.GetValue(message) : null;
-                var pointOfInterestIdValue = message != null ? typeof(T).GetProperty("PointOfInterestId")?.GetValue(message) : null;
-                var correlationId = correlationIdValue as Guid?;
-                var pointOfInterestId = pointOfInterestIdValue as int?;
+                Guid? correlationId = message?.CorrelationId;
+                int? pointOfInterestId = message?.AuditPointOfInterestId;
 
                 _logger.LogError(ex, "Error processing message from {Exchange}, retry count {RetryCount}, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
                     ea.Exchange, retryCount, pointOfInterestId, correlationId);
 
                 // Check retry threshold
-                if (retryCount < 3)
+                if (retryCount < MaxRetries)
                 {
                     // Increment retry count header and republish to same exchange
                     var properties = new BasicProperties();
@@ -158,6 +166,12 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
                         }
                     }
 
+                    // Back off before republishing, holding the original unacked: a failure that needs time to clear
+                    // (rate limit, provider outage) would otherwise burn every retry in milliseconds, and a crash
+                    // during the wait redelivers the original with its retry count intact. The cost is that this
+                    // queue's consumer is paused for the delay.
+                    await Task.Delay(RetryBaseDelay * Math.Pow(2, retryCount), cancellationToken);
+
                     // Republish message with incremented retry count
                     await channel.BasicPublishAsync(
                         exchange: ea.Exchange,
@@ -170,26 +184,26 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
 
                     // Acknowledge original message
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken);
-                    _logger.LogWarning("Message republished for retry (attempt {RetryCount}/3) for {Exchange}, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
-                        retryCount + 1, ea.Exchange, pointOfInterestId, correlationId);
-                    await LogAuditEventAsync(correlationId, pointOfInterestId, ea.Exchange, MessageAuditEventTypes.Retried, retryCount + 1, ex.Message, cancellationToken);
+                    _logger.LogWarning("Message republished for retry (attempt {RetryCount}/{MaxRetries}) for {Exchange}, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
+                        retryCount + 1, MaxRetries, ea.Exchange, pointOfInterestId, correlationId);
+                    await LogAuditEventAsync(correlationId, pointOfInterestId, ea.Exchange, MessageAuditEventTypes.Retried, retryCount + 1, ex.Message);
                 }
                 else
                 {
                     // Failed after 3 attempts: persist the payload so it can be inspected/retried from the admin page
-                    await SaveFailedMessageAsync(correlationId, pointOfInterestId, ea.Exchange, ea.Body.ToArray(), ex.Message, retryCount, cancellationToken);
+                    await SaveFailedMessageAsync(correlationId, pointOfInterestId, ea.Exchange, ea.Body.ToArray(), ex.Message, retryCount);
 
                     // Acknowledge original message so it stops retrying
                     await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken);
-                    _logger.LogError("Message dead-lettered after 3 attempts on {Exchange}, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
-                        ea.Exchange, pointOfInterestId, correlationId);
-                    await LogAuditEventAsync(correlationId, pointOfInterestId, ea.Exchange, MessageAuditEventTypes.Failed, retryCount, ex.Message, cancellationToken);
+                    _logger.LogError("Message dead-lettered after {MaxRetries} attempts on {Exchange}, PointOfInterestId {PointOfInterestId}, CorrelationId {CorrelationId}",
+                        MaxRetries, ea.Exchange, pointOfInterestId, correlationId);
+                    await LogAuditEventAsync(correlationId, pointOfInterestId, ea.Exchange, MessageAuditEventTypes.Failed, retryCount, ex.Message);
                 }
             }
         }
     }
 
-    private async Task SaveFailedMessageAsync(Guid? correlationId, int? pointOfInterestId, string exchange, byte[] body, string errorMessage, int retryCount, CancellationToken cancellationToken)
+    private async Task SaveFailedMessageAsync(Guid? correlationId, int? pointOfInterestId, string exchange, byte[] body, string errorMessage, int retryCount)
     {
         try
         {
@@ -204,7 +218,7 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
                 ErrorMessage = errorMessage,
                 RetryCount = retryCount,
                 FailedAt = DateTime.UtcNow
-            }, cancellationToken);
+            }, CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -212,7 +226,7 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
         }
     }
 
-    private async Task LogAuditEventAsync(Guid? correlationId, int? pointOfInterestId, string exchange, string eventType, int retryCount, string errorMessage, CancellationToken cancellationToken)
+    private async Task LogAuditEventAsync(Guid? correlationId, int? pointOfInterestId, string exchange, string eventType, int retryCount, string errorMessage)
     {
         if (!correlationId.HasValue || correlationId == Guid.Empty) return;
 
@@ -229,7 +243,7 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
                 RetryCount = retryCount,
                 ErrorMessage = errorMessage,
                 CreatedAt = DateTime.UtcNow
-            }, cancellationToken);
+            }, CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -237,10 +251,38 @@ public abstract class MessageSubscriberBase<T> : IHostedService where T : IMessa
         }
     }
 
-    public Task StopAsync(CancellationToken stoppingToken)
+    private async Task TryRequeueAsync(IChannel channel, ulong deliveryTag)
+    {
+        try
+        {
+            await channel.BasicNackAsync(deliveryTag, multiple: false, requeue: true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not requeue delivery {DeliveryTag} while stopping; the broker will redeliver it.", deliveryTag);
+        }
+    }
+
+    public async Task StopAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("{Service} is stopping.", nameof(MessageSubscriberBase<T>));
-        return Task.CompletedTask;
+
+        await _stopping.CancelAsync();
+
+        try
+        {
+            if (_channel is not null) await _channel.CloseAsync(stoppingToken);
+            if (_connection is not null) await _connection.CloseAsync(stoppingToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error closing RabbitMQ connection for queue '{Queue}'.", _queueName);
+        }
+        finally
+        {
+            _channel?.Dispose();
+            _connection?.Dispose();
+            _stopping.Dispose();
+        }
     }
 }
-

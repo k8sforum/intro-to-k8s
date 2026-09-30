@@ -52,6 +52,7 @@ public class PointOfInterestMcpTools
                 DateTaken = first.DateTaken,
                 FormattedAddress = first.FormattedAddress,
                 Description = first.Description,
+                CorrelationId = first.CorrelationId,
                 Latitude = first.Latitude,
                 Longitude = first.Longitude,
                 PointOfInterestKey = first.PointOfInterestKey,

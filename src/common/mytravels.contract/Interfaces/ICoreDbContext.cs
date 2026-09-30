@@ -26,7 +26,8 @@ public interface ICoreDbContext
     void AddObject(object entity);
     void DeleteObject(object entity);
     void DetachObject(object entity);
-    Task<List<PointOfInterest>> GetPointsOfInterestAsync(CancellationToken cancellationToken);
+    Task<List<PointOfInterest>> GetPointsMissingAddressAsync(DateTime createdAfter, CancellationToken cancellationToken);
+    Task<PointOfInterest> GetLatestPointOfInterestByKeyAsync(string pointOfInterestKey, CancellationToken cancellationToken);
     Task<int> UpdatePointOfInterestTagsAsync(List<SavePointOfInterestDto> dtos, CancellationToken cancellationToken);
     Task<int> CreatePointOfInterestAsync(PointOfInterest point, CancellationToken cancellationToken);
     Task AddImageToPointOfInterestAsync(string blobName, PointOfInterest point, CancellationToken cancellationToken);

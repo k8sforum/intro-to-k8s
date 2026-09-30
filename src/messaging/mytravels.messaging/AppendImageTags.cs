@@ -14,7 +14,7 @@ public class AppendImageTags : MessageSubscriberBase<PointOfInterestMessage>
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly FeatureClient _featureClient;
-    private static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+    private static readonly SemaphoreSlim semaphore = new(1, 1);
 
     public AppendImageTags
         (
@@ -31,9 +31,10 @@ public class AppendImageTags : MessageSubscriberBase<PointOfInterestMessage>
     protected override async Task ProcessMessageAsync(PointOfInterestMessage obj, CancellationToken cancellationToken)
     {
         if (obj is null) return;
+
+        await semaphore.WaitAsync(cancellationToken);
         try
         {
-            await semaphore.WaitAsync();
             using IServiceScope scope = _serviceScopeFactory.CreateScope();
             ICoreDbContext context = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             IObjectStorageService objectStorageService = scope.ServiceProvider.GetRequiredService<IObjectStorageService>();
@@ -52,8 +53,9 @@ public class AppendImageTags : MessageSubscriberBase<PointOfInterestMessage>
                 return;
             }
 
+            // A redelivered message must not re-call the metered Anthropic API or overwrite an existing description.
             bool imageDescriptionEnabled = await _featureClient.GetBooleanValueAsync("enable-image-description", true);
-            if (imageDescriptionEnabled)
+            if (imageDescriptionEnabled && point.Description is null)
             {
                 // ResizeImage runs immediately before this subscriber in the chain and always leaves a
                 // resized copy in ResizedImagesContainer under the same blob name (either freshly written,

@@ -10,20 +10,14 @@ namespace mytravels.common.Services
         {
             IReadOnlyList<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(stream);
 
-            GeoLocation geoLocation = ExtractGeoLocation(directories);
+            GeoLocation? geoLocation = ExtractGeoLocation(directories);
             DateTime? dateTaken = ExtractDateTaken(directories);
 
             return new ImageMetadata(geoLocation, dateTaken);
         }
 
-        private static GeoLocation ExtractGeoLocation(IReadOnlyList<MetadataExtractor.Directory> directories)
-        {
-            var gpsDirectory = directories.OfType<GpsDirectory>().FirstOrDefault();
-            if (gpsDirectory is null) return new GeoLocation(0, 0);
-
-            GeoLocation geoLocation = gpsDirectory.GetGeoLocation();
-            return geoLocation ?? new GeoLocation(0, 0);
-        }
+        private static GeoLocation? ExtractGeoLocation(IReadOnlyList<MetadataExtractor.Directory> directories)
+            => directories.OfType<GpsDirectory>().FirstOrDefault()?.GetGeoLocation();
 
         private static DateTime? ExtractDateTaken(IReadOnlyList<MetadataExtractor.Directory> directories)
         {

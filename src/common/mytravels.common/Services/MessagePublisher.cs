@@ -24,16 +24,14 @@ public class MessagePublisher : IMessagePublisher
         _auditLogger = auditLogger ?? throw new ArgumentNullException(nameof(auditLogger));
     }
 
-    public async Task PublishAsync<T>(string exchange, T message, CancellationToken cancellationToken)
+    public async Task PublishAsync<T>(string exchange, T message, CancellationToken cancellationToken) where T : IMessage
     {
-        var correlationIdProperty = message.GetType().GetProperty("CorrelationId");
-        Guid? messageCorrelationId = correlationIdProperty?.GetValue(message) as Guid?;
-        var pointOfInterestId = message.GetType().GetProperty("PointOfInterestId")?.GetValue(message) as int?;
+        ArgumentNullException.ThrowIfNull(message);
 
         string str = JsonConvert.SerializeObject(message);
         byte[] body = Encoding.UTF8.GetBytes(str);
 
-        await PublishBytesAsync(exchange, body, messageCorrelationId, pointOfInterestId, cancellationToken);
+        await PublishBytesAsync(exchange, body, message.CorrelationId, message.AuditPointOfInterestId, cancellationToken);
     }
 
     public async Task PublishRawAsync(string exchange, string payloadJson, Guid correlationId, int? pointOfInterestId, CancellationToken cancellationToken)
@@ -46,8 +44,8 @@ public class MessagePublisher : IMessagePublisher
     {
         using (var activity = _activitySource.StartActivity($"{exchange} publish", ActivityKind.Producer))
         {
-            IConnection connection = await _factory.CreateConnectionAsync(cancellationToken);
-            IChannel channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
+            await using IConnection connection = await _factory.CreateConnectionAsync(cancellationToken);
+            await using IChannel channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             await channel.ExchangeDeclareAsync(exchange: exchange, type: ExchangeType.Fanout, cancellationToken: cancellationToken);
 

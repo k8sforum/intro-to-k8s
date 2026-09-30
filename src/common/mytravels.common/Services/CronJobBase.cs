@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace mytravels.common.Services
@@ -14,13 +14,19 @@ namespace mytravels.common.Services
             _timer = new PeriodicTimer(timeSpan);
         }
 
+        public override void Dispose()
+        {
+            _timer.Dispose();
+            base.Dispose();
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             try
             {
-                await DoWorkAsync();
+                await DoWorkAsync(stoppingToken);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
                 HandleCronException(ex);
             }
@@ -29,16 +35,16 @@ namespace mytravels.common.Services
             {
                 try
                 {
-                    await DoWorkAsync();
+                    await DoWorkAsync(stoppingToken);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
                 {
                     HandleCronException(ex);
                 }
             }
         }
 
-        protected abstract Task DoWorkAsync();
+        protected abstract Task DoWorkAsync(CancellationToken cancellationToken);
 
         private void HandleCronException(Exception ex)
         {

@@ -30,14 +30,22 @@ namespace mytravels.domain
         public async Task ExecuteSqlInterpolatedAsync(FormattableString sql, CancellationToken cancellationToken)
             => await this.Database.ExecuteSqlInterpolatedAsync(sql, cancellationToken);
 
-        public async Task<List<PointOfInterest>> GetPointsOfInterestAsync(CancellationToken cancellationToken)
-            => await this.PointOfInterests.ToListAsync(cancellationToken);
+        public async Task<List<PointOfInterest>> GetPointsMissingAddressAsync(DateTime createdAfter, CancellationToken cancellationToken)
+            => await this.PointOfInterests
+                .Where(x => x.DateCreated > createdAfter && (x.FormattedAddress == null || x.FormattedAddress.Trim() == ""))
+                .ToListAsync(cancellationToken);
+
+        public async Task<PointOfInterest> GetLatestPointOfInterestByKeyAsync(string pointOfInterestKey, CancellationToken cancellationToken)
+            => await this.PointOfInterests
+                .Where(x => x.PointOfInterestKey == pointOfInterestKey)
+                .OrderByDescending(x => x.DateCreated)
+                .FirstOrDefaultAsync(cancellationToken);
 
         public async Task<List<GetPointOfInterestResponse>> GetPointsOfInterestByKeyAsync(string pointOfInterestKey, CancellationToken cancellationToken)
-            => await ExecuteProcInterpolatedAsync<GetPointOfInterestResponse>($"SELECT * FROM public.spGetPointOfInterestById({pointOfInterestKey})");
+            => await ExecuteProcInterpolatedAsync<GetPointOfInterestResponse>($"SELECT * FROM public.spGetPointOfInterestById({pointOfInterestKey})", cancellationToken);
 
         public async Task<List<GetPointOfInterestResponse>> GetAllPointsOfInterestAsync(CancellationToken cancellationToken)
-            => await ExecuteProcRawAsync<GetPointOfInterestResponse>("SELECT * FROM public.spGetPointOfInterest()");
+            => await ExecuteProcRawAsync<GetPointOfInterestResponse>("SELECT * FROM public.spGetPointOfInterest()", cancellationToken);
 
         public async Task<List<CorrelationSummaryDto>> GetCorrelationSummariesAsync(int page, int pageSize, CancellationToken cancellationToken)
         {
@@ -156,8 +164,9 @@ namespace mytravels.domain
 
         public async Task UpdateAddressAsync(UpdateAddressDto dto, CancellationToken cancellationToken)
         {
-            List<PointOfInterest> points = await this.GetPointsOfInterestAsync(cancellationToken);
-            points = points.Where(x => x.PointOfInterestKey == dto.PointOfInterestKey).ToList();
+            List<PointOfInterest> points = await this.PointOfInterests
+                .Where(x => x.PointOfInterestKey == dto.PointOfInterestKey)
+                .ToListAsync(cancellationToken);
             foreach (var point in points)
             {
                 point.DateUpdated = DateTime.UtcNow;
@@ -190,16 +199,10 @@ namespace mytravels.domain
                 .HasIndex(e => e.ResolvedAt);
         }
 
-        private Task<List<T>> ExecuteProcInterpolatedAsync<T>(FormattableString query) where T : class
-        {
-            var result = this.Set<T>().FromSqlInterpolated(query).ToList();
-            return Task.FromResult(result);
-        }
+        private async Task<List<T>> ExecuteProcInterpolatedAsync<T>(FormattableString query, CancellationToken cancellationToken) where T : class
+            => await this.Set<T>().FromSqlInterpolated(query).ToListAsync(cancellationToken);
 
-        private Task<List<T>> ExecuteProcRawAsync<T>(string query) where T : class
-        {
-            var result = this.Set<T>().FromSqlRaw(query).ToList();
-            return Task.FromResult(result);
-        }
+        private async Task<List<T>> ExecuteProcRawAsync<T>(string query, CancellationToken cancellationToken) where T : class
+            => await this.Set<T>().FromSqlRaw(query).ToListAsync(cancellationToken);
     }
 }

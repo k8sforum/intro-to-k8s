@@ -27,7 +27,7 @@ RUN dotnet ef migrations bundle \
 
 # Stage 2: runtime only. The bundle carries the migrations, so the SDK
 # (~1 GB with its NuGet cache and PowerShell) never reaches the final image.
-FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 
 # The Alpine .NET images default to invariant globalization and ship no ICU
 # data; Npgsql needs it for collation-aware comparisons.

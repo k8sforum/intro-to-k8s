@@ -68,16 +68,17 @@ namespace mytravels.domain.Features.PointOfInterest
 
         public async Task<int> SaveFileAsPointOfInsterestAsync(IFormFile file, CancellationToken cancellationToken)
         {
-            string objectName = await _objectStorageService.SaveObjectAsync(file, BucketNames.NewUploadedImagesContainer, cancellationToken);
-            ImageMetadata metadata = await GetImageMetadataAsync(objectName, cancellationToken);
+            // Validate before touching storage, so a rejected upload leaves no orphaned blob behind.
+            ImageMetadata metadata = ReadImageMetadata(file);
+            if (metadata.GeoLocation is not { } geoLocation)
+                throw new InvalidImageException("Image is not geocoded");
 
-            if (metadata.GeoLocation.Latitude == 0 || metadata.GeoLocation.Longitude == 0)
-                throw new InvalidOperationException("Image is not geocoded");
+            string objectName = await _objectStorageService.SaveObjectAsync(file, BucketNames.NewUploadedImagesContainer, cancellationToken);
 
             SaveCoordinatesDto coordinates = new()
             {
-                Latitude = metadata.GeoLocation.Latitude,
-                Longitude = metadata.GeoLocation.Longitude,
+                Latitude = geoLocation.Latitude,
+                Longitude = geoLocation.Longitude,
                 FormattedAddress = string.Empty
             };
 
@@ -86,33 +87,30 @@ namespace mytravels.domain.Features.PointOfInterest
 
         public async Task<int> SaveFileAsPointOfInsterestAsync(IFormFile file, SaveCoordinatesDto coordinates, CancellationToken cancellationToken)
         {
-            string objectName = await _objectStorageService.SaveObjectAsync(file, BucketNames.NewUploadedImagesContainer, cancellationToken);
-
             // The caller supplies the location, so the image is only read for its capture date and may carry no metadata at all.
-            ImageMetadata metadata = await TryGetImageMetadataAsync(objectName, cancellationToken);
+            ImageMetadata metadata = TryReadImageMetadata(file);
+
+            string objectName = await _objectStorageService.SaveObjectAsync(file, BucketNames.NewUploadedImagesContainer, cancellationToken);
 
             return await CreatePointOfInterestAsync(file, objectName, coordinates, metadata?.DateTaken, cancellationToken);
         }
 
         public async Task<int> UpdatePointOfInterestAsync(IFormFile file, string pointOfInterestKey, CancellationToken cancellationToken)
         {
+            contract.Entities.PointOfInterest point = await _context.GetLatestPointOfInterestByKeyAsync(pointOfInterestKey, cancellationToken)
+                ?? throw new EntityNotFoundException(nameof(point));
+
             string objectName = await _objectStorageService.SaveObjectAsync(file, BucketNames.NewUploadedImagesContainer, cancellationToken);
-            List<contract.Entities.PointOfInterest> points = await _context.GetPointsOfInterestAsync(cancellationToken);
-            contract.Entities.PointOfInterest point = points.Where(x => x.PointOfInterestKey == pointOfInterestKey)
-                                                   .OrderByDescending(x => x.DateCreated)
-                                                   .FirstOrDefault() ?? throw new EntityNotFoundException(nameof(point));
+
+            // Reuse the existing CorrelationId or mint one, before the row is re-inserted so it is saved once.
+            if (point.CorrelationId is null || point.CorrelationId == Guid.Empty)
+            {
+                point.CorrelationId = Guid.NewGuid();
+            }
 
             await _context.AddImageToPointOfInterestAsync(objectName, point, cancellationToken);
 
-            // Reuse existing CorrelationId or mint a new one
-            if (point.CorrelationId == null 
-             || point.CorrelationId == Guid.Empty)
-            {
-                point.CorrelationId = Guid.NewGuid();
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-
-            await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { CorrelationId = point.CorrelationId ?? Guid.NewGuid(), PointOfInterestId = point.Id }, CancellationToken.None);
+            await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { CorrelationId = point.CorrelationId.Value, PointOfInterestId = point.Id }, cancellationToken);
             return point.Id;
         }
 
@@ -157,26 +155,26 @@ namespace mytravels.domain.Features.PointOfInterest
             // append-image-tags is chained from ResizeImage rather than published here, so the description and
             // tags are generated exactly once per image and the index-solr message that carries them is only
             // published after the description service has succeeded.
-            await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { CorrelationId = correlationId, PointOfInterestId = point.Id }, cancellationToken);
+            await _publisher.PublishAsync(ExchangeNames.ResizeImage, new PointOfInterestMessage { CorrelationId = correlationId, PointOfInterestId = id }, cancellationToken);
 
             // Index immediately so the point is findable by date and coordinates straight away. The address,
             // description and tags all arrive asynchronously, so each enrichment subscriber republishes here.
-            await _publisher.PublishAsync(ExchangeNames.IndexSolr, new PointOfInterestMessage { CorrelationId = correlationId, PointOfInterestId = point.Id }, cancellationToken);
+            await _publisher.PublishAsync(ExchangeNames.IndexSolr, new PointOfInterestMessage { CorrelationId = correlationId, PointOfInterestId = id }, cancellationToken);
 
             return id;
         }
 
-        private async Task<ImageMetadata> GetImageMetadataAsync(string generatedObjectName, CancellationToken cancellationToken)
+        private ImageMetadata ReadImageMetadata(IFormFile file)
         {
-            Stream savedImage = await _objectStorageService.GetStreamAsync(BucketNames.NewUploadedImagesContainer, generatedObjectName, cancellationToken);
-            return _geoService.ExtractImageMetadata(savedImage);
+            using Stream stream = file.OpenReadStream();
+            return _geoService.ExtractImageMetadata(stream);
         }
 
-        private async Task<ImageMetadata> TryGetImageMetadataAsync(string generatedObjectName, CancellationToken cancellationToken)
+        private ImageMetadata TryReadImageMetadata(IFormFile file)
         {
             try
             {
-                return await GetImageMetadataAsync(generatedObjectName, cancellationToken);
+                return ReadImageMetadata(file);
             }
             catch (ImageProcessingException)
             {

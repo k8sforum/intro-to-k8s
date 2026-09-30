@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Minio;
 using Minio.DataModel;
@@ -228,7 +228,7 @@ public class S3StorageService : IObjectStorageService
         string jsonContent = await reader.ReadToEndAsync();
         if (!string.IsNullOrEmpty(jsonContent))
         {
-            T? deserialized = JsonConvert.DeserializeObject<T>(jsonContent);
+            T deserialized = JsonConvert.DeserializeObject<T>(jsonContent);
             if (deserialized is not null)
             {
                 t = deserialized;
@@ -237,8 +237,7 @@ public class S3StorageService : IObjectStorageService
         return t;
     }
 
-    //https://github.com/minio/minio-dotnet/blob/master/Minio.Examples/Cases/ListObjects.cs
-    public async Task<List<string>> ListObjectsAsync(string bucketName, CancellationToken cancellationToken)
+        public async Task<List<string>> ListObjectsAsync(string bucketName, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(bucketName))
         {
@@ -246,28 +245,16 @@ public class S3StorageService : IObjectStorageService
         }
 
         await CreateBucketIfNotExistsAsync(bucketName, cancellationToken);
-        string? prefix = null;
-        bool recursive = true;
-        bool versions = false;
         List<string> fileNames = new();
 
-        try
-        {
-            Console.WriteLine("Running example for API: ListObjectsAsync");
-            var listArgs = new ListObjectsArgs()
-                .WithBucket(bucketName)
-                .WithPrefix(prefix)
-                .WithRecursive(recursive)
-                .WithVersions(versions);
+        ListObjectsArgs listArgs = new ListObjectsArgs()
+            .WithBucket(bucketName)
+            .WithRecursive(true)
+            .WithVersions(false);
 
-            await foreach (Item item in _minioClient.ListObjectsEnumAsync(listArgs).ConfigureAwait(false))
-            {
-                fileNames.Add(item.Key);
-            }
-        }
-        catch (Exception e)
+        await foreach (Item item in _minioClient.ListObjectsEnumAsync(listArgs, cancellationToken).ConfigureAwait(false))
         {
-            Console.WriteLine($"[Bucket]  Exception: {e}");
+            fileNames.Add(item.Key);
         }
 
         return fileNames;
@@ -275,7 +262,7 @@ public class S3StorageService : IObjectStorageService
 
     public async Task<List<string>> ListBucketsAsync(CancellationToken cancellationToken)
     {
-        var buckets = await _minioClient.ListBucketsAsync();
+        var buckets = await _minioClient.ListBucketsAsync(cancellationToken);
         return buckets.Buckets.Select(x => x.Name).ToList();
     }
 
@@ -291,26 +278,11 @@ public class S3StorageService : IObjectStorageService
             throw new RequiredParameterNotFoundException(nameof(objectName));
         }
 
-        string? versionId = null;
+        RemoveObjectArgs args = new RemoveObjectArgs()
+            .WithBucket(bucketName)
+            .WithObject(objectName);
 
-        try
-        {
-            var args = new RemoveObjectArgs()
-                .WithBucket(bucketName)
-                .WithObject(objectName);
-            var versions = "";
-            if (!string.IsNullOrEmpty(versionId))
-            {
-                args = args.WithVersionId(versionId);
-                versions = ", with version ID " + versionId + " ";
-            }
-            Console.WriteLine("Running example for API: RemoveObjectAsync");
-            await _minioClient.RemoveObjectAsync(args).ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"[Bucket-Object]  Exception: {e}");
-        }
+        await _minioClient.RemoveObjectAsync(args, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task CreateBucketIfNotExistsAsync(string bucketName, CancellationToken cancellationToken)

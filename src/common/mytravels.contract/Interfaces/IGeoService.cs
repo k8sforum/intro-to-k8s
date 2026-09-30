@@ -7,4 +7,4 @@ public interface IGeoService
     ImageMetadata ExtractImageMetadata(Stream stream);
 }
 
-public record ImageMetadata(GeoLocation GeoLocation, DateTime? DateTaken);
+public record ImageMetadata(GeoLocation? GeoLocation, DateTime? DateTaken);

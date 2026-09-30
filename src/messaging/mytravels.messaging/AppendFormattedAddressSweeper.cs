@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using mytravels.common.Services;
+using mytravels.contract.Constants;
 using mytravels.contract.Entities;
 using mytravels.contract.Interfaces;
+using mytravels.contract.Messages;
 using mytravels.domain;
 
 namespace mytravels.functions;
@@ -20,7 +22,7 @@ public class AppendFormattedAddressSweeper : CronJobBase
         _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
     }
 
-    protected override async Task DoWorkAsync()
+    protected override async Task DoWorkAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -28,27 +30,32 @@ public class AppendFormattedAddressSweeper : CronJobBase
             ICoreDbContext context = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             IMapsService mapsService = scope.ServiceProvider.GetRequiredService<IMapsService>();
 
-            List<PointOfInterest> points = await context.GetPointsOfInterestAsync(default);
+            IMessagePublisher publisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
 
-            points = points.Where(x => x.DateCreated > DateTime.UtcNow.AddDays(-2) && x.FormattedAddress == "")
-                           .ToList();
+            List<PointOfInterest> points = await context.GetPointsMissingAddressAsync(DateTime.UtcNow.AddDays(-2), cancellationToken);
 
             foreach (PointOfInterest point in points)
             {
                 try
                 {
-                    point.FormattedAddress = await mapsService.GetAddressAsync(point.Latitude, point.Longitude, default);
+                    point.FormattedAddress = await mapsService.GetAddressAsync(point.Latitude, point.Longitude, cancellationToken);
                     var entry = context.Entry(point);
                     entry.State = EntityState.Unchanged;
                     entry.Property(nameof(point.FormattedAddress)).IsModified = true;
-                    await context.SaveChangesAsync(default);
+                    await context.SaveChangesAsync(cancellationToken);
+
+                    // The address is a SOLR-ranked field, so a swept point must be reindexed like a consumed one.
+                    await publisher.PublishAsync(ExchangeNames.IndexSolr, new PointOfInterestMessage { CorrelationId = point.CorrelationId ?? Guid.NewGuid(), PointOfInterestId = point.Id }, cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Sweeper failed to geocode POI {PointOfInterestId}, correlation {CorrelationId}",
                         point.Id,
                         point.CorrelationId);
-                    continue;
                 }
             }
         }
