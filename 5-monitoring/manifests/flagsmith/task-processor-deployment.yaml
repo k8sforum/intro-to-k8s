@@ -1,0 +1,54 @@
+# Flagsmith's background task processor. Does not serve HTTP, so no ports and
+# no probes, same as its Compose counterpart. Wave 4: alongside deployment.yaml
+# (both need only flagsmith-bootstrap, wave 3, done).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flagsmith-task-processor
+  namespace: mytravels-default
+  labels:
+    app: flagsmith-task-processor
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flagsmith-task-processor
+  template:
+    metadata:
+      labels:
+        app: flagsmith-task-processor
+    spec:
+      containers:
+        - name: flagsmith-task-processor
+          image: docker.flagsmith.com/flagsmith/flagsmith:2.261.0
+          args: ["run-task-processor"]
+          envFrom:
+            - configMapRef:
+                name: flagsmith-config
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/FeatureDb"
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flagsmith-secret
+                  key: DJANGO_SECRET_KEY
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi

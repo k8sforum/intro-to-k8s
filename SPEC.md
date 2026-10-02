@@ -7,7 +7,7 @@
 This document specifies two things that are inseparable in this repo:
 
 1. **MyTravels** - a .NET 10 / React geolocation Points-of-Interest (POI) application (source in `src/`).
-2. **A five-stage Kubernetes deployment tutorial** that deploys the same application with progressively more sophisticated tooling (`0-local/` → `4-argocd/`), each stage a self-contained lesson with its own `docker-compose.yml`/manifests, `.env.example`, and a Jupyter `runbook.ipynb` that walks through it hands-on.
+2. **A six-stage Kubernetes deployment tutorial** that deploys the same application with progressively more sophisticated tooling (`0-local/` → `5-monitoring/`), each stage a self-contained lesson with its own `docker-compose.yml`/manifests, `.env.example`, and a Jupyter `runbook.ipynb` that walks through it hands-on.
 
 Throughout, **Observed:** marks behavior read directly from code/config; **Inferred:** marks reasonable interpretation not directly stated.
 
@@ -28,7 +28,7 @@ Throughout, **Observed:** marks behavior read directly from code/config; **Infer
 | `web` | React SPA - map UI, upload flow, traceability UI | `src/web/` |
 | `mytravels.common` / `mytravels.contract` / `mytravels.domain` / `mytravels.storage` | Shared libraries (DTOs, entities, EF Core context, geo/maps services, object storage, messaging + audit logging, Anthropic integration, SOLR search + indexing) | `src/common/` |
 
-An **observability stack** (OTel Collector → Prometheus/Tempo → Grafana, plus postgres-exporter and cAdvisor) runs alongside the app in stages 1, 3, and 4. It is infrastructure rather than a MyTravels component, so it is specified separately in §4 and §14 rather than given a row above.
+An **observability stack** (OTel Collector → Prometheus/Tempo → Grafana, plus postgres-exporter and cAdvisor) runs alongside the app in **stage 5 only** (`5-monitoring/`); stages 0-4 carry the instrumentation but run it disabled (`OTEL_SDK_DISABLED=true`). It is infrastructure rather than a MyTravels component, so it is specified separately in §4 and §14 rather than given a row above.
 
 **Runtime topology** (Observed, from `1-dockerize/docker-compose.yml` and `3-kubernetes/manifests/`):
 
@@ -77,18 +77,19 @@ An **observability stack** (OTel Collector → Prometheus/Tempo → Grafana, plu
    PostgreSQL instance in a second database (FeatureDb), not a second container.
 
    api, mcp, messaging ──OTLP──► otel-collector ──► Prometheus (metrics) / Tempo (traces) ──► Grafana
-   web (browser RUM)   ──OTLP/HTTP──┘                                    (stages 1, 3, 4 only)
+   web (browser RUM)   ──OTLP/HTTP──┘                                    (stage 5 only)
 ```
 
-Five deployment stages progressively wrap this same topology:
+Six deployment stages progressively wrap this same topology:
 
 | Stage | Directory | Adds |
 |---|---|---|
 | 0 | `0-local/` | Infra (Postgres/RabbitMQ/SeaweedFS/SOLR) via Compose; app run from source (`dotnet run` / `npm run dev`) |
-| 1 | `1-dockerize/` | Full stack containerized, built locally via Compose; adds the full observability stack |
-| 2 | `2-dockerhub/` | Images built & pushed to Docker Hub, stack runs from registry images (observability dropped) |
+| 1 | `1-dockerize/` | Full stack containerized, built locally via Compose |
+| 2 | `2-dockerhub/` | Images built & pushed to Docker Hub, stack runs from registry images |
 | 3 | `3-kubernetes/` | Deployed to a k3d Kubernetes cluster via raw `kubectl apply` manifests + Traefik ingress |
 | 4 | `4-argocd/` | Same manifests, GitOps-deployed via Argo CD (Application/AppProject, sync waves, drift/self-heal) |
+| 5 | `5-monitoring/` | Stage 4 plus the full monitoring stack (OTel Collector, Prometheus, Tempo, Grafana, postgres-exporter, cAdvisor, RabbitMQ metrics, browser RUM) - the only stage that has it |
 
 **Inferred:** the repo's primary purpose is pedagogical (CKAD/CKA-oriented - see `CERTIFICATION.md`), using a realistic multi-service app as the running example rather than toy manifests.
 
@@ -201,16 +202,15 @@ intro-to-k8s/
 │   └── scripts/migrations.ps1
 ├── 1-dockerize/                 # Stage 1: full stack containerized (local build)
 │   ├── docker-compose.yml
-│   ├── observability/           # otel-collector, prometheus, tempo configs + Grafana provisioning/dashboards
 │   ├── tools/                   # stray dir: only a gitignored node_modules/, no tracked source
 │   └── runbook.ipynb
 ├── 2-dockerhub/                 # Stage 2: images built & pushed to Docker Hub
-│   ├── docker-compose.yml       # pulls from registry; no observability stack
+│   ├── docker-compose.yml       # pulls from registry
 │   ├── docker-compose.build.yml # multi-arch build/push helper - the authoritative image tags
 │   └── runbook.ipynb
 ├── 3-kubernetes/                # Stage 3: raw kubectl-applied manifests + Traefik ingress
 │   ├── manifests/               # 1-namespace.yaml, 8-traefik-config.yaml, 9-ingress.yaml, plus
-│   │                            #   api/, mcp/, messaging/, migrations/, seaweedfs/, observability/,
+│   │                            #   api/, mcp/, messaging/, migrations/, seaweedfs/,
 │   │                            #   postgres/, rabbitmq/, solr/, web/ - files numbered for apply order
 │   ├── roadmap.md
 │   └── runbook.ipynb            # NOTE: no docker-compose.yml - Compose stops at stage 2
@@ -220,6 +220,8 @@ intro-to-k8s/
 │   ├── manifests/                # same shape as 3-kubernetes/manifests, secrets removed,
 │   │                             #   filename number prefixes dropped, sync-wave annotations added
 │   └── runbook.ipynb
+├── 5-monitoring/                # Stage 5: stage 4 + manifests/observability/ (OTel Collector, Prometheus, Tempo, Grafana, postgres-exporter, cAdvisor);
+│   └── ...                      #   OTEL_* env on the .NET deployments, rabbitmq_prometheus, monitoring ingress hosts, real web OTLP endpoint
 ├── src/                          # Application source (the actual MyTravels app)
 │   ├── api/mytravels.api/        # ASP.NET Core REST API (net10.0)
 │   ├── api/mytravels.mcp/        # MCP tool server (net10.0, Web SDK) - Tools/, Dockerfile, appsettings
@@ -274,12 +276,12 @@ Excluded from the tree above (per instructions/format norms): `node_modules/`, `
 | ModelContextProtocol / ModelContextProtocol.AspNetCore | 2.2.0 | `src/api/mytravels.mcp/mytravels.mcp.csproj` |
 | OpenTelemetry (Exporter.OpenTelemetryProtocol, Extensions.Hosting, Instrumentation.AspNetCore / .Http / .Runtime) | 1.17.0 | `src/api/mytravels.api/`, `src/api/mytravels.mcp/`, `src/messaging/mytravels.messaging/` `.csproj` |
 | `@opentelemetry/*` (browser RUM: sdk-trace-web, instrumentation-fetch, instrumentation-document-load, exporter-trace-otlp-http, context-zone) | 2.10.x / 0.221.x | `src/web/package.json:13-22` |
-| OpenTelemetry Collector (contrib) | 0.116.1 | `1-dockerize/docker-compose.yml`, `*/manifests/observability/*otel-collector-deployment.yaml` |
+| OpenTelemetry Collector (contrib) | 0.116.1 | `5-monitoring/manifests/observability/otel-collector-deployment.yaml` |
 | Prometheus | v3.1.0 | same |
 | Grafana | 11.4.0 | same |
 | Grafana Tempo | 2.6.1 | same |
 | postgres-exporter | v0.15.0 | same |
-| cAdvisor | v0.49.1 | Compose service (stage 1); DaemonSet in stages 3–4 |
+| cAdvisor | v0.49.1 | DaemonSet in stage 5 |
 | Swashbuckle.AspNetCore (Swagger) | 10.2.3 | `src/api/mytravels.api/mytravels.api.csproj` |
 | Newtonsoft.Json | 13.0.4 | `src/api/mytravels.api/mytravels.api.csproj`, `mytravels.common.csproj` |
 | MetadataExtractor (EXIF) | 2.8.1 | `src/common/mytravels.contract/mytravels.contract.csproj`, `mytravels.common.csproj` |
@@ -598,7 +600,7 @@ Same `appsettings.json` shape as api/messaging (`ConnectionStrings:CoreDbContext
 | Key | Default | Notes |
 |---|---|---|
 | `OTEL_SERVICE_NAME` | `mytravels-api` / `mytravels-mcp` / `mytravels-messaging` (hardcoded per-service fallback) | read via `builder.Configuration["OTEL_SERVICE_NAME"]` |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset → OTel SDK default `http://localhost:4317` | set to `http://otel-collector:4317` in stage 1 Compose and in the stage 3/4 Deployments; **set nowhere in stages 0 and 2**, where export therefore fails against a non-existent local collector (non-fatal; produces connection-refused noise) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset → OTel SDK default `http://localhost:4317` | set to `http://otel-collector:4317` only in the stage 5 Deployments. Stages 0-4 instead set `OTEL_SDK_DISABLED=true` (Compose env in 1-2, Deployment env in 3-4, inline on the `dotnet run` lines in the stage 0 runbook), so there is no export attempt and no connection-refused noise |
 
 All three services call `.UseOtlpExporter()` with `AddAspNetCoreInstrumentation`, `AddHttpClientInstrumentation`, `AddRuntimeInstrumentation` (metrics) and `AddSource("Npgsql")` (traces). There is no sampling configuration and no `OTEL_TRACES_SAMPLER` handling - every request is traced.
 
@@ -614,7 +616,7 @@ All three services call `.UseOtlpExporter()` with `AddAspNetCoreInstrumentation`
 
 `VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` - same mechanism, read at `src/web/src/telemetry.ts:10`. **No default**: the whole OpenTelemetry setup sits behind `if (otlpEndpoint)` (`telemetry.ts:17`), so an unset build arg makes that branch statically false and Vite tree-shakes the entire browser-RUM block out of the bundle. (The historical `mytravels-web:v1.0.9` image was built that way and shipped with no browser tracing; `v1.0.7` fixed it by passing a non-empty sentinel, below.)
 
-Neither value is runtime-configurable *in the image*, but as of `v1.0.7` both are runtime-configurable *at deploy time* in the Kubernetes stages: the image is built with the sentinel placeholders `__API_BASE_URL__` and `__OTLP_TRACES_ENDPOINT__`, and a `render-config` init container copies the docroot into an `emptyDir`, `sed`s the sentinels to values from the `web-config` ConfigMap, and mounts that over nginx's docroot (`3-kubernetes/manifests/web/{1-configmap,2-deployment}.yaml`, `4-argocd/manifests/web/{configmap,deployment}.yaml`). Both sentinels are non-empty precisely so the tree-shaking above does not fire. Stage 1 is unaffected - it builds the image locally from source with literal URLs passed as build args. Stage 2 now runs the same `v1.0.7` sentinel image as the k8s stages, with a Compose equivalent of the init-container trick: a one-shot `render-web-config` service `sed`s the real URLs (from `.env`, not a ConfigMap) into a shared `web-docroot` volume before the `web` service mounts it over its own docroot (`2-dockerhub/docker-compose.yml`).
+Neither value is runtime-configurable *in the image*, but as of `v1.0.7` both are runtime-configurable *at deploy time* in the Kubernetes stages: the image is built with the sentinel placeholders `__API_BASE_URL__` and `__OTLP_TRACES_ENDPOINT__`, and a `render-config` init container copies the docroot into an `emptyDir`, `sed`s the sentinels to values from the `web-config` ConfigMap, and mounts that over nginx's docroot (`3-kubernetes/manifests/web/{1-configmap,2-deployment}.yaml`, `4-argocd/manifests/web/{configmap,deployment}.yaml`, `5-monitoring/manifests/web/{configmap,deployment}.yaml`). Both sentinels are non-empty precisely so the tree-shaking above does not fire. The OTLP sentinel is substituted with an **empty string** in stages 2-4 (`if (otlpEndpoint)` is then false at runtime: RUM off) and with the real endpoint only in stage 5. Stage 1 builds the image locally from source and passes no OTLP build arg. Stage 2 now runs the same `v1.0.7` sentinel image as the k8s stages, with a Compose equivalent of the init-container trick: a one-shot `render-web-config` service `sed`s the real URLs (from `.env`, not a ConfigMap) into a shared `web-docroot` volume before the `web` service mounts it over its own docroot (`2-dockerhub/docker-compose.yml`).
 
 ### 10.6 Docker Compose / Kubernetes env-var surface (cross-stage, from deployment-topology research)
 
@@ -624,10 +626,10 @@ Neither value is runtime-configurable *in the image*, but as of `v1.0.7` both ar
 | `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` | yes (0–2 `.env.example`), bound onto the `messaging` service only | `messaging` Secret (key) + `messaging` ConfigMap (model) in 3 and 4; `4-argocd/.env.example` carries `ANTHROPIC_API_KEY` as input to the out-of-band `kubectl create secret` step |
 | `GRAPH_API_TOKEN` | yes (`.env.example`, stages 0–3) | no - and never consumed by any Compose service either; dead variable |
 | `VITE_API_BASE_URL` | yes, value differs per stage (`http://localhost:5101` in 1/2); in stage 2 it's substituted at deploy time by the `render-web-config` Compose service rather than baked in at build time | `web-config` ConfigMap in 3 and 4, substituted into the built bundle by the `render-config` init container (`http://api.mytravels.local:8080`) |
-| `VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | stage 1 (build arg, `http://localhost:4318/v1/traces`) and stage 2 (deploy-time substitution via `render-web-config`, same value) | `web-config` ConfigMap in 3 and 4 (`http://otel.mytravels.local:8080/v1/traces`) |
+| `VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | not set in stage 1; stage 2 substitutes an empty value via `render-web-config` | `web-config` ConfigMap: empty in 3 and 4, `http://otel.mytravels.local:8080/v1/traces` in 5 |
 | `SEAWEEDFS_ENDPOINT` / admin UI port | consistent `23646:23646` everywhere | consistent, `seaweedfs-admin` Service port `23646` |
 | `SOLR_URL` / `SOLR_COLLECTION` | yes (0–2 and 4 `.env.example`), bound onto api/mcp/messaging as `Solr__Url`/`Solr__Collection` in stages 1–2. Stage 0 carries `http://localhost:8983` because the app runs from source on the host while SOLR runs in Compose | not env vars - set inline as literal values (`http://solr:8983`, `mytravels-pois`) on the api/mcp/messaging Deployments in stages 3–4, since neither is a secret |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_SERVICE_NAME` | stage 1 only (`http://otel-collector:4317`); absent in 0 and 2 | set inline on the api/mcp/messaging Deployments in stages 3–4 |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_SERVICE_NAME` | absent in 0-4 (replaced by `OTEL_SDK_DISABLED=true`) | set inline on the api/mcp/messaging Deployments in stage 5 only |
 | Argo CD-only vars (`ARGOCD_USER`, `ARGOCD_PASSWORD`) | only in `4-argocd/.env.example` | applied out-of-band via `kubectl create secret`, not committed |
 
 Stage 4's `.env.example` is structurally distinct from stages 0–3 (drops most app config vars since it never builds images or runs Compose - `.env` there is purely input to a "create the k8s secrets" runbook step).
@@ -719,7 +721,7 @@ Each of the three semaphores is `static` **per subscriber class**, so the three 
 | Flagsmith 2.261.0 (feature flags; evaluated from `api` and `messaging` via the OpenFeature .NET SDK - `OpenFeature.Contrib.Providers.Flagsmith` v0.3.1 - and from `web` via `@openfeature/web-sdk` / `@openfeature/react-sdk` / `@openfeature/flagsmith-client-provider`) | `Flagsmith:ApiUri` (`api`/`messaging` config section, e.g. `http://flagsmith:8000/api/v1/`) + `Flagsmith:ServerSideEnvironmentKey` on the .NET side; `VITE_FLAGSMITH_ENVIRONMENT_ID` (client-side key) baked into the `web` bundle. Self-hosted, shares `mytravels-postgres` in a second database (`FeatureDb`), not a second container or schema | **none - unauthenticated, like every other backing service here (§11)** | **Inferred** (from the OpenFeature spec's error-handling contract, not independently verified against a live outage): `FeatureClient.GetBooleanValueAsync(key, true)` on .NET falls back to the supplied default (`true`) if Flagsmith is unreachable, so a Flagsmith outage fails open rather than 404ing every gated endpoint. `mcp` never registers a client and evaluates none of the three flags |
 | Azure Blob Storage | never invoked - `AzureStorageService` is unregistered dead code | connection-string (never configured) | n/a - unreachable code path |
 | RabbitMQ | `RabbitMQ:Uri` | username/password in URI | no broker-level DLX; poison messages are bounded by the application-level 3-retry policy and then persisted to the `FailedMessages` table (§12) - replayable via `POST /api/failedmessages/{id}/retry` (F-20, resolved) |
-| OTLP collector (traces + metrics from api/mcp/messaging, and browser RUM from `web`) | `OTEL_EXPORTER_OTLP_ENDPOINT`, default `http://localhost:4317`; browser posts OTLP/HTTP to `otel.mytravels.local` in stages 3–4 | none | export failures are non-fatal and logged by the OTel SDK; absent in stages 0 and 2, where the default endpoint resolves to nothing |
+| OTLP collector (traces + metrics from api/mcp/messaging, and browser RUM from `web`) | `OTEL_EXPORTER_OTLP_ENDPOINT`, default `http://localhost:4317`; browser posts OTLP/HTTP to `otel.mytravels.local` in stage 5 | none | export failures are non-fatal and logged by the OTel SDK; stages 0-4 disable the SDK (`OTEL_SDK_DISABLED=true`) rather than run without a collector |
 | MCP clients (LLM hosts) | inbound to `mcp` on 5103, streamable HTTP via `MapMcp()` | **none - fully anonymous** | tool errors returned as `McpException`, except the gap noted in F-17 |
 
 ---
@@ -791,7 +793,7 @@ Each of the three semaphores is `static` **per subscriber class**, so the three 
 - **Orphan `rabbitmq-config-pvc`** created but never mounted by the RabbitMQ Deployment in stage 3 (fixed in stage 4 per commit `4ced81d`, but the stage-3 manifest was never updated to match). `3-kubernetes/manifests/rabbitmq/3-pvc.yaml` vs. `4-deployment.yaml`.
 - **F-15 [RESOLVED]** - `3-kubernetes/manifests/messaging/1-secret.yaml` provisioned `ContentSafetyEndpoint`/`ContentSafetyKey` for an Azure Content Safety integration that no code in `src/messaging` ever referenced - dead config for a feature that isn't (or was never) implemented. These keys (and the matching env entries in `2-deployment.yaml`/`4-argocd/manifests/messaging/deployment.yaml`, `.env.example`, and both runbooks) have been removed. The credential is still recoverable from git history - see F-18.
 - **`mytravels.migration.csproj` targets `net10.0` but its EF Core/Hosting/Npgsql packages and pinned `dotnet-ef` CLI tool are all on the `9.0.x` line** - consistent with F-9 but worth flagging separately since it directly affects the migration-bundle build. `src/common/mytravels.migration/mytravels.migration.csproj`, `src/.config/dotnet-tools.json`.
-- **cAdvisor v0.49.1 inotify file descriptor limit [RESOLVED]** - cAdvisor requires kernel file descriptor limits (`fs.file-max` and `fs.nr_open`) set to at least 2097152 to initialize inotify for filesystem monitoring. This was fixed by adding init containers to the cAdvisor DaemonSet in stages 3–4 that run `sysctl` to raise these limits before cAdvisor starts. `3-kubernetes/manifests/observability/14-cadvisor-daemonset.yaml`, `4-argocd/manifests/observability/cadvisor-daemonset.yaml`.
+- **cAdvisor v0.49.1 inotify file descriptor limit [RESOLVED]** - cAdvisor requires kernel file descriptor limits (`fs.file-max` and `fs.nr_open`) set to at least 2097152 to initialize inotify for filesystem monitoring. This was fixed by adding init containers to the cAdvisor DaemonSet in stage 5 that run `sysctl` to raise these limits before cAdvisor starts. `5-monitoring/manifests/observability/cadvisor-daemonset.yaml`.
 
 ### Dead code / ambiguous logic / undocumented behaviour
 
@@ -912,3 +914,5 @@ Each of the three semaphores is `static` **per subscriber class**, so the three 
 - *§4, §5, §6.7, §18 - `web` gained a third route, `/admin/failed-messages` (`FailedMessagesPage`), linked from the header alongside Traceability when on the map view; react-router-dom now routes three paths instead of two.*
 - *§16 - `FailedMessages` was initially added as its own migration (`20630930080000_AddFailedMessagesTable`), then folded into `Init` in a second migration squash the same day (6 → 3, alongside deleting two now-no-op migrations, `AddCorrelationIdToPointOfInterestFunctions` and `DropPointOfInterestByTagNameFunction`) - verified schema-identical via a scratch Postgres apply-and-diff before and after. Migrations are now, again, exactly `Init`, `UpdateStoredProcedure`, `SeedData`.*
 - *Image tags not yet bumped: this change touches `api`, `messaging`, `web` and `migrations`; `mcp` is unaffected (no subscribers, not wired to Flagsmith) and stays at its current tag.*
+
+*Revised 2026-10-02: monitoring moved out of stages 0-4 into the new `5-monitoring/` stage (a copy of `4-argocd/`). Stage 1's Compose observability stack and `1-dockerize/observability/` were deleted; stages 3 and 4 lost `manifests/observability/`, the `rabbitmq_prometheus` plugin/port and the grafana/prometheus/otel ingress hosts; stages 0-4 run the .NET services with `OTEL_SDK_DISABLED=true` and leave the web OTLP endpoint empty. (§1, §2, §3, §10, §14, §15, §17.)*

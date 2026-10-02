@@ -1,0 +1,210 @@
+# Exposes services via host-based routing:
+#   rabbitmq-management  - http://rabbitmq.mytravels.local
+#   seaweedfs-admin      - http://seaweedfs.mytravels.local
+#   api                  - http://api.mytravels.local
+#   web                  - http://web.mytravels.local
+#   mcp                  - http://mcp.mytravels.local
+#   grafana              - http://grafana.mytravels.local
+#   prometheus           - http://prometheus.mytravels.local
+#   otel-collector       - http://otel.mytravels.local (OTLP/HTTP, for browser RUM traces)
+#   solr                 - http://solr.mytravels.local (Admin UI and HTTP API)
+#   flagsmith            - http://flagsmith.mytravels.local (admin console + REST API)
+#   postgres             - TCP via the 'postgres' Traefik entrypoint (see note below)
+#
+# postgres note: HTTP Ingress does not support raw TCP. The IngressRouteTCP below
+# requires a dedicated TCP entrypoint named 'postgres' to be configured in Traefik,
+# e.g. --entrypoints.postgres.address=:5432
+#
+# Replace host values with your actual domain before applying.
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: management-ingress
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: rabbitmq.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rabbitmq-management
+                port:
+                  number: 15672
+    - host: seaweedfs.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: seaweedfs-admin
+                port:
+                  number: 23646
+    - host: grafana.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000
+    - host: prometheus.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus
+                port:
+                  number: 9090
+    - host: otel.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: otel-collector
+                port:
+                  number: 4318
+    - host: solr.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: solr
+                port:
+                  number: 8983
+    - host: flagsmith.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: flagsmith
+                port:
+                  number: 8000
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: api.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 5101
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: messaging-ingress
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: messaging.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: messaging
+                port:
+                  number: 5102
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-ingress
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: web.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mcp-ingress
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: mcp.mytravels.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mcp
+                port:
+                  number: 5103
+
+---
+
+# Traefik CRD for raw TCP - routes all connections on the 'postgres' entrypoint
+# to the postgres service. HostSNI(*) is required for non-TLS TCP routes.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: postgres-tcp-ingress
+  namespace: mytravels-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+spec:
+  entryPoints:
+    - postgres
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: postgres
+          port: 5432

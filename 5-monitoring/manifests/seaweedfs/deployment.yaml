@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seaweedfs
+  namespace: mytravels-default
+  labels:
+    app: seaweedfs
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seaweedfs
+  template:
+    metadata:
+      labels:
+        app: seaweedfs
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3d-mytravels-agent-2
+      containers:
+        - name: seaweedfs
+          image: chrislusf/seaweedfs:4.47
+          # "mini" runs master+volume+filer+S3 gateway+admin UI in one process -
+          # the closest equivalent to MinIO's single-container footprint.
+          args: ["mini", "-dir=/data", "-ip=localhost", "-webdav=false", "-metricsPort=9327"]
+          ports:
+            - name: s3-api
+              containerPort: 8333
+              protocol: TCP
+            - name: admin-ui
+              containerPort: 23646
+              protocol: TCP
+            - name: master
+              containerPort: 9333
+              protocol: TCP
+            - name: metrics
+              containerPort: 9327
+              protocol: TCP
+          env:
+            # mini creates its S3 identity from these two standard AWS env var
+            # names - not SeaweedFS-specific ones - so they're mapped here from
+            # the seaweedfs-secret keys.
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: seaweedfs-secret
+                  key: SEAWEEDFS_ACCESS_KEY
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: seaweedfs-secret
+                  key: SEAWEEDFS_SECRET_KEY
+            - name: S3_BUCKET
+              value: uploaded-images,resized-images
+          volumeMounts:
+            - name: seaweedfs-data
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /cluster/healthz
+              port: 9333
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /cluster/healthz
+              port: 9333
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: seaweedfs-data
+          persistentVolumeClaim:
+            claimName: seaweedfs-data-pvc

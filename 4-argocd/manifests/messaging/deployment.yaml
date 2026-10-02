@@ -78,10 +78,8 @@ spec:
                 secretKeyRef:
                   name: messaging-secret
                   key: GoogleApiKey
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://otel-collector:4317
-            - name: OTEL_SERVICE_NAME
-              value: mytravels-messaging
+            - name: OTEL_SDK_DISABLED
+              value: "true"
             - name: Flagsmith__ApiUri
               value: http://flagsmith:8000/api/v1/
             - name: Flagsmith__ServerSideEnvironmentKey

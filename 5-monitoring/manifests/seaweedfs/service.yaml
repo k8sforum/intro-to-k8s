@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweedfs-s3
+  namespace: mytravels-default
+  labels:
+    app: seaweedfs
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  type: ClusterIP
+  selector:
+    app: seaweedfs
+  ports:
+    - name: s3-api
+      port: 8333
+      targetPort: 8333
+      protocol: TCP
+    - name: metrics
+      port: 9327
+      targetPort: 9327
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweedfs-admin
+  namespace: mytravels-default
+  labels:
+    app: seaweedfs
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  type: ClusterIP
+  selector:
+    app: seaweedfs
+  ports:
+    - name: admin-ui
+      port: 23646
+      targetPort: 23646
+      protocol: TCP

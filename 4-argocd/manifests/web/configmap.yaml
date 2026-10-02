@@ -26,5 +26,5 @@ metadata:
     argocd.argoproj.io/sync-wave: "6"
 data:
   VITE_API_BASE_URL: http://api.mytravels.local:8080
-  VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel.mytravels.local:8080/v1/traces
+  VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ""
   VITE_FLAGSMITH_API_URL: http://flagsmith.mytravels.local:8080/api/v1/

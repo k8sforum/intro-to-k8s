@@ -273,6 +273,7 @@ services:
     container_name: mytravels-api
     image: tshepontlhokoa/mytravels-api:v1.0.14
     environment:
+      OTEL_SDK_DISABLED: "true"
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       GoogleApiKey: ${GOOGLE_API_KEY}
       GoogleMapsUrl: ${GOOGLE_MAPS_URL}
@@ -305,6 +306,7 @@ services:
     container_name: mytravels-messaging
     image: tshepontlhokoa/mytravels-messaging:v1.0.17
     environment:
+      OTEL_SDK_DISABLED: "true"
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
       ASPNETCORE_URLS: http://+:5102
@@ -339,6 +341,7 @@ services:
     container_name: mytravels-mcp
     image: tshepontlhokoa/mytravels-mcp:v1.0.3
     environment:
+      OTEL_SDK_DISABLED: "true"
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
       GoogleApiKey: ${GOOGLE_API_KEY}
       GoogleMapsUrl: ${GOOGLE_MAPS_URL}
@@ -378,7 +381,7 @@ services:
         cp -a /usr/share/nginx/html/. /docroot/
         find /docroot/assets -name '*.js' -exec sed -i \
           -e "s|__API_BASE_URL__|${VITE_API_BASE_URL}|g" \
-          -e "s|__OTLP_TRACES_ENDPOINT__|${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}|g" \
+          -e "s|__OTLP_TRACES_ENDPOINT__|${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-}|g" \
           -e "s|__FLAGSMITH_ENVIRONMENT_ID__|${VITE_FLAGSMITH_ENVIRONMENT_ID}|g" \
           -e "s|__FLAGSMITH_API_URL__|${VITE_FLAGSMITH_API_URL}|g" \
           {} +
@@ -388,12 +391,13 @@ services:
           exit 1
         fi
         echo "substituted VITE_API_BASE_URL=${VITE_API_BASE_URL}"
-        echo "substituted VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}"
+        echo "substituted VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-} (empty = RUM off)"
         echo "substituted VITE_FLAGSMITH_ENVIRONMENT_ID=${VITE_FLAGSMITH_ENVIRONMENT_ID}"
         echo "substituted VITE_FLAGSMITH_API_URL=${VITE_FLAGSMITH_API_URL}"
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL}
-      VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
+      # Empty on purpose: no collector in this stage, so browser RUM stays off (see 5-monitoring).
+      VITE_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ""
       VITE_FLAGSMITH_ENVIRONMENT_ID: ${VITE_FLAGSMITH_ENVIRONMENT_ID}
       VITE_FLAGSMITH_API_URL: ${VITE_FLAGSMITH_API_URL}
     volumes:

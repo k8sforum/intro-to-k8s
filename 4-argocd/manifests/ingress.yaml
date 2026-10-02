@@ -4,9 +4,6 @@
 #   api                  - http://api.mytravels.local
 #   web                  - http://web.mytravels.local
 #   mcp                  - http://mcp.mytravels.local
-#   grafana              - http://grafana.mytravels.local
-#   prometheus           - http://prometheus.mytravels.local
-#   otel-collector       - http://otel.mytravels.local (OTLP/HTTP, for browser RUM traces)
 #   solr                 - http://solr.mytravels.local (Admin UI and HTTP API)
 #   flagsmith            - http://flagsmith.mytravels.local (admin console + REST API)
 #   postgres             - TCP via the 'postgres' Traefik entrypoint (see note below)
@@ -47,36 +44,6 @@ spec:
                 name: seaweedfs-admin
                 port:
                   number: 23646
-    - host: grafana.mytravels.local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: grafana
-                port:
-                  number: 3000
-    - host: prometheus.mytravels.local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: prometheus
-                port:
-                  number: 9090
-    - host: otel.mytravels.local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: otel-collector
-                port:
-                  number: 4318
     - host: solr.mytravels.local
       http:
         paths:
