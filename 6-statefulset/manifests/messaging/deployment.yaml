@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging
+  namespace: mytravels-default
+  labels:
+    app: messaging
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: messaging
+  template:
+    metadata:
+      labels:
+        app: messaging
+    spec:
+      initContainers:
+        - name: wait-for-rabbitmq
+          image: busybox:1.35
+          command: ['sh', '-c', 'until nc -z rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done']
+      containers:
+        - name: messaging
+          image: tshepontlhokoa/mytravels-messaging:v1.0.17
+          ports:
+            - name: http
+              containerPort: 5102
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:5102
+            - name: GoogleMapsUrl
+              value: https://maps.googleapis.com
+            - name: GooglePlacesUrl
+              value: https://places.googleapis.com
+            - name: ObjectStorage__Endpoint
+              value: seaweedfs-s3:8333
+            - name: Solr__Url
+              value: http://solr:8983
+            - name: Solr__Collection
+              value: mytravels-pois
+            - name: ConnectionStrings__CoreDbContext
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: ConnectionStrings__CoreDbContext
+            - name: RabbitMQ__Uri
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: RabbitMQ__Uri
+            - name: ObjectStorage__AccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: ObjectStorage__AccessKey
+            - name: ObjectStorage__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: ObjectStorage__SecretKey
+            - name: AnthropicApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: AnthropicApiKey
+            - name: AnthropicModel
+              valueFrom:
+                configMapKeyRef:
+                  name: messaging-config
+                  key: AnthropicModel
+            - name: GoogleApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-secret
+                  key: GoogleApiKey
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector:4317
+            - name: OTEL_SERVICE_NAME
+              value: mytravels-messaging
+            - name: Flagsmith__ApiUri
+              value: http://flagsmith:8000/api/v1/
+            - name: Flagsmith__ServerSideEnvironmentKey
+              valueFrom:
+                secretKeyRef:
+                  name: flagsmith-keys
+                  key: FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY
+            - name: DOTNET_hostBuilder__reloadConfigOnChange
+              value: "false"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 2Gi
+          # livenessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: 5102
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 15
+          #   timeoutSeconds: 10
+          #   failureThreshold: 10

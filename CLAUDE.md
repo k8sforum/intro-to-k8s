@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A Kubernetes learning course (KCNA/CKAD-oriented) built around one running example app, **MyTravels** (a .NET 10 / React geolocation Points-of-Interest app, source in `src/`). Six stages under the repo root deploy the *same* app with progressively more sophisticated tooling - each stage is a self-contained lesson:
+A Kubernetes learning course (KCNA/CKAD-oriented) built around one running example app, **MyTravels** (a .NET 10 / React geolocation Points-of-Interest app, source in `src/`). Seven stages under the repo root deploy the *same* app with progressively more sophisticated tooling - each stage is a self-contained lesson:
 
 | Stage | Directory | Adds |
 |---|---|---|
@@ -13,7 +13,8 @@ A Kubernetes learning course (KCNA/CKAD-oriented) built around one running examp
 | 2 | `2-dockerhub/` | Images built & pushed to Docker Hub, stack runs from registry images |
 | 3 | `3-kubernetes/` | Deployed to a k3d cluster via raw `kubectl apply` manifests + Traefik ingress |
 | 4 | `4-argocd/` | Same manifests, GitOps-deployed via Argo CD (sync waves, drift/self-heal) |
-| 5 | `5-monitoring/` | Stage 4 plus the whole monitoring stack: OTel Collector, Prometheus, Tempo, Grafana, postgres-exporter, cAdvisor, RabbitMQ metrics, browser RUM. **The only stage with monitoring** |
+| 5 | `5-monitoring/` | Stage 4 plus the whole monitoring stack: OTel Collector, Prometheus, Tempo, Grafana, postgres-exporter, cAdvisor, RabbitMQ metrics, browser RUM. **The first stage with monitoring** |
+| 6 | `6-statefulset/` | Stage 5 with postgres, rabbitmq and seaweedfs as StatefulSets (`volumeClaimTemplates` on `local-path`, plus a `-headless` Service each). SeaweedFS's manual hostPath PV and node pinning are gone. Same cluster name/ports/hostnames as stage 5, so run one at a time |
 
 The app deploys five units: `api` (5101), `messaging` (5102), `mcp` (5103), `web`, and `migration` (a one-shot job), on top of the shared libraries under `src/common/`.
 

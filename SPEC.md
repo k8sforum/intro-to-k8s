@@ -222,6 +222,8 @@ intro-to-k8s/
 │   └── runbook.ipynb
 ├── 5-monitoring/                # Stage 5: stage 4 + manifests/observability/ (OTel Collector, Prometheus, Tempo, Grafana, postgres-exporter, cAdvisor);
 │   └── ...                      #   OTEL_* env on the .NET deployments, rabbitmq_prometheus, monitoring ingress hosts, real web OTLP endpoint
+├── 6-statefulset/               # Stage 6: stage 5 with postgres/rabbitmq/seaweedfs as StatefulSets (volumeClaimTemplates, headless Services);
+│   └── ...                      #   no manual SeaweedFS PV or node pinning, no PV entries in the Argo project/application
 ├── src/                          # Application source (the actual MyTravels app)
 │   ├── api/mytravels.api/        # ASP.NET Core REST API (net10.0)
 │   ├── api/mytravels.mcp/        # MCP tool server (net10.0, Web SDK) - Tools/, Dockerfile, appsettings

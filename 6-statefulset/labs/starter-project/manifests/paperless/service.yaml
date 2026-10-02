@@ -1,0 +1,18 @@
+# TODO: add argocd.argoproj.io/sync-wave: "1" under metadata (see secret.yaml
+# in this folder for why).
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless
+  namespace: paperless-lab
+  labels:
+    app: paperless
+spec:
+  type: ClusterIP
+  selector:
+    app: paperless
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
