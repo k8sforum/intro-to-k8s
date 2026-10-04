@@ -40,11 +40,11 @@ Managing applications at scale is HARD.
     - Persistent Volume Claim
     - Storage Class
 - Config
-    - Config Maps
+    - Config Maps (mounted as a volume to a pod, then to a container at a specific mount point)
     - Secrets
 - Observability
     -
     - 
 - Security
-    -
-    - 
+    - namespaces
+    - RBAC
