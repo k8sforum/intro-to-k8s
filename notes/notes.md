@@ -8,7 +8,7 @@ Managing applications at scale is HARD.
 
 - AVAILABILITY - App crashes - Self Healing
 - SCALABILITY - Scaling and load balancing - 
-- DISASTER RECOVER 
+- DISASTER RECOVER  - 
 
 ## L1 - Basic k8s Cluster Architecture
 
@@ -23,6 +23,8 @@ Managing applications at scale is HARD.
     - default
     - kube-public
     - kube- system
+
+- Labels 
 
 ## L2
 

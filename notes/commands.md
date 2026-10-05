@@ -45,3 +45,27 @@
 
 
 ## kubectl get cm -A
+
+# Labels
+
+## kubectl get pods --show-labels 
+
+## watch -n 0.1 kubectl get pods --show-labels
+
+## kubectl label pod mynginx <KEY>=<VALUE>
+
+## kubectl get pods, svc -n mytravels-default --selector=app=ai       
+
+## kubectl get pods -n mytravels-default -l app=api
+
+
+# Deployment
+
+## kubectl create deployment mydeploy --image=nginx
+
+
+## kubectl get deploy
+
+
+## kubectl scale deploy mydeploy --replicas 3
+
