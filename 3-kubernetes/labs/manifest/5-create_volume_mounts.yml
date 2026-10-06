@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-deployment
+  namespace: k8s-ns
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: k8s-deployment
+  template:
+    metadata:
+      labels:
+        app: k8s-deployment
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+      volumes:
+        - name: html
+          configMap:
+            name: k8s-cm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-service
+  namespace: k8s-ns
+spec:
+  type: LoadBalancer
+  selector:
+    app: k8s-deployment
+  ports:
+    - port: 8081
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: k8s-ingress
+  namespace: k8s-ns
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: k8s.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: k8s-service
+                port:
+                  number: 8081
