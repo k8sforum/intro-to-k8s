@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-deployment
+  namespace: k8s-ns
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: k8s-deployment
+  template:
+    metadata:
+      labels:
+        app: k8s-deployment
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-service
+  namespace: k8s-ns
+spec:
+  type: LoadBalancer
+  selector:
+    app: k8s-deployment
+  ports:
+    - port: 8081
+      targetPort: 80
