@@ -1,3 +1,4 @@
+# Create a Kubernetes deployment named k8s-deployment in the k8s-ns namespace
 apiVersion: apps/v1
 kind: Deployment
 metadata:

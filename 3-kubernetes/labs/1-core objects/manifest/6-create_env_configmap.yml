@@ -1,3 +1,4 @@
+# This manifest is specifically for creating environment ConfigMap and related resources.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,6 +8,7 @@ data:
   K8S_FORUM_SESSION_NUMBER: "4"
   K8S_FORUM_SESSION_TITLE: "Core Objects"
 ---
+# Deployment manifest for the k8s-ns namespace.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,13 +33,14 @@ spec:
             - configMapRef:
                 name: k8s-env-cm
           volumeMounts:
-            - name: html
+            - name: index
               mountPath: /usr/share/nginx/html
       volumes:
-        - name: html
+        - name: index
           configMap:
             name: k8s-cm
 ---
+# Service manifest for the k8s-ns namespace.
 apiVersion: v1
 kind: Service
 metadata:
@@ -51,6 +54,7 @@ spec:
     - port: 8081
       targetPort: 80
 ---
+# Ingress manifest for the k8s-ns namespace.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

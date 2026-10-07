@@ -1,3 +1,4 @@
+# ConfigMap manifest for the k8s-ns namespace.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,6 +8,7 @@ data:
   K8S_FORUM_SESSION_NUMBER: "4"
   K8S_FORUM_SESSION_TITLE: "Core Objects"
 ---
+# StorageClass manifest for the k8s-ns namespace.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -15,6 +17,7 @@ provisioner: kubernetes.io/no-provisioner
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
 ---
+# PersistentVolume manifest for the k8s-ns namespace.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -38,6 +41,7 @@ spec:
               values:
                 - k3d-k8scluster-agent-0
 ---
+# PersistentVolumeClaim (dynamic) manifest for the k8s-ns namespace.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -48,8 +52,9 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10Mi
+      storage: 15Mi
 ---
+# PersistentVolumeClaim (manual) manifest for the k8s-ns namespace.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -63,6 +68,7 @@ spec:
     requests:
       storage: 10Mi
 ---
+# Deployment manifest for the k8s-ns namespace.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -88,14 +94,14 @@ spec:
             - configMapRef:
                 name: k8s-env-cm
           volumeMounts:
-            - name: html
+            - name: index
               mountPath: /usr/share/nginx/html
             - name: data-dynamic
               mountPath: /data/dynamic
             - name: data-manual
               mountPath: /data/manual
       volumes:
-        - name: html
+        - name: index
           configMap:
             name: k8s-cm
         - name: data-dynamic
@@ -105,6 +111,7 @@ spec:
           persistentVolumeClaim:
             claimName: k8s-pvc-manual
 ---
+# Service manifest for the k8s-ns namespace.
 apiVersion: v1
 kind: Service
 metadata:
@@ -118,6 +125,7 @@ spec:
     - port: 8081
       targetPort: 80
 ---
+# Ingress manifest for the k8s-ns namespace.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

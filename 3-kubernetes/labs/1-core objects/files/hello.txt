@@ -1,1 +1,1 @@
-Hello from my laptop! This file was copied into the pod with kubectl cp.
+my manual content

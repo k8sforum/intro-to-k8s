@@ -1,3 +1,4 @@
+# Create a Kubernetes pod named k8s-pod in the k8s-ns namespace
 apiVersion: v1
 kind: Pod
 metadata:
