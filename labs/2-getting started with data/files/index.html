@@ -40,6 +40,7 @@ code{font-family:var(--mono);font-size:.86em;background:var(--blue-100);color:va
 .card.inverse:hover{border-color:var(--lime)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;border:1px solid var(--border-inverse);color:#fff;font-size:13px;font-weight:600}
+.muted-head{margin-top:72px}.muted-head h2{color:var(--gray-500)}.muted .card{background:var(--gray-100);border-color:var(--gray-200);box-shadow:none;color:var(--gray-500)}.muted .card:hover{transform:none;box-shadow:none;border-color:var(--gray-200)}.muted .card h3{color:var(--gray-500)}.muted .card .num{color:var(--gray-500)}.muted code{background:var(--gray-200);color:var(--gray-700)}
 footer{background:var(--midnight);color:var(--text-inverse-muted);font-size:14px}
 footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-top:28px;padding-bottom:28px}
 footer .brand{font-size:18px}
@@ -54,13 +55,16 @@ footer .brand{font-size:18px}
 <div class="stats"><div class="stat"><div class="v accent">1</div><div class="l">Server</div></div><div class="stat"><div class="v">3</div><div class="l">Agents</div></div><div class="stat"><div class="v">k3d</div><div class="l">Local cluster</div></div></div>
 </div></header>
 <main class="sec"><div class="wrap">
-<div class="head"><span class="eyebrow">Agenda</span><h2>What we cover</h2></div>
+<div class="head"><span class="eyebrow">Agenda</span><h2>What is covered</h2></div>
 <div class="grid">
 <article class="card"><span class="num">01</span><h3>Cluster basics</h3><p>What Kubernetes solves (availability, scalability), control plane vs worker nodes, inspecting clusters and contexts, creating a k3d cluster</p></article>
 <article class="card"><span class="num">02</span><h3>Namespaces</h3><p>Listing, creating and switching the default namespace for <code>kubectl</code></p></article>
 <article class="card"><span class="num">03</span><h3>Workloads</h3><p>Pods (CLI and manifest), Deployments (scaling and self-healing), using <code>describe</code></p></article>
 <article class="card"><span class="num">04</span><h3>Labels</h3><p>Viewing, selecting (<code>-l</code>) and adding labels to resources</p></article>
 <article class="card"><span class="num">05</span><h3>Networking</h3><p>Port forwarding, Services (ClusterIP, LoadBalancer) and Endpoints, Ingress with a local hostname (<code>k8s.local</code>)</p></article>
+</div>
+<div class="head muted-head"><h2>What is not covered</h2></div>
+<div class="grid muted">
 <article class="card"><span class="num">06</span><h3>Configurations</h3><p>ConfigMaps (mounted as a volume and injected as environment variables)</p></article>
 <article class="card"><span class="num">07</span><h3>Storage</h3><p>StorageClass, PersistentVolume and PersistentVolumeClaim, dynamic (<code>local-path</code>) vs static (<code>manual</code>) provisioning, data surviving pod deletion, and the <code>Delete</code> vs <code>Retain</code> reclaim policies</p></article>
 <article class="card"><span class="num">08</span><h3>Cleanup</h3><p>Deleting the cluster, reclaiming Docker disk space and removing the <code>k8s.local</code> host entry</p></article>

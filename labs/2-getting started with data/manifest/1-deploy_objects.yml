@@ -1,14 +1,10 @@
-# This manifest is specifically for creating environment ConfigMap and related resources.
+# Create a Namespace for the k8s-deployment and k8s-service
 apiVersion: v1
-kind: ConfigMap
+kind: Namespace
 metadata:
-  name: k8s-env-cm
-  namespace: k8s-ns
-data:
-  K8S_FORUM_SESSION_NUMBER: "4"
-  K8S_FORUM_SESSION_TITLE: "Core Objects"
+  name: k8s-ns
 ---
-# Deployment manifest for the k8s-ns namespace.
+# Create a Kubernetes deployment named k8s-deployment with volume mounts in the k8s-ns namespace
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -29,9 +25,6 @@ spec:
           image: nginx
           ports:
             - containerPort: 80
-          envFrom:
-            - configMapRef:
-                name: k8s-env-cm
           volumeMounts:
             - name: index
               mountPath: /usr/share/nginx/html
@@ -40,7 +33,7 @@ spec:
           configMap:
             name: k8s-cm
 ---
-# Service manifest for the k8s-ns namespace.
+# Create a Kubernetes service of type LoadBalancer for the k8s-deployment in the k8s-ns namespace
 apiVersion: v1
 kind: Service
 metadata:
@@ -54,7 +47,7 @@ spec:
     - port: 8081
       targetPort: 80
 ---
-# Ingress manifest for the k8s-ns namespace.
+# Create a Kubernetes ingress for the k8s-service in the k8s-ns namespace
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

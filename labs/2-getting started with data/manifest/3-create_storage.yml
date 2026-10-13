@@ -1,3 +1,9 @@
+# Create a Namespace for the k8s-deployment and k8s-service
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: k8s-ns
+---
 # ConfigMap manifest for the k8s-ns namespace.
 apiVersion: v1
 kind: ConfigMap
@@ -118,7 +124,7 @@ metadata:
   name: k8s-service
   namespace: k8s-ns
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: k8s-deployment
   ports:
