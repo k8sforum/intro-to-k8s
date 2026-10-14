@@ -33,14 +33,14 @@ spec:
           configMap:
             name: k8s-cm
 ---
-# Create a Kubernetes service of type LoadBalancer for the k8s-deployment in the k8s-ns namespace
+# Create a Kubernetes service of type ClusterIP for the k8s-deployment in the k8s-ns namespace
 apiVersion: v1
 kind: Service
 metadata:
   name: k8s-service
   namespace: k8s-ns
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: k8s-deployment
   ports:
