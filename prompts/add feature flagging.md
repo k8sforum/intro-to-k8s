@@ -61,7 +61,7 @@ hard-coded config toggle.
   files without numbers plus sync-wave annotations
   (`4-argocd/manifests/solr/{deployment,pvc,service}.yaml`). Any hostPath PV in
   this cluster is node-pinned - `minio/2-pv-pvc.yaml`'s `nodeAffinity` to
-  `k3d-mytravels-agent-2`, which `solr/1-pvc.yaml` matches.
+  `k3d-k8scluster-agent-2`, which `solr/1-pvc.yaml` matches.
 - **Web runtime config is sentinel-substituted, not baked in.** Vite env vars
   are compiled into the bundle at build time, so the published image is built
   with placeholders (`__API_BASE_URL__`, `__OTLP_TRACES_ENDPOINT__`,

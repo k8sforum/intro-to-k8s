@@ -242,7 +242,7 @@ Add a `solr-data` named volume. `api`, `mcp` and `messaging` gain
 Stage 3 (`3-kubernetes/manifests/solr/`, numbered for apply order):
 `1-pv-pvc.yaml`, `2-deployment.yaml`, `3-service.yaml`. Follow
 `minio/2-pv-pvc.yaml` - note it hard-pins `nodeAffinity` to
-`k3d-mytravels-agent-2`; match that so SOLR lands on the same node as the other
+`k3d-k8scluster-agent-2`; match that so SOLR lands on the same node as the other
 `hostPath` volumes. Add `solr.mytravels.local` → `solr:8983` to
 `9-ingress.yaml` for the Admin UI, and to the host comment block at the top,
 which currently lists every other exposed host.
