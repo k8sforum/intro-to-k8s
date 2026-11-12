@@ -72,6 +72,9 @@ builder.Services.AddTransient<IFailedMessageWriter, FailedMessageWriter>();
 builder.Services.AddMapsService(builder.Configuration);
 builder.Services.AddTransient<IObjectStorageService, S3StorageService>();
 builder.Services.AddTransient<IImageDescriptionService, AnthropicImageDescriptionService>();
+// Constructor dependency of the shared PointOfInterestService only: messaging never searches.
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ISearchTermRewriter, AnthropicSearchTermRewriter>();
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 
 // Register message subscribers (hosted services)

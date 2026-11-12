@@ -38,7 +38,8 @@ builder.Services.AddOpenTelemetry()
            .AddAspNetCoreInstrumentation()
            .AddHttpClientInstrumentation()
            .AddSource("Npgsql")
-           .AddSource("MyTravels.RabbitMQ"))
+           .AddSource("MyTravels.RabbitMQ")
+           .AddSource(AnthropicSearchTermRewriter.ActivitySourceName))
        .UseOtlpExporter();
 
 builder.Configuration
@@ -103,6 +104,9 @@ builder.Services.AddTransient<IImageDescriptionService, AnthropicImageDescriptio
 builder.Services.AddTransient<SolrClient>();
 builder.Services.AddTransient<ISolrSearchService, SolrSearchService>();
 builder.Services.AddTransient<ISolrIndexService, SolrIndexService>();
+builder.Services.AddMemoryCache();
+// Singleton so one AnthropicClient serves every request; it caches rewrites in IMemoryCache by normalised term.
+builder.Services.AddSingleton<ISearchTermRewriter, AnthropicSearchTermRewriter>();
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 

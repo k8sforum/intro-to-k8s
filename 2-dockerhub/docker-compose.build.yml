@@ -7,25 +7,25 @@
 
 services:
   migration-tool:
-    image: tshepontlhokoa/mytravels-migrations:v1.0.8-${ARCH}
+    image: tshepontlhokoa/mytravels-migrations:v1.0.9-${ARCH}
     build:
       context: ../src
       dockerfile: common/mytravels.migration/Dockerfile
 
   api:
-    image: tshepontlhokoa/mytravels-api:v1.0.14-${ARCH}
+    image: tshepontlhokoa/mytravels-api:v1.0.15-${ARCH}
     build:
       context: ../src
       dockerfile: api/mytravels.api/Dockerfile
 
   messaging:
-    image: tshepontlhokoa/mytravels-messaging:v1.0.17-${ARCH}
+    image: tshepontlhokoa/mytravels-messaging:v1.0.18-${ARCH}
     build:
       context: ../src
       dockerfile: messaging/mytravels.messaging/Dockerfile
 
   mcp:
-    image: tshepontlhokoa/mytravels-mcp:v1.0.3-${ARCH}
+    image: tshepontlhokoa/mytravels-mcp:v1.0.4-${ARCH}
     build:
       context: ../src
       dockerfile: api/mytravels.mcp/Dockerfile

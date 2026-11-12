@@ -10,4 +10,10 @@ public interface ISolrSearchService
     /// shape the PostgreSQL stored procedures produce, so every existing caller is unaffected.
     /// </summary>
     Task<List<GetPointOfInterestResponse>> SearchAsync(SolrSearchQuery query, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Returns the most common tag names in the index, most common first, by faceting on <c>tag_exact</c>
+    /// (the untokenised copy of each tag). Used to show the search-term rewriter the real tag vocabulary.
+    /// </summary>
+    Task<List<string>> GetTopTagsAsync(int limit, CancellationToken cancellationToken);
 }

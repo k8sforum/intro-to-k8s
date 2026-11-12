@@ -195,8 +195,8 @@ services:
       flagsmith-migrate:
         condition: service_completed_successfully
 
-  # Idempotent: creates the "Production" environment and the three flags (all
-  # defaulting to enabled) directly via Flagsmith's own Django ORM - no HTTP
+  # Idempotent: creates the "Production" environment and the five flags (all but
+  # enable-nlp-search defaulting to enabled) directly via Flagsmith's own Django ORM - no HTTP
   # calls, no password/login dance. Also sets a real admin password (from
   # FLAGSMITH_ADMIN_PASSWORD) so a human can still log into the console.
   # Rewrites FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY and VITE_FLAGSMITH_ENVIRONMENT_ID
@@ -242,6 +242,8 @@ services:
 
         for name in ['enable-image-description', 'enable-poi-search', 'enable-message-tracing', 'enable-failed-message-admin']:
             Feature.objects.get_or_create(project=project, name=name, defaults={'default_enabled': True})
+        # off by default, gates the LLM search term rewrite in api
+        Feature.objects.get_or_create(project=project, name='enable-nlp-search', defaults={'default_enabled': False})
 
         print(f'FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY={server_key.key}')
         print(f'VITE_FLAGSMITH_ENVIRONMENT_ID={env.api_key}')
@@ -259,7 +261,7 @@ services:
 
 # Migrations
   migrate-core-db:
-    image: tshepontlhokoa/mytravels-migrations:v1.0.8
+    image: tshepontlhokoa/mytravels-migrations:v1.0.9
     command: ["--connection", "${CORE_DB_CONTEXT}"]
     restart: "no"
     environment:
@@ -271,7 +273,7 @@ services:
   # ASP.NET CORE API
   api:
     container_name: mytravels-api
-    image: tshepontlhokoa/mytravels-api:v1.0.14
+    image: tshepontlhokoa/mytravels-api:v1.0.15
     environment:
       OTEL_SDK_DISABLED: "true"
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
@@ -288,6 +290,9 @@ services:
       Solr__Collection: ${SOLR_COLLECTION}
       Flagsmith__ApiUri: http://flagsmith:8000/api/v1/
       Flagsmith__ServerSideEnvironmentKey: ${FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY}
+      # Used only when the enable-nlp-search flag is on, to rewrite search terms; unset just means raw-term search.
+      AnthropicApiKey: ${ANTHROPIC_API_KEY}
+      AnthropicModel: ${ANTHROPIC_MODEL}
       DOTNET_hostBuilder__reloadConfigOnChange: "false"
     ports:
       - 5101:5101
@@ -304,7 +309,7 @@ services:
   # MESSAGING APP
   messaging:
     container_name: mytravels-messaging
-    image: tshepontlhokoa/mytravels-messaging:v1.0.17
+    image: tshepontlhokoa/mytravels-messaging:v1.0.18
     environment:
       OTEL_SDK_DISABLED: "true"
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}
@@ -339,7 +344,7 @@ services:
   # MCP SERVER
   mcp:
     container_name: mytravels-mcp
-    image: tshepontlhokoa/mytravels-mcp:v1.0.3
+    image: tshepontlhokoa/mytravels-mcp:v1.0.4
     environment:
       OTEL_SDK_DISABLED: "true"
       ConnectionStrings__CoreDbContext: ${CORE_DB_CONTEXT}

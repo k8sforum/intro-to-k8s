@@ -1,5 +1,5 @@
-# Idempotent: creates the "Production" environment and the three flags (all
-# defaulting to enabled) via Flagsmith's own Django ORM, and sets a real admin
+# Idempotent: creates the "Production" environment and the five flags (all but
+# enable-nlp-search defaulting to enabled) via Flagsmith's own Django ORM, and sets a real admin
 # password. Same script as 1-dockerize/docker-compose.yml's flagsmith-seed
 # service, unescaped for a plain YAML block scalar (Compose's `$$` there exists
 # only to survive Compose's own variable interpolation - Kubernetes manifests
@@ -69,6 +69,8 @@ spec:
 
               for name in ['enable-image-description', 'enable-poi-search', 'enable-message-tracing', 'enable-failed-message-admin']:
                   Feature.objects.get_or_create(project=project, name=name, defaults={'default_enabled': True})
+              # off by default, gates the LLM search term rewrite in api
+              Feature.objects.get_or_create(project=project, name='enable-nlp-search', defaults={'default_enabled': False})
 
               print(f'FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY={server_key.key}')
               print(f'VITE_FLAGSMITH_ENVIRONMENT_ID={env.api_key}')

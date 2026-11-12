@@ -68,11 +68,16 @@ namespace mytravels.api.Controllers
                 return NotFound();
             }
 
+            // Off by default: when on, terms of three or more words are rewritten by an LLM into a location and
+            // keywords before they reach SOLR, falling back to the raw term on any failure or timeout.
+            bool nlpSearchEnabled = await _featureClient.GetBooleanValueAsync("enable-nlp-search", false);
+
             SolrSearchQuery query = new()
             {
                 Term = term,
                 Rows = rows <= 0 ? DefaultRows : rows,
-                Start = start < 0 ? 0 : start
+                Start = start < 0 ? 0 : start,
+                RewriteTerm = nlpSearchEnabled
             };
 
             List<GetPointOfInterestResponse> response = await _service.SearchAsync(query, cancellationToken);

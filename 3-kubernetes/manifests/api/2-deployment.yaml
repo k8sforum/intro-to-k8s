@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: tshepontlhokoa/mytravels-api:v1.0.14
+          image: tshepontlhokoa/mytravels-api:v1.0.15
           ports:
             - name: http
               containerPort: 5101
@@ -66,6 +66,16 @@ spec:
                 secretKeyRef:
                   name: flagsmith-keys
                   key: FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY
+            # Search-term rewriting, used only while the enable-nlp-search flag is on. optional: an absent
+            # key just means raw-term search, so api still starts without one.
+            - name: AnthropicApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: api-secret
+                  key: AnthropicApiKey
+                  optional: true
+            - name: AnthropicModel
+              value: claude-haiku-4-5
             - name: DOTNET_hostBuilder__reloadConfigOnChange
               value: "false"
           resources:

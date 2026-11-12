@@ -19,6 +19,7 @@ namespace mytravels.domain.Features.PointOfInterest
         private readonly IGeoService _geoService;
         private readonly IImageDescriptionService _imageDescriptionService;
         private readonly ISolrSearchService _solrSearchService;
+        private readonly ISearchTermRewriter _searchTermRewriter;
 
         public PointOfInterestService
         (
@@ -27,7 +28,8 @@ namespace mytravels.domain.Features.PointOfInterest
             IMessagePublisher publisher,
             IGeoService geoService,
             IImageDescriptionService imageDescriptionService,
-            ISolrSearchService solrSearchService
+            ISolrSearchService solrSearchService,
+            ISearchTermRewriter searchTermRewriter
         )
         {
             _objectStorageService = service ?? throw new ArgumentNullException(nameof(service));
@@ -36,6 +38,7 @@ namespace mytravels.domain.Features.PointOfInterest
             _geoService = geoService ?? throw new ArgumentNullException(nameof(geoService));
             _imageDescriptionService = imageDescriptionService ?? throw new ArgumentNullException(nameof(imageDescriptionService));
             _solrSearchService = solrSearchService ?? throw new ArgumentNullException(nameof(solrSearchService));
+            _searchTermRewriter = searchTermRewriter ?? throw new ArgumentNullException(nameof(searchTermRewriter));
         }
 
         /// <summary>
@@ -56,8 +59,22 @@ namespace mytravels.domain.Features.PointOfInterest
             return await _solrSearchService.SearchAsync(listQuery, cancellationToken);
         }
 
+        /// <summary>
+        /// Searches SOLR, first rewriting a natural-language term into a location and keywords when the caller
+        /// asked for it (<see cref="SolrSearchQuery.RewriteTerm"/>). The rewriter returns null rather than throwing
+        /// on any failure, in which case the raw term is searched exactly as before.
+        /// </summary>
         public async Task<List<GetPointOfInterestResponse>> SearchAsync(SolrSearchQuery query, CancellationToken cancellationToken)
-            => await _solrSearchService.SearchAsync(query, cancellationToken);
+        {
+            ArgumentNullException.ThrowIfNull(query);
+
+            if (query.RewriteTerm && !string.IsNullOrWhiteSpace(query.Term))
+            {
+                query.Rewrite = await _searchTermRewriter.RewriteAsync(query.Term, cancellationToken);
+            }
+
+            return await _solrSearchService.SearchAsync(query, cancellationToken);
+        }
 
         public async Task<Guid> RequestReindexAsync(bool purgeFirst, CancellationToken cancellationToken)
         {

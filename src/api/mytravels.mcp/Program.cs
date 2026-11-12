@@ -58,6 +58,10 @@ builder.Services.AddMapsService(builder.Configuration);
 builder.Services.AddTransient<SolrClient>();
 builder.Services.AddTransient<ISolrSearchService, SolrSearchService>();
 builder.Services.AddTransient<ISolrIndexService, SolrIndexService>();
+// Constructor dependency of the shared PointOfInterestService only: search_pointofinterest never sets
+// SolrSearchQuery.RewriteTerm (its caller is already an LLM composing the term), so no AnthropicApiKey is needed here.
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ISearchTermRewriter, AnthropicSearchTermRewriter>();
 builder.Services.AddTransient<IPointOfInterestService, PointOfInterestService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 

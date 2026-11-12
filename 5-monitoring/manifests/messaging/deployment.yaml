@@ -23,7 +23,7 @@ spec:
           command: ['sh', '-c', 'until nc -z rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done']
       containers:
         - name: messaging
-          image: tshepontlhokoa/mytravels-messaging:v1.0.17
+          image: tshepontlhokoa/mytravels-messaging:v1.0.18
           ports:
             - name: http
               containerPort: 5102

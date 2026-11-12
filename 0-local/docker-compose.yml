@@ -197,8 +197,8 @@ services:
       flagsmith-migrate:
         condition: service_completed_successfully
 
-  # Idempotent: creates the "Production" environment and the three flags (all
-  # defaulting to enabled) directly via Flagsmith's own Django ORM - no HTTP
+  # Idempotent: creates the "Production" environment and the five flags (all but
+  # enable-nlp-search defaulting to enabled) directly via Flagsmith's own Django ORM - no HTTP
   # calls, no password/login dance. Also sets a real admin password (from
   # FLAGSMITH_ADMIN_PASSWORD) so a human can still log into the console.
   # Rewrites FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY and VITE_FLAGSMITH_ENVIRONMENT_ID
@@ -247,6 +247,8 @@ services:
 
         for name in ['enable-image-description', 'enable-poi-search', 'enable-message-tracing', 'enable-failed-message-admin']:
             Feature.objects.get_or_create(project=project, name=name, defaults={'default_enabled': True})
+        # off by default, gates the LLM search term rewrite in api
+        Feature.objects.get_or_create(project=project, name='enable-nlp-search', defaults={'default_enabled': False})
 
         print(f'FLAGSMITH_SERVER_SIDE_ENVIRONMENT_KEY={server_key.key}')
         print(f'VITE_FLAGSMITH_ENVIRONMENT_ID={env.api_key}')
@@ -264,7 +266,7 @@ services:
 
 # Migrations
   migrate-core-db:
-    image: tshepontlhokoa/mytravels-migrations:v1.0.8
+    image: tshepontlhokoa/mytravels-migrations:v1.0.9
     command: ["--connection", "${CORE_DB_CONTEXT}"]
     restart: "no"
     environment:

@@ -10,10 +10,10 @@
 set -euo pipefail
 
 images=(
-    "tshepontlhokoa/mytravels-migrations:v1.0.8"
-    "tshepontlhokoa/mytravels-api:v1.0.14"
-    "tshepontlhokoa/mytravels-messaging:v1.0.17"
-    "tshepontlhokoa/mytravels-mcp:v1.0.3"
+    "tshepontlhokoa/mytravels-migrations:v1.0.9"
+    "tshepontlhokoa/mytravels-api:v1.0.15"
+    "tshepontlhokoa/mytravels-messaging:v1.0.18"
+    "tshepontlhokoa/mytravels-mcp:v1.0.4"
     "tshepontlhokoa/mytravels-web:v1.0.9"
 )
 
